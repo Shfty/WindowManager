@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/qmldir</file>
+        <file>qml/main.qml</file>
+        <file>qml/items/BlurBehind.qml</file>
+        <file>qml/items/ManagedWindow.qml</file>
+        <file>qml/options/Options.qml</file>
+        <file>qml/tree/TreeDelegate.qml</file>
+        <file>qml/tree/TreeHeader.qml</file>
+        <file>qml/tree/TestWindow.qml</file>
+        <file>qml/tree/MonitorWindow.qml</file>
+        <file>qml/tree/TreeWindow.qml</file>
+        <file>qml/tree/ThumbnailOverlayWindow.qml</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,4 @@
+singleton Options 1.0 options/Options.qml
+
+BlurBehind 1.0 items/BlurBehind.qml
+ManagedWindow 1.0 items/ManagedWindow.qml
