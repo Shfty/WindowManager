@@ -27,9 +27,33 @@ ManagedWindow::~ManagedWindow()
 
 QSGNode *ManagedWindow::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
-	if(m_parentHwnd == nullptr)
+	drawThumbnail();
+
+	// Schedule a repaint
+	update();
+
+	return QQuickItem::updatePaintNode(oldNode, updatePaintNodeData);
+}
+
+void ManagedWindow::updateThumbnail()
+{
+	if (m_thumbnail != nullptr)
 	{
-		return QQuickItem::updatePaintNode(oldNode, updatePaintNodeData);
+		DwmUnregisterThumbnail(m_thumbnail);
+		m_thumbnail = nullptr;
+	}
+
+	if (m_parentHwnd != nullptr && m_hwnd != nullptr)
+	{
+		DwmRegisterThumbnail(m_parentHwnd, m_hwnd, &m_thumbnail);
+	}
+}
+
+void ManagedWindow::drawThumbnail()
+{
+	if(m_thumbnail == nullptr)
+	{
+		return;
 	}
 
 	WindowManager& wm = WindowManager::instance();
@@ -76,6 +100,19 @@ QSGNode *ManagedWindow::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePain
 	QRectF sourceRect = QRectF(sourcePos, sourceSize);
 	QRectF destRect = QRectF(destPos, destSize);
 
+	if(m_clipTarget != nullptr)
+	{
+		QPointF clipTargetPos = m_clipTarget->mapToScene(QPointF(0, 0));
+		QRectF clippingRect = QRectF(clipTargetPos, m_clipTarget->size());
+
+		destRect = destRect.intersected(clippingRect);
+
+		QPointF relativePos = clippingRect.topLeft() - destPos;
+		QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
+		
+		sourceRect = sourceRect.intersected(relativeClipRect);
+	}
+
 	// Convert rectangles into winapi format
 	RECT source = {
 		static_cast<LONG>(sourceRect.left()),
@@ -106,23 +143,4 @@ QSGNode *ManagedWindow::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePain
 
 	// Display the thumbnail
 	DwmUpdateThumbnailProperties(m_thumbnail, &dskThumbProps);
-
-	// Schedule a repaint
-	update();
-
-	return QQuickItem::updatePaintNode(oldNode, updatePaintNodeData);
-}
-
-void ManagedWindow::updateThumbnail()
-{
-	if (m_thumbnail != nullptr)
-	{
-		DwmUnregisterThumbnail(m_thumbnail);
-		m_thumbnail = nullptr;
-	}
-
-	if (m_parentHwnd != nullptr && m_hwnd != nullptr)
-	{
-		DwmRegisterThumbnail(m_parentHwnd, m_hwnd, &m_thumbnail);
-	}
 }

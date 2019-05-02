@@ -62,6 +62,7 @@ void AppCore::windowManagerReady()
 	// Create nested model and pass a reference to the QML app
 	m_rootItem = loadModel(AUTOSAVE_PATH);
 	m_qmlApp->setModel(m_rootItem);
+	m_rootItem->moveWindowOnscreen();
 
 	// Disconnect signal
 	QObject::disconnect(&WindowManager::instance(), SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
@@ -114,7 +115,7 @@ void AppCore::saveDefaultModel(QString filename)
 		QScreen* screen = screens.at(i);
 
 		TreeItem* monitorItem = qvariant_cast<TreeItem*>(model->addChild("Monitor", "Horizontal", "Tabbed", screen->geometry(), screen->refreshRate()));
-		TreeItem* desktopItem = qvariant_cast<TreeItem*>(monitorItem->addChild("Desktop", "Horizontal", "Split"));
+		monitorItem->addChild("Desktop", "Horizontal", "Split");
 	}
 
 	saveModel(filename, model);

@@ -2,7 +2,7 @@ import QtQuick 2.11
 import QtQml 2.2
 import Process 1.0
 
-import "tree"
+import "."
 
 QtObject {
     id: rootObject
@@ -26,14 +26,12 @@ QtObject {
             property var treeWindow: TreeWindow {
                 thumbnailOverlay: thumbnailWindow
             }
-            property var thumbnailWindow: ThumbnailOverlayWindow {}
+            property var thumbnailWindow: ThumbnailUnderlayWindow {}
         }
     }
 
-    property var configWindow: TestWindow {
+    property var configWindow: ConfigWindow {
         visible: false
         model: rootObject.model ? rootObject.model.children : null
     }
-
-    property var process: Process {}
 }

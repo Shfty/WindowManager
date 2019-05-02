@@ -10,19 +10,21 @@ import ".."
 Item {
 	id: itemWrapper
 
+	property var parentItem: null
+
 	property var treeItem: model.modelData
 	property var delegate: treeDelegate
 
 	property var animationEasing: Easing.OutCubic
 	property int animationDuration: 200 * treeWindow.animationRate
 
-	property rect bounds: treeItem.bounds
-	property rect headerBounds: treeItem.headerBounds
-	property rect contentBounds: treeItem.contentBounds
-	property var hwnd: treeItem.hwnd
+	property rect bounds: treeItem ? treeItem.bounds : Qt.rect(0, 0, 0, 0)
+	property rect headerBounds: treeItem ? treeItem.headerBounds : Qt.rect(0, 0, 0, 0)
+	property rect contentBounds: treeItem ? treeItem.contentBounds : Qt.rect(0, 0, 0, 0)
+	property var hwnd: treeItem ? treeItem.hwnd : null
 	property bool hwndValid: false
 	onHwndChanged: {
-		hwndValid = treeItem.isHwndValid()
+		hwndValid = treeItem ? treeItem.isHwndValid() : false
 	}
 	
 	x: bounds.x
@@ -35,7 +37,8 @@ Item {
 
 	function addChild(treeItem) {
 		var incubator = itemWrapper.delegate.incubateObject(childWrapper, {
-			treeItem: treeItem
+			treeItem: treeItem,
+			parentItem: childWrapper
 		});
 
 		incubators.push(incubator)
@@ -54,6 +57,8 @@ Item {
 	}
 
 	Component.onCompleted: {
+		if(!treeItem) return
+
 		for(var i = 0; i < treeItem.children.length; ++i)
 		{
 			itemWrapper.addChild(treeItem.children[i])
@@ -120,14 +125,12 @@ Item {
 	Item {
 		id: childWrapper
 
-		clip: true
+		clip: treeItem ? treeItem.layout == "Tabbed" : false
 	
 		x: contentBounds.x
 		y: contentBounds.y
 		width: contentBounds.width
 		height: contentBounds.height
-
-		visible: treeItem.isVisible
 
 		Behavior on x {
 			SequentialAnimation {
@@ -177,15 +180,22 @@ Item {
 			id: itemBackground
 			anchors.fill: parent
 
-			visible: treeItem.depth > 1
+			visible: treeItem ? treeItem.depth > 1 : false
 
 			color: Options.containerPlaceholderColor
 		}
 
 		ManagedWindow {
 			anchors.fill: parent
-			hwnd: treeItem.hwnd
+			hwnd: treeItem ? treeItem.hwnd : null
 			parentHwnd: windowManager.getWindowHwnd(treeWindow.thumbnailOverlay)
+			clipTarget: {
+				if(!treeItem) return null
+				if(treeItem.parent == null) return null
+				if(treeItem.parent.layout != "Tabbed") return null;
+
+				return parentItem
+			}
 		}
 	}
 }

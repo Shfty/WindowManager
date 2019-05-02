@@ -12,19 +12,23 @@ Item {
     
     property var treeItem: null
 
-    property var hwnd: treeItem.hwnd
+    property var hwnd: treeItem ? treeItem.hwnd : null
     onHwndChanged: {
+        if(!treeItem) return
+
         hwndValid = treeItem.isHwndValid()
     }
 
     property bool hwndValid: false
-    property bool isRoot: treeItem.depth == 1
+    property bool isRoot: treeItem ? treeItem.depth == 1 : false
 
     Rectangle {
         width: parent.width
         height: Options.headerSize
 
         color: {
+            if(!treeItem) return Options.activeHeaderColor
+
             if(treeItem.parent.layout === "Split") {
                 return Options.activeHeaderColor
             }
@@ -40,7 +44,7 @@ Item {
     TextField {
         id: titleTextField
 
-        width: 200
+        width: 100
         height: Options.headerSize
 
         background: Rectangle {
@@ -55,6 +59,8 @@ Item {
         placeholderText: qsTr("Title")
 
         onEditingFinished: {
+            if(!treeItem) return
+
             treeItem.title = titleTextField.text
         }
     }
@@ -67,7 +73,7 @@ Item {
         height: Options.headerSize
 
         property var windowList: windowManager.windowList
-        property string containerString: "[" + treeItem.flow + " " + treeItem.layout + " Container]"
+        property string containerString: "[Container]"
 
         model: {
             var stringModel = [ containerString ];
@@ -76,10 +82,14 @@ Item {
         }
 
         currentIndex: {
+            if(!treeItem) return 0
+
             return windowList.hwnds.indexOf(treeItem.hwnd) + 1
         }
 
         onActivated: function(selectedIndex) {
+            if(!treeItem) return
+
             if(selectedIndex == 0)
             {
                 treeItem.resetHwnd()
@@ -96,8 +106,8 @@ Item {
             windowComboBox.popup.bottomMargin = 0
         }
 
-        Window {
-            property var rootTransform: {
+        OverlayWindow {
+            property point rootTransform: {
                 // Dependencies
                 windowComboBox.popup.opened
 
@@ -108,8 +118,7 @@ Item {
             y: rootTransform.y
             width: windowComboBox.popup.width
             height: windowComboBox.popup.height
-            flags: Qt.FramelessWindowHint | Qt.WA_TranslucentBackground | Qt.WindowStaysOnTopHint | Qt.Dialog
-            color: "#00000000"
+
             visible: windowComboBox.popup.visible
 
             onActiveChanged: {
@@ -126,6 +135,109 @@ Item {
         }
     }
 
+    OverlayWindow {
+        id: configWindow
+
+        property point rootTransform: {
+            // Dependencies
+            windowComboBox.popup.opened
+
+            return mapToGlobal(nestedHeader.x, nestedHeader.y + nestedHeader.height)
+        }
+
+        width: treeItem ? treeItem.contentBounds.width : 0
+        height: treeItem ? treeItem.contentBounds.height : 0
+
+        function toggle() {
+            this.visible = !this.visible
+
+            var pos = mapToGlobal(nestedHeader.x, nestedHeader.y + nestedHeader.height)
+            this.x = pos.x
+            this.y = pos.y
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#80000000"
+
+            ColumnLayout {
+                anchors.fill: parent
+
+                RowLayout {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+
+                    Button {
+                        Layout.minimumWidth: 100
+                        Layout.fillWidth: false
+                        height: Options.headerSize
+
+                        text: "Launch URI"
+                    }
+                    TextField {
+                        id: launchUriTextField
+
+                        Layout.fillWidth: true
+                        height: Options.headerSize
+
+                        background: Rectangle {
+                            color: "#50000000"
+                            border.width: 2
+                            border.color: "#65FFFFFF"
+                        }
+
+                        color: "white"
+
+                        text: treeItem ? treeItem.launchUri : ""
+                        placeholderText: qsTr("Launch URI")
+
+                        onEditingFinished: {
+                            if(!treeItem) return
+
+                            treeItem.launchUri = launchUriTextField.text
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+
+                    Button {
+                        Layout.minimumWidth: 100
+                        Layout.fillWidth: false
+                        height: Options.headerSize
+
+                        text: "Launch Params"
+                    }
+                    TextField {
+                        id: launchParamsTextField
+
+                        Layout.fillWidth: true
+                        height: Options.headerSize
+
+                        background: Rectangle {
+                            color: "#50000000"
+                            border.width: 2
+                            border.color: "#65FFFFFF"
+                        }
+
+                        color: "white"
+
+                        text: treeItem ? treeItem.launchParams : ""
+                        placeholderText: qsTr("Launch Params")
+
+                        onEditingFinished: {
+                            if(!treeItem) return
+
+                            treeItem.launchParams = launchParamsTextField.text
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     RowLayout {
         id: buttonLayout
 
@@ -133,6 +245,56 @@ Item {
         height: Options.headerSize
 
         spacing: 0
+
+        Button {
+            id: flipButton
+            objectName: "flipButton"
+
+            width: Options.headerSize
+            Layout.fillHeight: true
+
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            ToolTip.text: qsTr("Flip Orientation")
+
+            font.family: "Segoe MDL2 Assets"
+            text: treeItem ? treeItem.flow : ""
+
+            visible: !hwndValid
+
+            onClicked: {
+                if(!treeItem) return
+
+                if(!pressed) {
+                    treeItem.toggleFlow()
+                }
+            }
+        }
+
+        Button {
+            id: layoutButton
+            objectName: "layoutButton"
+
+            width: Options.headerSize
+            Layout.fillHeight: true
+
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            ToolTip.text: qsTr("Switch Layout")
+
+            font.family: "Segoe MDL2 Assets"
+            text: treeItem ? treeItem.layout : ""
+
+            visible: !hwndValid
+
+            onClicked: {
+                if(!treeItem) return
+
+                if(!pressed) {
+                    treeItem.toggleLayout()
+                }
+            }
+        }
 
         Button {
             id: addButton
@@ -151,58 +313,14 @@ Item {
             visible: !hwndValid
 
             onClicked: {
+                if(!treeItem) return
+
                 if(!pressed) {
                     treeItem.addChild(
                         "",
                         treeItem.flow === "Horizontal" ? "Vertical" : "Horizontal",
                         "Split"
                     )
-                }
-            }
-        }
-
-        Button {
-            id: flipButton
-            objectName: "flipButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Flip Orientation")
-
-            width: Options.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE8EB"
-
-            visible: !hwndValid
-
-            onClicked: {
-                if(!pressed) {
-                    treeItem.toggleFlow()
-                }
-            }
-        }
-
-        Button {
-            id: layoutButton
-            objectName: "layoutButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Switch Layout")
-
-            width: Options.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE7FD"
-
-            visible: !hwndValid
-
-            onClicked: {
-                if(!pressed) {
-                    treeItem.toggleLayout()
                 }
             }
         }
@@ -218,16 +336,32 @@ Item {
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
-            text: "\uE713"
-
-            visible: treeItem.hwnd ? true : false
-
-            property string itemLaunchProgram: "C:/Program Files/Mozilla Firefox/firefox.exe"
-            property string itemLaunchParams: "-new-window https://www.google.com"
+            text: "\uE768"
 
             onClicked: {
-                var paramArray = itemLaunchParams.split(" ")
-                rootObject.process.start(itemLaunchProgram, paramArray)
+                if(!treeItem) return
+
+                treeItem.launch()
+            }
+        }
+
+        Button {
+            id: configButton
+            objectName: "configButton"
+
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            ToolTip.text: qsTr("Configure")
+
+            Layout.fillHeight: true
+
+            font.family: "Segoe MDL2 Assets"
+            text: "\uE713"
+
+            enabled: treeItem ? treeItem.children.length == 0 : false
+
+            onClicked: {
+                configWindow.toggle()
             }
         }
 
@@ -244,6 +378,8 @@ Item {
 
             font.family: "Segoe MDL2 Assets"
             text: {
+                if(!treeItem) return "\uE76B"
+
                 if(treeItem.parent)
                 {
                     return treeItem.parent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
@@ -253,9 +389,15 @@ Item {
             }
 
             visible: !isRoot
-            enabled: treeItem.parent.children.length > 0 && treeItem.index > 0
+            enabled: {
+                if(!treeItem) return false
+
+                return treeItem.parent.children.length > 0 && treeItem.index > 0
+            }
 
             onClicked: {
+                if(!treeItem) return
+
                 treeItem.moveUp()
             }
         }
@@ -282,9 +424,15 @@ Item {
             }
 
             visible: !isRoot
-            enabled: treeItem.parent.children.length > 0 && treeItem.index < treeItem.parent.children.length - 1
+            enabled: {
+                if(!treeItem) return false
+
+                return treeItem.parent.children.length > 0 && treeItem.index < treeItem.parent.children.length - 1
+            }
 
             onClicked: {
+                if(!treeItem) return
+
                 treeItem.moveDown()
             }
         }
@@ -381,6 +529,8 @@ Item {
             visible: !isRoot
 
             onClicked: {
+                if(!treeItem) return
+
                 treeItem.remove()
             }
         }
@@ -512,6 +662,8 @@ Item {
         visible: !isRoot && treeItem.parent.layout !== "Split" && treeItem.index != treeItem.parent.activeIndex
 
         onClicked: {
+            if(!treeItem) return
+            
             treeItem.setActive();
         }
     }

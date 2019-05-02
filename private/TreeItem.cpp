@@ -2,22 +2,30 @@
 
 #include "WindowManager.h"
 
+#include <QDir>
 #include <QDebug>
+#include <QUrl>
+#include <QProcess>
+#include <QDesktopServices>
 
 // TODO: Convert into member properties
 #define HEADER_SIZE 30
-#define ITEM_MARGIN 15
+#define ITEM_MARGIN 10
 
 TreeItem::TreeItem(QObject *parent)
 	: QObject(parent),
 	  m_hwnd(nullptr),
 	  m_activeChild(nullptr),
-	  m_bounds(QRect()),
-	  m_refreshRate(-1)
+	  m_refreshRate(-1),
+	  m_process(new QProcess())
 {
 	connect(this, SIGNAL(boundsChanged()), this, SLOT(updateChildBounds()));
 	connect(this, SIGNAL(activeIndexChanged()), this, SLOT(updateChildBounds()));
+	connect(this, SIGNAL(flowChanged()), this, SLOT(updateChildBounds()));
+	connect(this, SIGNAL(layoutChanged()), this, SLOT(updateChildBounds()));
+
 	connect(this, SIGNAL(hwndChanged()), this, SLOT(moveWindowOnscreen()));
+
 	connect(this, SIGNAL(isAnimatingChanged()), this, SLOT(handleAnimatingChanged()));
 }
 
@@ -297,16 +305,12 @@ void TreeItem::toggleFlow()
 {
 	m_flow = m_flow == "Horizontal" ? "Vertical" : "Horizontal";
 	flowChanged();
-
-	this->updateChildBounds();
 }
 
 void TreeItem::toggleLayout()
 {
 	m_layout = m_layout == "Split" ? "Tabbed" : "Split";
 	layoutChanged();
-
-	this->updateChildBounds();
 }
 
 QVariant TreeItem::addChild(QString title, QString flow, QString layout, QRectF bounds, qreal refreshRate, HWND hwnd)
@@ -416,6 +420,7 @@ void TreeItem::moveChild(TreeItem *child, int delta)
 
 	child->indexChanged();
 	displacedChild->indexChanged();
+	childrenChanged();
 
 	this->updateChildBounds();
 }
@@ -497,6 +502,35 @@ void TreeItem::moveWindowOnscreen()
 	wm.endMoveWindows();
 }
 
+void TreeItem::moveWindowOffscreen()
+{
+	WindowManager& wm = WindowManager::instance();
+	wm.beginMoveWindows();
+	moveWindowOffscreen_Internal();
+	wm.endMoveWindows();
+}
+
+void TreeItem::launch()
+{
+	if(!m_launchUri.isEmpty())
+	{
+		QUrl uri = QUrl(m_launchUri + m_launchParams, QUrl::StrictMode);
+		if(uri.isValid())
+		{
+			QDesktopServices::openUrl(uri);
+		}
+		else
+		{
+			QProcess::startDetached(m_launchUri, m_launchParams.split(" "));
+		}
+	}
+
+	for(TreeItem* child : m_children)
+	{
+		child->launch();
+	}
+}
+
 void TreeItem::moveWindowOnscreen_Internal()
 {
 	if(this->isHwndValid())
@@ -510,14 +544,6 @@ void TreeItem::moveWindowOnscreen_Internal()
 	{
 		child->moveWindowOnscreen_Internal();
 	}
-}
-
-void TreeItem::moveWindowOffscreen()
-{
-	WindowManager& wm = WindowManager::instance();
-	wm.beginMoveWindows();
-	moveWindowOffscreen_Internal();
-	wm.endMoveWindows();
 }
 
 void TreeItem::moveWindowOffscreen_Internal()
@@ -544,13 +570,18 @@ void TreeItem::handleAnimatingChanged()
 	{
 		moveWindowOnscreen();
 	}
-
-	isVisibleChanged();
 }
 
 QDataStream &TreeItem::serialize(QDataStream &out) const
 {
-	out << m_title << m_flow << m_layout << m_bounds << m_refreshRate << QVariant(qulonglong(m_hwnd));
+	out << m_title;
+	out << m_flow;
+	out << m_layout;
+	out << m_bounds;
+	out << m_refreshRate;
+	out << QVariant(qulonglong(m_hwnd));
+	out << m_launchUri;
+	out << m_launchParams;
 	out << m_children.length();
 
 	for (TreeItem* child : m_children)
@@ -569,8 +600,17 @@ QDataStream &TreeItem::deserialize(QDataStream &in)
 	QRectF bounds;
 	qreal refreshRate;
 	QVariant hwnd;
+	QString launchUri;
+	QString launchParams;
 
-	in >> title >> flow >> layout >> bounds >> refreshRate >> hwnd;
+	in >> title;
+	in >> flow;
+	in >> layout;
+	in >> bounds;
+	in >> refreshRate;
+	in >> hwnd;
+	in >> launchUri;
+	in >> launchParams;
 
 	m_title = title;
 	m_flow = flow;
@@ -583,6 +623,9 @@ QDataStream &TreeItem::deserialize(QDataStream &in)
 	{
 		m_hwnd = loadedHwnd;
 	}
+
+	m_launchUri = launchUri;
+	m_launchParams = launchParams;
 	
 	int childCount;
 	in >> childCount;

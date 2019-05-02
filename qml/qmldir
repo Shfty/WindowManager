@@ -2,3 +2,14 @@ singleton Options 1.0 options/Options.qml
 
 BlurBehind 1.0 items/BlurBehind.qml
 ManagedWindow 1.0 items/ManagedWindow.qml
+OverlayWindow 1.0 items/OverlayWindow.qml
+MonitorWindow 1.0 items/MonitorWindow.qml
+
+TreeWindow 1.0 tree/TreeWindow.qml
+TreeDelegate 1.0 tree/TreeDelegate.qml
+TreeHeader 1.0 tree/TreeHeader.qml
+ThumbnailUnderlayWindow 1.0 tree/ThumbnailUnderlayWindow.qml
+
+ConfigWindow 1.0 config/ConfigWindow.qml
+ConfigView 1.0 config/ConfigView.qml
+ConfigDelegate 1.0 config/ConfigDelegate.qml

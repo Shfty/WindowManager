@@ -8,6 +8,8 @@
 #include <QVariant>
 #include "Win.h"
 
+class QProcess;
+
 class TreeItem : public QObject
 {
 	Q_OBJECT
@@ -26,8 +28,9 @@ class TreeItem : public QObject
 	Q_PROPERTY(QRectF contentBounds READ calculateContentBounds() NOTIFY contentBoundsChanged)
 	Q_PROPERTY(qreal refreshRate MEMBER m_refreshRate NOTIFY refreshRateChanged)
 	Q_PROPERTY(HWND hwnd MEMBER m_hwnd NOTIFY hwndChanged)
+	Q_PROPERTY(QString launchUri MEMBER m_launchUri NOTIFY launchUriChanged)
+	Q_PROPERTY(QString launchParams MEMBER m_launchParams NOTIFY launchParamsChanged)
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
-	Q_PROPERTY(bool isVisible READ getIsVisible() NOTIFY isVisibleChanged)
 
   public:
 	explicit TreeItem(QObject *parent = nullptr);
@@ -86,29 +89,39 @@ class TreeItem : public QObject
 	void contentBoundsChanged();
 	void refreshRateChanged();
 	void hwndChanged();
+	void launchUriChanged();
+	void launchParamsChanged();
+
 	void isAnimatingChanged();
-	void isVisibleChanged();
+
+  public slots:
+	void moveWindowOnscreen();
+	void moveWindowOffscreen();
+	void launch();
 
   private slots:
 	void updateChildBounds();
-	void moveWindowOnscreen();
 	void moveWindowOnscreen_Internal();
-	void moveWindowOffscreen();
 	void moveWindowOffscreen_Internal();
 	void handleAnimatingChanged();
 
   private:
+	// Serialized properties
 	QString m_title;
 	QString m_flow;
 	QString m_layout;
 	QRectF m_bounds;
 	qreal m_refreshRate;
 	HWND m_hwnd;
+	QString m_launchUri;
+	QString m_launchParams;
 
 	QList<TreeItem*> m_children;
+	
+	// Trasient properties
 	TreeItem* m_activeChild;
-
 	bool m_isAnimating;
+	QProcess* m_process;
 };
 
 QDataStream &operator<<(QDataStream &out, const TreeItem* nestedItem);
