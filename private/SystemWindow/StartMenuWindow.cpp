@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-StartMenuWindow::StartMenuWindow(QObject *parent)
+StartMenuWindow::StartMenuWindow(QObject* parent)
 	: SystemWindow(parent)
 {
 	m_windowTitle = "Start";

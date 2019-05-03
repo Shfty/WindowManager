@@ -1,15 +1,16 @@
 #ifndef WINDOWINFO_H
 #define WINDOWINFO_H
 
-#include <QString>
 #include "Win.h"
+#include <QString>
 
 struct WindowInfo
 {
-  public:
-	WindowInfo(HWND newHwnd = nullptr, QString newTitle = QString(), QString newClass = QString()) : hwnd(newHwnd),
-																									 winTitle(newTitle),
-																									 winClass(newClass)
+public:
+	WindowInfo(HWND newHwnd = nullptr, QString newTitle = QString(), QString newClass = QString())
+		: hwnd(newHwnd)
+		, winTitle(newTitle)
+		, winClass(newClass)
 	{
 	}
 

@@ -9,9 +9,9 @@ class StartMenuWindow : public SystemWindow
 {
 	Q_OBJECT
 
-	public:
-		explicit StartMenuWindow(QObject *parent = nullptr);
-		~StartMenuWindow();
+public:
+	explicit StartMenuWindow(QObject* parent = nullptr);
+	~StartMenuWindow();
 };
 
 #endif // STARTMENUWINDOW_H

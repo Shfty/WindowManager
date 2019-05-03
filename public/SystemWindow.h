@@ -9,8 +9,8 @@ class SystemWindow : public QObject
 {
 	Q_OBJECT
 
-  public:
-	explicit SystemWindow(QObject *parent = nullptr);
+public:
+	explicit SystemWindow(QObject* parent = nullptr);
 	~SystemWindow();
 
 	void setPosition(QPoint position);
@@ -19,7 +19,7 @@ class SystemWindow : public QObject
 	void hide();
 	void toggle();
 
-  protected:
+protected:
 	HWND getWindowHwnd();
 
 	QString m_windowTitle;

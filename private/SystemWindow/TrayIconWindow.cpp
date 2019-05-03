@@ -5,7 +5,7 @@
 #include "Win.h"
 #include "WindowManager.h"
 
-TrayIconWindow::TrayIconWindow(QObject *parent)
+TrayIconWindow::TrayIconWindow(QObject* parent)
 	: SystemWindow(parent)
 {
 	m_windowClass = "NotifyIconOverflowWindow";

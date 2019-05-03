@@ -9,9 +9,9 @@ class TrayIconWindow : public SystemWindow
 {
 	Q_OBJECT
 
-	public:
-		explicit TrayIconWindow(QObject *parent = nullptr);
-		~TrayIconWindow();
+public:
+	explicit TrayIconWindow(QObject* parent = nullptr);
+	~TrayIconWindow();
 };
 
 #endif // TRAYICONWINDOW_H

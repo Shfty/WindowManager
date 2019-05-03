@@ -1,28 +1,28 @@
 #include "AppCore.h"
 
-#include <QScreen>
 #include <QDebug>
 #include <QFileInfo>
+#include <QScreen>
 
+#include "QMLApplication.h"
+#include "SystemWindow/TaskBarWindow.h"
+#include "SystemWindow/TrayIconWindow.h"
+#include "TrayIcon.h"
 #include "TreeItem.h"
 #include "WindowManager.h"
-#include "SystemWindow/TrayIconWindow.h"
-#include "SystemWindow/TaskBarWindow.h"
-#include "TrayIcon.h"
-#include "QMLApplication.h"
 
 #define WORKING_DIRECTORY "P:/Personal/C++/WindowManager"
 #define AUTOSAVE_FILE "autosave.dat"
 #define AUTOSAVE_PATH QString(WORKING_DIRECTORY) + QString("/") + QString(AUTOSAVE_FILE)
 
-AppCore::AppCore(QObject *parent)
-	: QObject(parent),
-	  m_rootItem(nullptr)
+AppCore::AppCore(QObject* parent)
+	: QObject(parent)
+	, m_rootItem(nullptr)
 {
 	m_qmlApp = new QMLApplication(this);
 
 	// Quit if QML application failed to load
-	if (m_qmlApp->rootObjects().isEmpty())
+	if(m_qmlApp->rootObjects().isEmpty())
 	{
 		qApp->quit();
 	}
@@ -76,7 +76,7 @@ void AppCore::handleAboutToQuit()
 TreeItem* AppCore::loadModel(QString filename)
 {
 	bool fileExists = QFileInfo::exists(AUTOSAVE_PATH) && QFileInfo(AUTOSAVE_PATH).isFile();
-	if (!fileExists)
+	if(!fileExists)
 	{
 		saveDefaultModel(AUTOSAVE_PATH);
 	}
@@ -109,8 +109,8 @@ void AppCore::saveDefaultModel(QString filename)
 {
 	TreeItem* model = new TreeItem(nullptr);
 
-	QList<QScreen *> screens = qApp->screens();
-	for (int i = 0; i < screens.length(); ++i)
+	QList<QScreen*> screens = qApp->screens();
+	for(int i = 0; i < screens.length(); ++i)
 	{
 		QScreen* screen = screens.at(i);
 

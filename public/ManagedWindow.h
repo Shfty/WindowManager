@@ -13,23 +13,23 @@ class ManagedWindow : public QQuickItem
 	Q_PROPERTY(qreal thumbnailOpacity MEMBER m_thumbnailOpacity NOTIFY thumbnailOpacityChanged())
 	Q_PROPERTY(QQuickItem* clipTarget MEMBER m_clipTarget NOTIFY clipTargetChanged())
 
-  public:
-	ManagedWindow(QQuickItem *parent = nullptr);
+public:
+	ManagedWindow(QQuickItem* parent = nullptr);
 	~ManagedWindow() override;
 
-	QSGNode *updatePaintNode(QSGNode* oldNode, QQuickItem::UpdatePaintNodeData* updatePaintNodeData) override;
+	QSGNode* updatePaintNode(QSGNode* oldNode, QQuickItem::UpdatePaintNodeData* updatePaintNodeData) override;
 
-  signals:
+signals:
 	void hwndChanged();
 	void parentHwndChanged();
 	void thumbnailOpacityChanged();
 	void clipTargetChanged();
 
-  private slots:
+private slots:
 	void updateThumbnail();
 	void drawThumbnail();
 
-  private:
+private:
 	HWND m_hwnd;
 	HWND m_parentHwnd;
 	qreal m_thumbnailOpacity;

@@ -1,13 +1,13 @@
 #include "TrayIcon.h"
 
-#include <QMenu>
 #include <QDebug>
+#include <QMenu>
 
-TrayIcon::TrayIcon(QObject *parent)
-	: QSystemTrayIcon(parent),
-	  m_menu(new QMenu())
+TrayIcon::TrayIcon(QObject* parent)
+	: QSystemTrayIcon(parent)
+	, m_menu(new QMenu())
 {
-	QAction *quitAction = m_menu->addAction("Quit");
+	QAction* quitAction = m_menu->addAction("Quit");
 	QObject::connect(quitAction, SIGNAL(triggered()), this, SIGNAL(onQuitTriggered()));
 
 	QObject::connect(this, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(onActivated(QSystemTrayIcon::ActivationReason)));
@@ -20,7 +20,7 @@ TrayIcon::TrayIcon(QObject *parent)
 
 void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	if (reason == ActivationReason::Trigger)
+	if(reason == ActivationReason::Trigger)
 	{
 		this->onClicked();
 	}
