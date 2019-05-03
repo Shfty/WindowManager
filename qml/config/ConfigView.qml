@@ -8,10 +8,11 @@ import QtQuick.Controls.Universal 2.3
 import ".."
 
 // Root item
-Rectangle {
+Item {
 	id: configView
-	anchors.fill: parent
-	color: "black"
+
+	property var model: null
+	property var selectedItem: null
 
 	Flickable {
 		anchors.fill: parent
@@ -35,7 +36,7 @@ Rectangle {
 			anchors.right: parent.right
 			Repeater {
 				id: rootRepeater
-				model: configWindow.model
+				model: configView.model
 				delegate: recursiveDelegate
 			}
 		}

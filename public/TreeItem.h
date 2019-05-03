@@ -3,10 +3,10 @@
 
 #include <QObject>
 
-#include <QString>
-#include <QRect>
-#include <QVariant>
 #include "Win.h"
+#include <QRect>
+#include <QString>
+#include <QVariant>
 
 class QProcess;
 
@@ -14,8 +14,8 @@ class TreeItem : public QObject
 {
 	Q_OBJECT
 
-	Q_PROPERTY(TreeItem *parent READ getTreeParent() NOTIFY parentChanged)
-	Q_PROPERTY(QList<QObject *> children READ getTreeChildren() NOTIFY childrenChanged)
+	Q_PROPERTY(TreeItem* parent READ getTreeParent() NOTIFY parentChanged)
+	Q_PROPERTY(QList<QObject*> children READ getTreeChildren() NOTIFY childrenChanged)
 	Q_PROPERTY(int activeIndex READ getActiveIndex() NOTIFY activeIndexChanged)
 
 	Q_PROPERTY(QString title MEMBER m_title NOTIFY titleChanged)
@@ -32,8 +32,8 @@ class TreeItem : public QObject
 	Q_PROPERTY(QString launchParams MEMBER m_launchParams NOTIFY launchParamsChanged)
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
 
-  public:
-	explicit TreeItem(QObject *parent = nullptr);
+public:
+	explicit TreeItem(QObject* parent = nullptr);
 	~TreeItem();
 
 	Q_INVOKABLE int getActiveIndex();
@@ -61,18 +61,18 @@ class TreeItem : public QObject
 
 	QPointF getScreenPosition();
 
-	TreeItem *getTreeParent() const;
+	TreeItem* getTreeParent() const;
 	QObjectList getTreeChildren() const;
 	void setBounds(QRectF bounds) { m_bounds = bounds; }
 
-	void moveChild(TreeItem *child, int delta);
+	void moveChild(TreeItem* child, int delta);
 
-	virtual void childEvent(QChildEvent *event) override;
+	virtual void childEvent(QChildEvent* event) override;
 
-	QDataStream &serialize(QDataStream &out) const;
-	QDataStream &deserialize(QDataStream &in);
+	QDataStream& serialize(QDataStream& out) const;
+	QDataStream& deserialize(QDataStream& in);
 
-  signals:
+signals:
 	void parentChanged();
 	void childrenChanged();
 	void childAdded(int index, TreeItem* child);
@@ -94,18 +94,18 @@ class TreeItem : public QObject
 
 	void isAnimatingChanged();
 
-  public slots:
+public slots:
 	void moveWindowOnscreen();
 	void moveWindowOffscreen();
 	void launch();
 
-  private slots:
+private slots:
 	void updateChildBounds();
 	void moveWindowOnscreen_Internal();
 	void moveWindowOffscreen_Internal();
 	void handleAnimatingChanged();
 
-  private:
+private:
 	// Serialized properties
 	QString m_title;
 	QString m_flow;
@@ -117,17 +117,16 @@ class TreeItem : public QObject
 	QString m_launchParams;
 
 	QList<TreeItem*> m_children;
-	
+
 	// Trasient properties
 	TreeItem* m_activeChild;
 	bool m_isAnimating;
-	QProcess* m_process;
 };
 
-QDataStream &operator<<(QDataStream &out, const TreeItem* nestedItem);
-QDataStream &operator>>(QDataStream &in, TreeItem* nestedItem);
+QDataStream& operator<<(QDataStream& out, const TreeItem* nestedItem);
+QDataStream& operator>>(QDataStream& in, TreeItem* nestedItem);
 
-Q_DECLARE_METATYPE(TreeItem *)
-Q_DECLARE_METATYPE(const TreeItem *)
+Q_DECLARE_METATYPE(TreeItem*)
+Q_DECLARE_METATYPE(const TreeItem*)
 
 #endif // TREEITEM_H

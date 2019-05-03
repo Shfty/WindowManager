@@ -69,22 +69,18 @@ Item {
 
 
             background: Rectangle {
-                color: itemButton.hovered ? "#50000000" : "#80000000"
+                color: {
+                    if(treeItem == configView.selectedItem) return "#C0FFFFFF"
+                    if(itemButton.pressed) return "#C0FFFFFF"
+                    if(itemButton.hovered) return "#80FFFFFF"
+                    return "#40FFFFFF"
+                }
                 border.width: 2
                 border.color: "#65FFFFFF"
             }
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: {
-                var string = ""
-                for (var prop in treeItem) {
-                    var type = typeof(treeItem[prop])
-                    if(type != "function")
-                    {
-                        string += prop + " (" + type + ") = " + treeItem[prop] + "\n";
-                    }
-                }
+            onClicked: {
+                configView.selectedItem = treeItem
             }
         }
     }

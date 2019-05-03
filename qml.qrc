@@ -6,6 +6,10 @@
         <file>qml/config/ConfigWindow.qml</file>
         <file>qml/config/ConfigView.qml</file>
         <file>qml/config/ConfigDelegate.qml</file>
+        <file>qml/config/DetailView.qml</file>
+        <file>qml/config/TreeTab.qml</file>
+        <file>qml/config/WindowsTab.qml</file>
+        <file>qml/config/SettingsTab.qml</file>
 
         <file>qml/items/BlurBehind.qml</file>
         <file>qml/items/ManagedWindow.qml</file>

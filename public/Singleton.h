@@ -1,19 +1,24 @@
 #ifndef SINGLETON_H
 #define SINGLETON_H
 
-class Singleton
+abstract class Singleton : public QObject
 {
-	private:
-		Singleton() {}
+	Q_OBJECT
 
-	public:
-		static Singleton & instance() {
-			static Singleton * _instance = nullptr;
-			if ( _instance == nullptr ) {
-				_instance = new Singleton();
-			}
-			return *_instance;
+  private:
+	explicit Singleton(QObject *parent = nullptr);
+	~Singleton();
+
+  public:
+	static Singleton &instance()
+	{
+		static Singleton *_instance = nullptr;
+		if (_instance == nullptr)
+		{
+			_instance = new Singleton();
 		}
+		return *_instance;
+	}
 };
 
 #endif // SINGLETON_H

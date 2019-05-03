@@ -21,6 +21,36 @@ Window {
 
     property var model: null
 
-    // Root item
-    ConfigView {}
+    Rectangle {
+        anchors.top: bar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        
+        color: "black"
+
+        StackLayout {
+            currentIndex: bar.currentIndex
+            anchors.fill: parent
+
+            TreeTab {}
+            WindowsTab {}
+            SettingsTab {}
+        }
+    }
+
+    TabBar {
+        id: bar
+        width: parent.width
+
+        TabButton {
+            text: qsTr("Tree")
+        }
+        TabButton {
+            text: qsTr("Windows")
+        }
+        TabButton {
+            text: qsTr("Settings")
+        }
+    }
 }

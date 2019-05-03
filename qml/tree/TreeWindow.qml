@@ -31,8 +31,12 @@ MonitorWindow {
         windowManager.attachWindowToDesktop(treeWindow)
     }
 
-    // Blur wallpaper
-    property Image wallpaper: Image {
+    // Wallpaper
+    Image {
+        id: wallpaper
+        
+        x: desktopRect.x - treeWindow.x
+        y: desktopRect.y - treeWindow.y
         width: desktopRect.width
         height: desktopRect.height
 
@@ -43,34 +47,11 @@ MonitorWindow {
         fillMode: Options.wallpaperFillMode
     }
 
-    property GaussianBlur blurWallpaper: GaussianBlur {
-        anchors.fill: wallpaper
-
-        visible: false
-
-        source: wallpaper
-        cached: true
-
-        radius: Options.wallpaperBlurRadius
-        samples: 1 + radius * 2
-    }
-
     // Recursive tree delegate
     Component {
         id: treeDelegate
 
         TreeDelegate {}
-    }
-
-    // Non-blurred background
-    ShaderEffectSource {
-        anchors.fill: parent
-
-        sourceItem: wallpaper
-        sourceRect: Qt.rect(treeWindow.x - desktopRect.x,
-                            treeWindow.y - desktopRect.y,
-                            treeWindow.width,
-                            treeWindow.height)
     }
 
     // Root tree item
