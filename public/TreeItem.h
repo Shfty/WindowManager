@@ -18,7 +18,6 @@ class TreeItem : public QObject
 	Q_PROPERTY(QList<QObject*> children READ getTreeChildren() NOTIFY childrenChanged)
 	Q_PROPERTY(int activeIndex READ getActiveIndex() NOTIFY activeIndexChanged)
 
-	Q_PROPERTY(QString title MEMBER m_title NOTIFY titleChanged)
 	Q_PROPERTY(QString flow MEMBER m_flow NOTIFY flowChanged)
 	Q_PROPERTY(QString layout MEMBER m_layout NOTIFY layoutChanged)
 	Q_PROPERTY(int index READ getIndex() NOTIFY indexChanged)
@@ -79,7 +78,6 @@ signals:
 	void childRemoved(int index, TreeItem* child);
 	void activeIndexChanged();
 
-	void titleChanged();
 	void flowChanged();
 	void layoutChanged();
 	void indexChanged();
@@ -107,7 +105,6 @@ private slots:
 
 private:
 	// Serialized properties
-	QString m_title;
 	QString m_flow;
 	QString m_layout;
 	QRectF m_bounds;

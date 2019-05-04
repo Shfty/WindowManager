@@ -17,8 +17,6 @@
         <file>qml/items/OverlayWindow.qml</file>
         <file>qml/items/MonitorWindow.qml</file>
 
-        <file>qml/options/Options.qml</file>
-
         <file>qml/tree/TreeWindow.qml</file>
         <file>qml/tree/TreeDelegate.qml</file>
         <file>qml/tree/TreeHeader.qml</file>

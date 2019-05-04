@@ -32,10 +32,20 @@ Window {
         StackLayout {
             currentIndex: bar.currentIndex
             anchors.fill: parent
+            anchors.margins: 10
 
-            TreeTab {}
-            WindowsTab {}
-            SettingsTab {}
+            TreeTab {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            WindowsTab {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            SettingsTab {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
         }
     }
 

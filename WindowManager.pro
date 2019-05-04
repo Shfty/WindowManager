@@ -39,7 +39,7 @@ HEADERS += \
     public/ManagedWindow.h \
     public/Process.h \
     public/QMLApplication.h \
-    public/Singleton.h \
+    public/Settings.h \
     public/SystemWindow.h \
     public/TrayIcon.h \
     public/Win.h \
@@ -55,10 +55,9 @@ SOURCES += \
     private/EnumWindowsThread.cpp \
     private/ManagedWindow.cpp \
     private/QMLApplication.cpp \
+    private/Settings.cpp \
     private/SystemWindow.cpp \
     private/TrayIcon.cpp \
+    private/WindowInfo.cpp \
     private/WindowManager.cpp \
     main.cpp
-
-
-

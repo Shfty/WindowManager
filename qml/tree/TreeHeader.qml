@@ -24,20 +24,20 @@ Item {
 
     Rectangle {
         width: parent.width
-        height: Options.headerSize
+        height: settings.headerSize
 
         color: {
-            if(!treeItem) return Options.activeHeaderColor
+            if(!treeItem) return settings.colorActiveHeader
 
             if(treeItem.parent.layout === "Split") {
-                return Options.activeHeaderColor
+                return settings.colorActiveHeader
             }
 
             if(treeItem.parent.activeIndex === treeItem.index) {
-                return Options.activeHeaderColor
+                return settings.colorActiveHeader
             }
 
-            return Options.inactiveHeaderColor
+            return settings.colorInactiveHeader
         }
     }
     
@@ -45,7 +45,7 @@ Item {
         id: titleTextField
 
         width: 100
-        height: Options.headerSize
+        height: settings.headerSize
 
         background: Rectangle {
             color: "#50000000"
@@ -55,13 +55,13 @@ Item {
 
         color: "white"
 
-        text: treeItem ? treeItem.title : ""
+        text: treeItem ? treeItem.objectName : ""
         placeholderText: qsTr("Title")
 
         onEditingFinished: {
             if(!treeItem) return
 
-            treeItem.title = titleTextField.text
+            treeItem.objectName = titleTextField.text
         }
     }
 
@@ -70,34 +70,36 @@ Item {
 
         anchors.left: titleTextField.right
         anchors.right: buttonLayout.left
-        height: Options.headerSize
+        height: settings.headerSize
 
         property var windowList: windowManager.windowList
-        property string containerString: "[Container]"
 
         model: {
-            var stringModel = [ containerString ];
-            stringModel.push.apply(stringModel, windowList.titles)
-            return stringModel
+            var strlist = []
+            for(var i in windowManager.windowList)
+            {
+                var wi = windowManager.windowList[i]
+                strlist.push(wi.winTitle);
+            }
+            return strlist;
         }
 
         currentIndex: {
             if(!treeItem) return 0
 
-            return windowList.hwnds.indexOf(treeItem.hwnd) + 1
+            for(var i in windowManager.windowList)
+            {
+                var wi = windowManager.windowList[i]
+                if(wi.hwnd == treeItem.hwnd) return i
+            }
+
+            return -1
         }
 
         onActivated: function(selectedIndex) {
             if(!treeItem) return
 
-            if(selectedIndex == 0)
-            {
-                treeItem.resetHwnd()
-            }
-            else
-            {
-                treeItem.hwnd = windowList.hwnds[currentIndex - 1]
-            }
+            treeItem.hwnd = windowManager.windowList[selectedIndex].hwnd
         }
 
         Component.onCompleted: {
@@ -170,7 +172,7 @@ Item {
                     Button {
                         Layout.minimumWidth: 100
                         Layout.fillWidth: false
-                        height: Options.headerSize
+                        height: settings.headerSize
 
                         text: "Launch URI"
                     }
@@ -178,7 +180,7 @@ Item {
                         id: launchUriTextField
 
                         Layout.fillWidth: true
-                        height: Options.headerSize
+                        height: settings.headerSize
 
                         background: Rectangle {
                             color: "#50000000"
@@ -206,7 +208,7 @@ Item {
                     Button {
                         Layout.minimumWidth: 100
                         Layout.fillWidth: false
-                        height: Options.headerSize
+                        height: settings.headerSize
 
                         text: "Launch Params"
                     }
@@ -214,7 +216,7 @@ Item {
                         id: launchParamsTextField
 
                         Layout.fillWidth: true
-                        height: Options.headerSize
+                        height: settings.headerSize
 
                         background: Rectangle {
                             color: "#50000000"
@@ -242,7 +244,7 @@ Item {
         id: buttonLayout
 
         anchors.right: parent.right
-        height: Options.headerSize
+        height: settings.headerSize
 
         spacing: 0
 
@@ -250,7 +252,7 @@ Item {
             id: flipButton
             objectName: "flipButton"
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -275,7 +277,7 @@ Item {
             id: layoutButton
             objectName: "layoutButton"
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -304,7 +306,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Add Child")
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -373,7 +375,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Left")
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -410,7 +412,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Right")
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -445,7 +447,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Swap")
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -481,7 +483,7 @@ Item {
                 width: parent.width
 
                 property int parentIndex: treeItem.index
-                property string parentTitle: treeItem.title
+                property string parentTitle: treeItem.objectName
 
                 property bool hasParentBounds: treeItem.bounds ? true : false
                 property rect parentBounds: hasParentBounds ? treeItem.bounds : Qt.rect(-1, -1, -1, -1)
@@ -493,7 +495,7 @@ Item {
                     id: swapRepeater
                     model: nestedModel
                     MenuItem {
-                        text: treeItem.title
+                        text: treeItem.objectName
                         enabled: treeItem.index != swapMenu.parentIndex
                         width: parent.width
                         onTriggered: {
@@ -520,7 +522,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Close")
 
-            width: Options.headerSize
+            width: settings.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -551,7 +553,7 @@ Item {
             visible: isRoot
 
             onClicked: {
-                var pos = mapToGlobal(0, Options.headerSize)
+                var pos = mapToGlobal(0, settings.headerSize)
                 rootObject.showTrayIconWindow(Qt.point(pos.x, pos.y))
             }
         }

@@ -15,9 +15,9 @@ class EnumWindowsThread : public QThread
 		void startProcess();
 
 	signals:
-		void windowAdded(WindowInfo windowInfo);
-		void windowChanged(WindowInfo windowInfo);
-		void windowRemoved(WindowInfo windowInfo);
+		void windowAdded(HWND window, QString title);
+		void windowTitleChanged(HWND window, QString title);
+		void windowRemoved(HWND window);
 		void windowScanFinished();
 
 	public slots:
@@ -28,7 +28,7 @@ class EnumWindowsThread : public QThread
 
 	private:
 		bool m_abort;
-		QMap<HWND, WindowInfo> m_windowMap;
+		QMap<HWND, QString> m_windowMap;
 };
 
 #endif // ENUMWINDOWSTHREAD_H

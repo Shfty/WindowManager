@@ -5,6 +5,7 @@
 #include <QQmlContext>
 #include "Process.h"
 #include "ManagedWindow.h"
+#include "Settings.h"
 #include "WindowManager.h"
 #include "TreeItem.h"
 
@@ -16,6 +17,7 @@ QMLApplication::QMLApplication(QObject *parent) : QQmlApplicationEngine(parent)
 	qmlRegisterType<ManagedWindow>("ManagedWindow", 1, 0, "ManagedWindow");
 	qmlRegisterInterface<HWND>("HWND");
 
+	rootContext()->setContextProperty("settings", &Settings::instance());
 	rootContext()->setContextProperty("windowManager", &WindowManager::instance());
 
 	load(QUrl(QStringLiteral("qrc:/qml/main.qml")));

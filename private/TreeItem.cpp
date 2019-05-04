@@ -1,16 +1,13 @@
 #include "TreeItem.h"
 
 #include "WindowManager.h"
+#include "Settings.h"
 
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
 #include <QProcess>
 #include <QUrl>
-
-// TODO: Convert into member properties
-#define HEADER_SIZE 30
-#define ITEM_MARGIN 10
 
 TreeItem::TreeItem(QObject* parent)
 	: QObject(parent)
@@ -19,6 +16,8 @@ TreeItem::TreeItem(QObject* parent)
 	, m_refreshRate(-1)
 	, m_isAnimating(false)
 {
+	setObjectName("Tree Item");
+
 	connect(this, SIGNAL(boundsChanged()), this, SLOT(updateChildBounds()));
 	connect(this, SIGNAL(activeIndexChanged()), this, SLOT(updateChildBounds()));
 	connect(this, SIGNAL(flowChanged()), this, SLOT(updateChildBounds()));
@@ -50,7 +49,7 @@ QRectF TreeItem::calculateBounds()
 	QRectF newBounds;
 	newBounds.setWidth(parentContentBounds.width());
 	newBounds.setHeight(parentContentBounds.height());
-	return newBounds.marginsRemoved(QMargins(ITEM_MARGIN, ITEM_MARGIN, ITEM_MARGIN, ITEM_MARGIN));
+	return newBounds.marginsRemoved(QMargins(Settings::instance().getItemMargin(), Settings::instance().getItemMargin(), Settings::instance().getItemMargin(), Settings::instance().getItemMargin()));
 }
 
 QRectF TreeItem::calculateHeaderBounds()
@@ -61,7 +60,7 @@ QRectF TreeItem::calculateHeaderBounds()
 	{
 		QRectF headerBounds;
 		headerBounds.setWidth(bounds.width());
-		headerBounds.setHeight(HEADER_SIZE);
+		headerBounds.setHeight(Settings::instance().getHeaderSize());
 		return headerBounds;
 	}
 
@@ -83,11 +82,11 @@ QRectF TreeItem::calculateHeaderBounds()
 		qreal newWidth = bounds.width() / parentChildCount;
 		headerBounds.setX(index * newWidth);
 		headerBounds.setWidth(newWidth);
-		headerBounds.setHeight(HEADER_SIZE);
+		headerBounds.setHeight(Settings::instance().getHeaderSize());
 
 		if(parentLayout == "Split")
 		{
-			QMargins margins = QMargins(index > 0 ? ITEM_MARGIN / 2 : 0, 0, index < parentChildCount - 1 ? ITEM_MARGIN / 2 : 0, 0);
+			QMargins margins = QMargins(index > 0 ? Settings::instance().getItemMargin() / 2 : 0, 0, index < parentChildCount - 1 ? Settings::instance().getItemMargin() / 2 : 0, 0);
 			headerBounds = headerBounds.marginsRemoved(margins);
 		}
 	}
@@ -99,16 +98,16 @@ QRectF TreeItem::calculateHeaderBounds()
 			headerBounds.setY(index * newHeight);
 			if(index > 0)
 			{
-				headerBounds.setY(headerBounds.y() + ITEM_MARGIN / 2);
+				headerBounds.setY(headerBounds.y() + Settings::instance().getItemMargin() / 2);
 			}
 			headerBounds.setWidth(bounds.width());
-			headerBounds.setHeight(HEADER_SIZE);
+			headerBounds.setHeight(Settings::instance().getHeaderSize());
 		}
 		else
 		{
-			headerBounds.setY(index * HEADER_SIZE);
+			headerBounds.setY(index * Settings::instance().getHeaderSize());
 			headerBounds.setWidth(bounds.width());
-			headerBounds.setHeight(HEADER_SIZE);
+			headerBounds.setHeight(Settings::instance().getHeaderSize());
 		}
 	}
 
@@ -124,7 +123,7 @@ QRectF TreeItem::calculateContentBounds()
 		QRectF newBounds;
 		newBounds.setWidth(bounds.width());
 		newBounds.setHeight(bounds.height());
-		newBounds.setY(HEADER_SIZE);
+		newBounds.setY(Settings::instance().getHeaderSize());
 		return newBounds;
 	}
 
@@ -148,21 +147,21 @@ QRectF TreeItem::calculateContentBounds()
 		{
 			qreal newWidth = bounds.width() / parentChildCount;
 			newBounds.setX(index * newWidth);
-			newBounds.setY(HEADER_SIZE);
+			newBounds.setY(Settings::instance().getHeaderSize());
 			newBounds.setWidth(newWidth);
-			newBounds.setHeight(bounds.height() - HEADER_SIZE);
+			newBounds.setHeight(bounds.height() - Settings::instance().getHeaderSize());
 
-			QMargins margins = QMargins(index > 0 ? ITEM_MARGIN / 2 : 0, 0, index < parentChildCount - 1 ? ITEM_MARGIN / 2 : 0, 0);
+			QMargins margins = QMargins(index > 0 ? Settings::instance().getItemMargin() / 2 : 0, 0, index < parentChildCount - 1 ? Settings::instance().getItemMargin() / 2 : 0, 0);
 			newBounds = newBounds.marginsRemoved(margins);
 		}
 		else
 		{
 			qreal newHeight = bounds.height() / parentChildCount;
-			newBounds.setY(index * newHeight + HEADER_SIZE);
+			newBounds.setY(index * newHeight + Settings::instance().getHeaderSize());
 			newBounds.setWidth(bounds.width());
-			newBounds.setHeight(newHeight - HEADER_SIZE);
+			newBounds.setHeight(newHeight - Settings::instance().getHeaderSize());
 
-			QMargins margins = QMargins(0, index > 0 ? ITEM_MARGIN / 2 : 0, 0, index < parentChildCount - 1 ? ITEM_MARGIN / 2 : 0);
+			QMargins margins = QMargins(0, index > 0 ? Settings::instance().getItemMargin() / 2 : 0, 0, index < parentChildCount - 1 ? Settings::instance().getItemMargin() / 2 : 0);
 			newBounds = newBounds.marginsRemoved(margins);
 		}
 	}
@@ -172,7 +171,7 @@ QRectF TreeItem::calculateContentBounds()
 		{
 			if(index > parentActiveIndex)
 			{
-				newBounds.setX(bounds.width() + ITEM_MARGIN);
+				newBounds.setX(bounds.width() + Settings::instance().getItemMargin());
 			}
 			else if(index == parentActiveIndex)
 			{
@@ -180,31 +179,31 @@ QRectF TreeItem::calculateContentBounds()
 			}
 			else
 			{
-				newBounds.setX(-(bounds.width() + ITEM_MARGIN));
+				newBounds.setX(-(bounds.width() + Settings::instance().getItemMargin()));
 			}
-			newBounds.setY(HEADER_SIZE);
+			newBounds.setY(Settings::instance().getHeaderSize());
 
 			newBounds.setWidth(bounds.width());
-			newBounds.setHeight(bounds.height() - HEADER_SIZE);
+			newBounds.setHeight(bounds.height() - Settings::instance().getHeaderSize());
 		}
 		else
 		{
 			newBounds.setX(0);
 			if(index > parentActiveIndex)
 			{
-				newBounds.setY(bounds.height() + ITEM_MARGIN);
+				newBounds.setY(bounds.height() + Settings::instance().getItemMargin());
 			}
 			else if(index == parentActiveIndex)
 			{
-				newBounds.setY(HEADER_SIZE * parentChildCount);
+				newBounds.setY(Settings::instance().getHeaderSize() * parentChildCount);
 			}
 			else
 			{
-				newBounds.setY(-(bounds.height() + ITEM_MARGIN));
+				newBounds.setY(-(bounds.height() + Settings::instance().getItemMargin()));
 			}
 
 			newBounds.setWidth(bounds.width());
-			newBounds.setHeight(bounds.height() - HEADER_SIZE * parentChildCount);
+			newBounds.setHeight(bounds.height() - Settings::instance().getHeaderSize() * parentChildCount);
 		}
 	}
 
@@ -321,6 +320,7 @@ QVariant TreeItem::addChild(QString title, QString flow, QString layout, QRectF 
 {
 	TreeItem* child = new TreeItem();
 
+	child->setObjectName(title);
 	child->setProperty("title", title);
 	child->setProperty("flow", flow);
 	child->setProperty("layout", layout);
@@ -578,7 +578,7 @@ void TreeItem::handleAnimatingChanged()
 
 QDataStream& TreeItem::serialize(QDataStream& out) const
 {
-	out << m_title;
+	out << objectName();
 	out << m_flow;
 	out << m_layout;
 	out << m_bounds;
@@ -616,7 +616,7 @@ QDataStream& TreeItem::deserialize(QDataStream& in)
 	in >> launchUri;
 	in >> launchParams;
 
-	m_title = title;
+	setObjectName(title);
 	m_flow = flow;
 	m_layout = layout;
 	m_bounds = bounds;

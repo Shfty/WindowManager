@@ -65,7 +65,7 @@ Item {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            text: treeItem ? treeItem.title : ""
+            text: treeItem ? treeItem.objectName : ""
 
 
             background: Rectangle {

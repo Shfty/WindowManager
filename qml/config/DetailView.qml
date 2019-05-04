@@ -55,6 +55,9 @@ Item {
 						Layout.fillHeight: true
 
 						text: model.modelData["value"]
+						ToolTip.visible: hovered
+						ToolTip.delay: 500
+						ToolTip.text: text
 					}
 				}
 			}

@@ -11,8 +11,6 @@ ManagedWindow 1.0 items/ManagedWindow.qml
 OverlayWindow 1.0 items/OverlayWindow.qml
 MonitorWindow 1.0 items/MonitorWindow.qml
 
-singleton Options 1.0 options/Options.qml
-
 TreeWindow 1.0 tree/TreeWindow.qml
 TreeDelegate 1.0 tree/TreeDelegate.qml
 TreeHeader 1.0 tree/TreeHeader.qml

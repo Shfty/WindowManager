@@ -23,7 +23,7 @@ MonitorWindow {
 
     flags: Qt.FramelessWindowHint
 
-    title: treeItem ? treeItem.title : ""
+    title: treeItem ? treeItem.objectName : ""
 
     Universal.theme: Universal.Dark
 
@@ -43,8 +43,8 @@ MonitorWindow {
         asynchronous: true
         cache: true
 
-        source: Options.wallpaperUrl
-        fillMode: Options.wallpaperFillMode
+        source: settings.wallpaperUrl
+        fillMode: settings.wallpaperFillMode
     }
 
     // Recursive tree delegate

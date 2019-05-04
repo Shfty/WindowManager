@@ -1,8 +1,6 @@
 #include "EnumWindowsThread.h"
 
 #include "Win.h"
-#include <QCoreApplication>
-#include <QDebug>
 
 EnumWindowsThread::EnumWindowsThread(QObject* parent)
 	: QThread(parent)
@@ -29,28 +27,10 @@ BOOL CALLBACK enumWindowsProc(__in HWND hwnd, __in LPARAM lParam)
 		return TRUE;
 	}
 
-	wchar_t* windowTitle = new wchar_t[titleLength + 1];
-	GetWindowText(hwnd, windowTitle, titleLength + 1);
-
-	if(windowTitle == QCoreApplication::applicationName())
-	{
-		return TRUE;
-	}
-
-	wchar_t* windowClass = new wchar_t[256];
-	GetClassName(hwnd, windowClass, 256);
-
-	if(windowClass == QString("Progman"))
-	{
-		return TRUE;
-	}
-
 	// Retrieve the pointer passed into this callback, and re-'type' it.
 	// The only way for a C API to pass arbitrary data is by means of a void*.
-	QMap<HWND, WindowInfo>& windowMap = *reinterpret_cast<QMap<HWND, WindowInfo>*>(lParam);
-	windowMap.insert(hwnd, WindowInfo(hwnd, QString::fromStdWString(windowTitle), QString::fromStdWString(windowClass)));
-
-	delete[] windowTitle;
+	QList<HWND>& windowList = *reinterpret_cast<QList<HWND>*>(lParam);
+	windowList.append(hwnd);
 
 	return TRUE;
 }
@@ -59,37 +39,40 @@ void EnumWindowsThread::run()
 {
 	while(!m_abort)
 	{
-		QMap<HWND, WindowInfo> windows;
+		QList<HWND> windows;
 		EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(&windows));
 
 		// Prune closed windows
-		for(HWND k : m_windowMap.keys())
+		for(HWND hwnd : m_windowMap.keys())
 		{
-			if(!windows.contains(k))
+			if(!windows.contains(hwnd))
 			{
-				WindowInfo v = m_windowMap.value(k);
-				m_windowMap.remove(k);
-				emit windowRemoved(v);
+				m_windowMap.remove(hwnd);
+				emit windowRemoved(hwnd);
 			}
 		}
 
 		// Add or update new windows
-		for(HWND k : windows.keys())
+		for(HWND hwnd : windows)
 		{
-			WindowInfo v = windows.value(k);
-			if(m_windowMap.contains(k))
+			int titleLength = GetWindowTextLength(hwnd);
+			wchar_t* wt = new wchar_t[titleLength + 1];
+			GetWindowText(hwnd, wt, titleLength + 1);
+			QString winTitle = QString::fromStdWString(wt);
+
+			if(m_windowMap.contains(hwnd))
 			{
-				WindowInfo existing = m_windowMap.value(k);
-				if(existing.winTitle != v.winTitle || existing.winClass != v.winClass)
+				QString existingTitle = m_windowMap.value(hwnd);
+				if(existingTitle != winTitle)
 				{
-					m_windowMap.insert(k, v);
-					emit windowChanged(v);
+					m_windowMap.insert(hwnd, winTitle);
+					emit windowTitleChanged(hwnd, winTitle);
 				}
 			}
 			else
 			{
-				m_windowMap.insert(k, v);
-				emit windowAdded(v);
+				m_windowMap.insert(hwnd, winTitle);
+				emit windowAdded(hwnd, winTitle);
 			}
 		}
 
@@ -97,4 +80,6 @@ void EnumWindowsThread::run()
 
 		msleep(10);
 	}
+	
+	quit();
 }

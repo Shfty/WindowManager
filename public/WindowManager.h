@@ -1,13 +1,13 @@
 #ifndef WINDOWMANAGER_H
 #define WINDOWMANAGER_H
 
-#include "Win.h"
-#include "WindowInfo.h"
 #include <QMetaType>
 #include <QObject>
 #include <QRect>
 #include <QVariant>
 #include <QWindow>
+
+#include "WindowInfo.h"
 
 class EnumWindowsThread;
 
@@ -15,8 +15,7 @@ class WindowManager : public QObject
 {
 	Q_OBJECT
 
-	Q_PROPERTY(QStringList windowStringList READ getWindowStringList NOTIFY windowStringListChanged)
-	Q_PROPERTY(QVariantMap windowList READ getWindowList NOTIFY windowListChanged)
+	Q_PROPERTY(QList<QObject*> windowList READ getWindowList NOTIFY windowListChanged)
 
 public:
 	explicit WindowManager(QObject* parent = nullptr);
@@ -24,18 +23,13 @@ public:
 
 	static WindowManager& instance()
 	{
-		static WindowManager* _instance = nullptr;
-		if(_instance == nullptr)
-		{
-			_instance = new WindowManager();
-		}
-		return *_instance;
+		static WindowManager inst;
+		return inst;
 	}
 
 	HWND getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
 
-	QStringList getWindowStringList();
-	QVariantMap getWindowList();
+	QObjectList getWindowList();
 
 	Q_INVOKABLE QRect getDesktopRect();
 	Q_INVOKABLE QRect getDesktopWorkArea();
@@ -58,7 +52,7 @@ public:
 	Q_INVOKABLE bool isWindowVisible(HWND hwnd);
 
 	Q_INVOKABLE bool hasWindowInfo(HWND hwnd);
-	Q_INVOKABLE WindowInfo getWindowInfo(HWND hwnd);
+	Q_INVOKABLE WindowInfo* getWindowInfo(HWND hwnd);
 	Q_INVOKABLE QString getWindowTitle(HWND hwnd);
 	Q_INVOKABLE QString getWindowClass(HWND hwnd);
 
@@ -69,18 +63,18 @@ public:
 signals:
 	void windowScanFinished();
 	void windowListChanged();
-	void windowStringListChanged();
 
 public slots:
-	void onWindowAdded(WindowInfo windowInfo);
-	void onWindowChanged(WindowInfo windowInfo);
-	void onWindowRemoved(WindowInfo windowInfo);
+	void onWindowAdded(HWND hwnd, QString title);
+	void onWindowTitleChanged(HWND hwnd, QString title);
+	void onWindowRemoved(HWND hwnd);
 
 private:
 	HDWP m_dwp;
+	WindowInfo* m_placeholder;
 
 	EnumWindowsThread* m_thread;
-	QMap<QString, WindowInfo> m_windowMap;
+	QMap<QString, WindowInfo*> m_windowMap;
 };
 
 #endif // WINDOWMANAGER_H

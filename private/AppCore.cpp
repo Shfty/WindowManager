@@ -108,6 +108,7 @@ void AppCore::saveModel(QString filename, const TreeItem* model)
 void AppCore::saveDefaultModel(QString filename)
 {
 	TreeItem* model = new TreeItem(nullptr);
+	model->setObjectName("Root");
 
 	QList<QScreen*> screens = qApp->screens();
 	for(int i = 0; i < screens.length(); ++i)

@@ -182,7 +182,7 @@ Item {
 
 			visible: treeItem ? treeItem.depth > 1 : false
 
-			color: Options.containerPlaceholderColor
+			color: settings.colorContainerPlaceholder
 		}
 
 		ManagedWindow {

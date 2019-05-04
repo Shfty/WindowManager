@@ -9,18 +9,21 @@
 #include <QTimer>
 
 #include "EnumWindowsThread.h"
+#include "Win.h"
 
 WindowManager::WindowManager(QObject* parent)
 	: QObject(parent)
 	, m_dwp(nullptr)
+	, m_placeholder(new WindowInfo(this))
 	, m_thread(new EnumWindowsThread(this))
 {
 	qRegisterMetaType<HWND>();
-	qRegisterMetaType<WindowInfo>();
 
-	connect(m_thread, SIGNAL(windowAdded(WindowInfo)), this, SLOT(onWindowAdded(WindowInfo)));
-	connect(m_thread, SIGNAL(windowChanged(WindowInfo)), this, SLOT(onWindowChanged(WindowInfo)));
-	connect(m_thread, SIGNAL(windowRemoved(WindowInfo)), this, SLOT(onWindowRemoved(WindowInfo)));
+	m_placeholder->setProperty("winTitle", "[Container]");
+
+	connect(m_thread, SIGNAL(windowAdded(HWND, QString)), this, SLOT(onWindowAdded(HWND, QString)));
+	connect(m_thread, SIGNAL(windowTitleChanged(HWND, QString)), this, SLOT(onWindowTitleChanged(HWND, QString)));
+	connect(m_thread, SIGNAL(windowRemoved(HWND)), this, SLOT(onWindowRemoved(HWND)));
 	connect(m_thread, SIGNAL(windowScanFinished()), this, SIGNAL(windowScanFinished()));
 
 	m_thread->startProcess();
@@ -28,6 +31,8 @@ WindowManager::WindowManager(QObject* parent)
 
 WindowManager::~WindowManager()
 {
+	m_thread->stopProcess();
+	m_thread->wait();
 }
 
 HWND WindowManager::getWindowByRegex(const QString& titlePattern, const QString& classPattern)
@@ -35,46 +40,26 @@ HWND WindowManager::getWindowByRegex(const QString& titlePattern, const QString&
 	QRegularExpression titleRegex(titlePattern);
 	QRegularExpression classRegex(classPattern);
 
-	for(WindowInfo wi : m_windowMap.values())
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		if(titleRegex.match(wi.winTitle).hasMatch() && classRegex.match(wi.winClass).hasMatch())
+		if(titleRegex.match(wi->getWinTitle()).hasMatch() && classRegex.match(wi->getWinClass()).hasMatch())
 		{
-			return wi.hwnd;
+			return wi->getHwnd();
 		}
 	}
 
 	return nullptr;
 }
 
-QStringList WindowManager::getWindowStringList()
+QObjectList WindowManager::getWindowList()
 {
-	QStringList stringList;
-
-	for(WindowInfo v : m_windowMap)
+	QObjectList objectList;
+	objectList.append(m_placeholder);
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		stringList.append(v.winTitle);
+		objectList.append(wi);
 	}
-
-	return stringList;
-}
-
-QVariantMap WindowManager::getWindowList()
-{
-	QVariantMap windowList;
-
-	QVariantList hwnds;
-	QVariantList titles;
-
-	for(WindowInfo wi : m_windowMap.values())
-	{
-		hwnds.append(QVariant::fromValue(wi.hwnd));
-		titles.append(QVariant::fromValue(wi.winTitle));
-	}
-
-	windowList.insert("hwnds", hwnds);
-	windowList.insert("titles", titles);
-
-	return windowList;
+	return objectList;
 }
 
 QRect WindowManager::getDesktopRect()
@@ -112,34 +97,34 @@ QPoint WindowManager::getOffscreenArea()
 
 bool WindowManager::hasWindowInfo(HWND hwnd)
 {
-	for(WindowInfo wi : m_windowMap.values())
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		if(wi.hwnd == hwnd)
+		if(wi->getHwnd() == hwnd)
 			return true;
 	}
 
 	return false;
 }
 
-WindowInfo WindowManager::getWindowInfo(HWND hwnd)
+WindowInfo* WindowManager::getWindowInfo(HWND hwnd)
 {
-	for(WindowInfo wi : m_windowMap.values())
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		if(wi.hwnd == hwnd)
+		if(wi->getHwnd() == hwnd)
 			return wi;
 	}
 
-	return WindowInfo();
+	return nullptr;
 }
 
 QString WindowManager::getWindowTitle(HWND hwnd)
 {
-	return getWindowInfo(hwnd).winTitle;
+	return getWindowInfo(hwnd)->getWinTitle();
 }
 
 QString WindowManager::getWindowClass(HWND hwnd)
 {
-	return getWindowInfo(hwnd).winClass;
+	return getWindowInfo(hwnd)->getWinClass();
 }
 
 HWND WindowManager::getWindowHwnd(QWindow* window)
@@ -242,36 +227,57 @@ void WindowManager::setBackgroundWindow(QWindow* window)
 	SetWindowPos(windowHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
-void WindowManager::onWindowAdded(WindowInfo windowInfo)
+void WindowManager::onWindowAdded(HWND hwnd, QString title)
 {
-	m_windowMap.insert(windowInfo.winTitle.toLower(), windowInfo);
-	emit windowStringListChanged();
+	if(title == QCoreApplication::applicationName())
+	{
+		return;
+	}
+
+	wchar_t* wc = new wchar_t[256];
+	GetClassName(hwnd, wc, 256);
+	QString winClass = QString::fromStdWString(wc);
+	if(winClass == QString("Progman"))
+	{
+		return;
+	}
+
+	WindowInfo* winInfo = new WindowInfo(this);
+	winInfo->setProperty("hwnd", QVariant::fromValue<HWND>(hwnd));
+	winInfo->setProperty("winTitle", title);
+	winInfo->setProperty("winClass", winClass);
+
+	m_windowMap.insert(title.toLower(), winInfo);
 	emit windowListChanged();
 }
 
-void WindowManager::onWindowChanged(WindowInfo windowInfo)
+void WindowManager::onWindowTitleChanged(HWND hwnd, QString newTitle)
 {
-	for(WindowInfo w : m_windowMap.values())
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		if(w.hwnd == windowInfo.hwnd)
+		if(wi == m_placeholder) continue;
+		
+		if(wi->getHwnd() == hwnd)
 		{
-			m_windowMap.remove(w.winTitle.toLower());
-			m_windowMap.insert(windowInfo.winTitle.toLower(), windowInfo);
+			m_windowMap.remove(wi->getWinTitle().toLower());
+			wi->setProperty("winTitle", newTitle);
+			m_windowMap.insert(newTitle.toLower(), wi);
+			emit windowListChanged();
+			break;
 		}
 	}
-	emit windowStringListChanged();
-	emit windowListChanged();
 }
 
-void WindowManager::onWindowRemoved(WindowInfo windowInfo)
+void WindowManager::onWindowRemoved(HWND hwnd)
 {
-	for(WindowInfo w : m_windowMap.values())
+	for(WindowInfo* wi : m_windowMap.values())
 	{
-		if(w.hwnd == windowInfo.hwnd)
+		if(wi == m_placeholder) continue;
+
+		if(wi->getHwnd() == hwnd)
 		{
-			m_windowMap.remove(w.winTitle.toLower());
+			m_windowMap.remove(wi->getWinTitle().toLower());
 		}
 	}
-	emit windowStringListChanged();
 	emit windowListChanged();
 }
