@@ -8,7 +8,9 @@
 #include <QString>
 #include <QVariant>
 
-class QProcess;
+class QScreen;
+class QQuickWindow;
+class QQuickView;
 
 class TreeItem : public QObject
 {
@@ -22,10 +24,10 @@ class TreeItem : public QObject
 	Q_PROPERTY(QString layout MEMBER m_layout NOTIFY layoutChanged)
 	Q_PROPERTY(int index READ getIndex() NOTIFY indexChanged)
 	Q_PROPERTY(int depth READ getDepth() NOTIFY depthChanged)
-	Q_PROPERTY(QRectF bounds READ calculateBounds() WRITE setBounds() NOTIFY boundsChanged)
+	Q_PROPERTY(QScreen* monitor READ getMonitor() NOTIFY monitorChanged)
+	Q_PROPERTY(QRectF bounds READ calculateBounds() NOTIFY boundsChanged)
 	Q_PROPERTY(QRectF headerBounds READ calculateHeaderBounds() NOTIFY headerBoundsChanged)
 	Q_PROPERTY(QRectF contentBounds READ calculateContentBounds() NOTIFY contentBoundsChanged)
-	Q_PROPERTY(qreal refreshRate MEMBER m_refreshRate NOTIFY refreshRateChanged)
 	Q_PROPERTY(HWND hwnd MEMBER m_hwnd NOTIFY hwndChanged)
 	Q_PROPERTY(QString launchUri MEMBER m_launchUri NOTIFY launchUriChanged)
 	Q_PROPERTY(QString launchParams MEMBER m_launchParams NOTIFY launchParamsChanged)
@@ -43,16 +45,17 @@ public:
 	Q_INVOKABLE int getDepth();
 	Q_INVOKABLE bool getIsVisible();
 
+	Q_INVOKABLE QScreen* getMonitor();
+
 	Q_INVOKABLE QRectF calculateBounds();
 	Q_INVOKABLE QRectF calculateHeaderBounds();
 	Q_INVOKABLE QRectF calculateContentBounds();
 
-	Q_INVOKABLE bool isBoundsValid();
 	Q_INVOKABLE bool isHwndValid();
 
 	Q_INVOKABLE void toggleFlow();
 	Q_INVOKABLE void toggleLayout();
-	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", QRectF bounds = QRectF(), qreal refreshRate = -1, HWND hwnd = nullptr);
+	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", int monitorIndex = -1, HWND hwnd = nullptr);
 	Q_INVOKABLE void resetHwnd();
 	Q_INVOKABLE void moveUp();
 	Q_INVOKABLE void moveDown();
@@ -62,7 +65,6 @@ public:
 
 	TreeItem* getTreeParent() const;
 	QObjectList getTreeChildren() const;
-	void setBounds(QRectF bounds) { m_bounds = bounds; }
 
 	void moveChild(TreeItem* child, int delta);
 
@@ -85,7 +87,7 @@ signals:
 	void boundsChanged();
 	void headerBoundsChanged();
 	void contentBoundsChanged();
-	void refreshRateChanged();
+	void monitorChanged();
 	void hwndChanged();
 	void launchUriChanged();
 	void launchParamsChanged();
@@ -98,20 +100,23 @@ public slots:
 	void launch();
 
 private slots:
-	void updateChildBounds();
 	void moveWindowOnscreen_Internal();
 	void moveWindowOffscreen_Internal();
+	void handleMonitorBoundsChanged();
 	void handleAnimatingChanged();
 
 private:
 	// Serialized properties
 	QString m_flow;
 	QString m_layout;
-	QRectF m_bounds;
-	qreal m_refreshRate;
+	int m_monitorIndex;
 	HWND m_hwnd;
 	QString m_launchUri;
 	QString m_launchParams;
+
+	QQuickWindow* m_itemWindow;
+	QQuickWindow* m_headerWindow;
+	QQuickWindow* m_overlayWindow;
 
 	QList<TreeItem*> m_children;
 

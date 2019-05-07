@@ -6,12 +6,13 @@ TreeTab 1.0 config/TreeTab.qml
 WindowsTab 1.0 config/WindowsTab.qml
 SettingsTab 1.0 config/SettingsTab.qml
 
-BlurBehind 1.0 items/BlurBehind.qml
 ManagedWindow 1.0 items/ManagedWindow.qml
 OverlayWindow 1.0 items/OverlayWindow.qml
 MonitorWindow 1.0 items/MonitorWindow.qml
 
-TreeWindow 1.0 tree/TreeWindow.qml
-TreeDelegate 1.0 tree/TreeDelegate.qml
+ItemWindow 1.0 tree/ItemWindow.qml
+HeaderWindow 1.0 tree/HeaderWindow.qml
+OverlayWindow 1.0 tree/OverlayWindow.qml
+ItemDelegate 1.0 tree/ItemDelegate.qml
+HeaderDelegate 1.0 tree/HeaderDelegate.qml
 TreeHeader 1.0 tree/TreeHeader.qml
-ThumbnailUnderlayWindow 1.0 tree/ThumbnailUnderlayWindow.qml

@@ -12,13 +12,9 @@ class TrayIcon : public QSystemTrayIcon
 
 	signals:
 		void onClicked();
-		void onQuitTriggered();
 
 	private slots:
 		void onActivated(QSystemTrayIcon::ActivationReason reason);
-
-	private:
-		QMenu* m_menu;
 };
 
 #endif // TRAYICON_H

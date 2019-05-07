@@ -2,7 +2,7 @@
 
 Settings::Settings(QObject* parent)
 	: QObject(parent)
-	, m_wallpaperUrl("file:///C:/Users/Josh/Pictures/space-1511293211222-8946.jpg")
+	, m_wallpaperUrl("file:///C:/Users/Josh/Pictures/wallpaper-space.jpg")
 	, m_wallpaperFillMode(2)
 	, m_headerSize(30)
 	, m_itemMargin(10)

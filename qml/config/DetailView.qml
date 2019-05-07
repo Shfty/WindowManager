@@ -12,6 +12,9 @@ Item {
 	id: detailView
 
 	property var detailObject: null
+	property var blacklistProperties: []
+
+	signal propertyClicked(var key, var value)
 
 	Flickable {
 		anchors.fill: parent
@@ -28,7 +31,8 @@ Item {
 
 					for (var prop in detailObject) {
 						if(typeof detailObject[prop] == "function") continue
-						
+						if(blacklistProperties.indexOf(prop) != -1) continue
+
 						arr.push({
 							"key": prop,
 							"value": detailObject[prop].toString()
@@ -48,6 +52,11 @@ Item {
 						Layout.minimumWidth: 200
 
 						text: model.modelData["key"]
+
+						onClicked: {
+							var prop = model.modelData["key"]
+							detailView.propertyClicked(prop, detailObject[prop])
+						}
 					}
 
 					Button {
@@ -58,6 +67,11 @@ Item {
 						ToolTip.visible: hovered
 						ToolTip.delay: 500
 						ToolTip.text: text
+
+						onClicked: {
+							var prop = model.modelData["key"]
+							detailView.propertyClicked(prop, detailObject[prop])
+						}
 					}
 				}
 			}

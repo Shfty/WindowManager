@@ -16,12 +16,6 @@ Flickable {
 				Layout.fillWidth: true
 
 				Button {
-					text: modelData.hwnd.toString()
-					Layout.fillWidth: false
-					Layout.fillHeight: true
-					Layout.minimumWidth: 200
-				}
-				Button {
 					text: modelData.winTitle
 					Layout.fillWidth: true
 					Layout.fillHeight: true

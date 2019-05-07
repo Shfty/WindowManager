@@ -6,12 +6,15 @@ Window {
 	id: monitorWindow
 
     property var treeItem: model.modelData
-    property rect bounds: treeItem ? treeItem.bounds : Qt.rect(0, 0, 0, 0)
-    property real animationRate: treeItem ? treeItem.refreshRate / 60 : 1
-	property point offset: Qt.point(0, 0)
+    property rect bounds: treeItem.bounds
+    property real animationRate: treeItem ? treeItem.monitor.refreshRate / 60 : 1
+
+    Component.onCompleted: {
+		windowManager.setBackgroundWindow(monitorWindow)
+    }
 
 	onBoundsChanged: {
-		var pos = Qt.point(bounds.x + offset.x, bounds.y + offset.y)
+		var pos = Qt.point(bounds.x, bounds.y)
 		var sz = Qt.size(bounds.width, bounds.height)
 
 		windowManager.beginMoveWindows()

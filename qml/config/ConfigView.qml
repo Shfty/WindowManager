@@ -36,7 +36,7 @@ Item {
 			anchors.right: parent.right
 			Repeater {
 				id: rootRepeater
-				model: configView.model
+				model: configView.model ? configView.model.children : null
 				delegate: recursiveDelegate
 			}
 		}

@@ -1,9 +1,9 @@
 ﻿---
-BasedOnStyle: WebKit
-BreakBeforeBraces: Allman
 AllowShortFunctionsOnASingleLine: 'true'
 AllowShortIfStatementsOnASingleLine: 'true'
 AllowShortLoopsOnASingleLine: 'true'
+BasedOnStyle: WebKit
+BreakBeforeBraces: Allman
 IndentCaseLabels: 'true'
 IndentWrappedFunctionNames: 'true'
 KeepEmptyLinesAtTheStartOfBlocks: 'false'

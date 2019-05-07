@@ -1,19 +1,38 @@
 #ifndef QMLAPPLICATION_H
 #define QMLAPPLICATION_H
 
-#include <QQmlApplicationEngine>
+#include <QObject>
 
-class TreeItem;
+class QQuickWindow;
+class QQmlContext;
+class QQmlEngine;
+class QQuickItem;
+class QQuickWindow;
 
-class QMLApplication : public QQmlApplicationEngine
+class QMLApplication : public QObject
 {
 	Q_OBJECT
 
 	public:
 		explicit QMLApplication(QObject* parent = nullptr);
+		~QMLApplication();
 
-		void setModel(TreeItem* model);
-		void showWindow();
+		static QMLApplication& instance()
+		{
+			static QMLApplication inst;
+			return inst;
+		}
+
+		QQmlContext* getRootContext() const;
+
+		QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);
+
+	public slots:
+		void showConfigWindow();
+
+	private:
+		QQmlEngine* m_qmlEngine;
+		QQuickWindow* m_configWindow;
 };
 
 #endif // QMLAPPLICATION_H

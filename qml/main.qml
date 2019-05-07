@@ -1,37 +1,25 @@
 import QtQuick 2.11
 import QtQml 2.2
-import Process 1.0
 
 import "."
 
 QtObject {
     id: rootObject
 
-    property bool hasModel: typeof treeModel !== "undefined"
-    property var model: hasModel ? treeModel : null
-    
-    signal showTrayIconWindow(point position)
+    property var model: treeItem
 
-    signal showConfigWindow()
-    onShowConfigWindow:{
-        configWindow.show()
-        configWindow.requestActivate()
-    }
+    signal showTrayIconWindow(point position)
+    signal shutdown()
+    signal restart()
+    signal sleep()
     
     property Instantiator windowInstantiator: Instantiator {
-        model: rootObject.model ? rootObject.model.children : null
+        model: treeItem.children
         asynchronous: true
 
         QtObject {
-            property var treeWindow: TreeWindow {
-                thumbnailOverlay: thumbnailWindow
-            }
-            property var thumbnailWindow: ThumbnailUnderlayWindow {}
+            property var headerWindow: HeaderWindow {}
+            property var itemWindow: ItemWindow {}
         }
-    }
-
-    property var configWindow: ConfigWindow {
-        visible: false
-        model: rootObject.model ? rootObject.model.children : null
     }
 }

@@ -1,2 +1,3 @@
+call "build-scripts/config.bat"
 cd build
-call "C:\SDK\Qt\5.11.0\msvc2017_64\bin\windeployqt.exe" --qmldir ../qml ./debug
+call "%qtdir%/windeployqt.exe" --qmldir ../qml ./debug

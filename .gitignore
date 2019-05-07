@@ -2,3 +2,5 @@
 build
 autosave.dat
 *.pdb
+.qmake.stash
+Makefile*

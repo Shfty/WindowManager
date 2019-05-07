@@ -15,8 +15,14 @@ Item {
 
     anchors.top: {
         if(!parent) return anchors.top
-        if(index == 0) return parent.top
-        return parent.children[index - 1].bottom
+        if(treeItem.index == 0) return parent.top
+        
+        var target = parent.children[treeItem.index - 1]
+        if(target != this) {
+            return parent.children[treeItem.index - 1].bottom
+        }
+
+        return anchors.top
     }
     height: totalHeight(submodelRepeater)
 

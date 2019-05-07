@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>qml/qmldir</file>
         <file>qml/main.qml</file>
+        <file>qml/test.qml</file>
 
         <file>qml/config/ConfigWindow.qml</file>
         <file>qml/config/ConfigView.qml</file>
@@ -9,17 +10,18 @@
         <file>qml/config/DetailView.qml</file>
         <file>qml/config/TreeTab.qml</file>
         <file>qml/config/WindowsTab.qml</file>
+        <file>qml/config/MonitorsTab.qml</file>
         <file>qml/config/SettingsTab.qml</file>
 
-        <file>qml/items/BlurBehind.qml</file>
         <file>qml/items/ManagedWindow.qml</file>
-        
         <file>qml/items/OverlayWindow.qml</file>
         <file>qml/items/MonitorWindow.qml</file>
 
-        <file>qml/tree/TreeWindow.qml</file>
-        <file>qml/tree/TreeDelegate.qml</file>
+        <file>qml/tree/ItemWindow.qml</file>
+        <file>qml/tree/HeaderWindow.qml</file>
+        <file>qml/tree/OverlayWindow.qml</file>
+        <file>qml/tree/ItemDelegate.qml</file>
+        <file>qml/tree/HeaderDelegate.qml</file>
         <file>qml/tree/TreeHeader.qml</file>
-        <file>qml/tree/ThumbnailUnderlayWindow.qml</file>
     </qresource>
 </RCC>

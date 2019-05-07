@@ -7,19 +7,12 @@ import QtQuick.Controls.Universal 2.3
 
 import ".."
 
-Window {
+Item {
     id: configWindow
 
-    visible: true
-
-    title: "Window Manager Config"
-
-    width: 1280
-    height: 720
+    anchors.fill: parent
 
     Universal.theme: Universal.Dark
-
-    property var model: null
 
     Rectangle {
         anchors.top: bar.bottom
@@ -42,6 +35,10 @@ Window {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }
+            MonitorsTab {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
             SettingsTab {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -58,6 +55,9 @@ Window {
         }
         TabButton {
             text: qsTr("Windows")
+        }
+        TabButton {
+            text: qsTr("Monitors")
         }
         TabButton {
             text: qsTr("Settings")

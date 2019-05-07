@@ -6,7 +6,6 @@
 #include <QRect>
 #include <QRegularExpression>
 #include <QScreen>
-#include <QTimer>
 
 #include "EnumWindowsThread.h"
 #include "Win.h"
@@ -18,6 +17,7 @@ WindowManager::WindowManager(QObject* parent)
 	, m_thread(new EnumWindowsThread(this))
 {
 	qRegisterMetaType<HWND>();
+	qRegisterMetaType<QScreen*>();
 
 	m_placeholder->setProperty("winTitle", "[Container]");
 
@@ -62,37 +62,20 @@ QObjectList WindowManager::getWindowList()
 	return objectList;
 }
 
-QRect WindowManager::getDesktopRect()
+QObjectList WindowManager::getScreenList()
 {
-	QRect desktopRect;
-
-	QList<QScreen*> screens = QApplication::screens();
-	for(int i = 0; i < screens.length(); ++i)
+	QObjectList objectList;
+	for(QScreen* screen : QGuiApplication::screens())
 	{
-		QScreen* screen = screens.at(i);
-		desktopRect |= screen->geometry();
+		objectList.append(screen);
 	}
-
-	return desktopRect;
-}
-
-QRect WindowManager::getDesktopWorkArea()
-{
-	QRect desktopRect;
-
-	QList<QScreen*> screens = QApplication::screens();
-	for(int i = 0; i < screens.length(); ++i)
-	{
-		QScreen* screen = screens.at(i);
-		desktopRect |= screen->availableGeometry();
-	}
-
-	return desktopRect;
+	return objectList;
 }
 
 QPoint WindowManager::getOffscreenArea()
 {
-	return getDesktopRect().bottomRight() + QPoint(1, 1);
+	QScreen* screen = QGuiApplication::screens()[0];
+	return screen->virtualGeometry().bottomRight() + QPoint(1, 1);
 }
 
 bool WindowManager::hasWindowInfo(HWND hwnd)
@@ -119,17 +102,36 @@ WindowInfo* WindowManager::getWindowInfo(HWND hwnd)
 
 QString WindowManager::getWindowTitle(HWND hwnd)
 {
-	return getWindowInfo(hwnd)->getWinTitle();
+	WindowInfo* winInfo = getWindowInfo(hwnd);
+	
+	if(winInfo != nullptr)
+	{
+		return getWindowInfo(hwnd)->getWinTitle();
+	}
+
+	return nullptr;
 }
 
 QString WindowManager::getWindowClass(HWND hwnd)
 {
-	return getWindowInfo(hwnd)->getWinClass();
+	WindowInfo* winInfo = getWindowInfo(hwnd);
+	
+	if(winInfo != nullptr)
+	{
+		return getWindowInfo(hwnd)->getWinClass();
+	}
+
+	return nullptr;
 }
 
 HWND WindowManager::getWindowHwnd(QWindow* window)
 {
-	return reinterpret_cast<HWND>(window->winId());
+	if(window != nullptr)
+	{
+		return reinterpret_cast<HWND>(window->winId());
+	}
+
+	return nullptr;
 }
 
 QPoint WindowManager::getWindowPosition(HWND hwnd)
@@ -178,7 +180,7 @@ bool WindowManager::isWindowVisible(HWND hwnd)
 	return IsWindowVisible(hwnd);
 }
 
-void WindowManager::moveWindow(HWND hwnd, QPoint position, QSize size)
+void WindowManager::moveWindow(HWND hwnd, QPoint position, QSize size, int layer)
 {
 	Q_ASSERT_X(hwnd != nullptr, "moveWindow", "moveWindow called with invalid HWND");
 	Q_ASSERT_X(m_dwp != nullptr, "moveWindow", "moveWindow called before beginMoveWindows");
@@ -189,12 +191,17 @@ void WindowManager::moveWindow(HWND hwnd, QPoint position, QSize size)
 		flags |= SWP_NOSIZE;
 	}
 
-	DeferWindowPos(m_dwp, hwnd, HWND_NOTOPMOST, position.x(), position.y(), size.width(), size.height(), flags);
+	DeferWindowPos(m_dwp, hwnd, reinterpret_cast<HWND>(layer), position.x(), position.y(), size.width(), size.height(), flags);
 }
 
-void WindowManager::moveWindow(QWindow* window, QPoint position, QSize size)
+void WindowManager::moveWindow(QWindow* window, QPoint position, QSize size, int layer)
 {
-	moveWindow(getWindowHwnd(window), position, size);
+	if(window == nullptr)
+	{
+		return;
+	}
+
+	moveWindow(getWindowHwnd(window), position, size, layer);
 }
 
 void WindowManager::endMoveWindows()
@@ -203,9 +210,9 @@ void WindowManager::endMoveWindows()
 	m_dwp = nullptr;
 }
 
-HWND WindowManager::findWindow(QString winTitle, QString winClass)
+HWND WindowManager::findWindow(QString winTitle, QString winClass, HWND after, HWND parent)
 {
-	return FindWindowA(winClass.toLocal8Bit().constData(), winTitle.toLocal8Bit().constData());
+	return FindWindowEx(parent, after, (LPCWSTR)winClass.utf16(), (LPCWSTR)winTitle.utf16());
 }
 
 void WindowManager::attachWindowToDesktop(QWindow* window)
@@ -223,8 +230,20 @@ void WindowManager::detachWindowFromDesktop(QWindow* window)
 void WindowManager::setBackgroundWindow(QWindow* window)
 {
 	HWND windowHwnd = getWindowHwnd(window);
-	SetWindowLong(windowHwnd, GWL_EXSTYLE, GetWindowLong(windowHwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
+	SetWindowLong(windowHwnd, GWL_EXSTYLE, GetWindowLong(windowHwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
 	SetWindowPos(windowHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+void WindowManager::setNonInteractiveWindow(QWindow* window)
+{
+	HWND windowHwnd = getWindowHwnd(window);
+	SetWindowLong(windowHwnd, GWL_EXSTYLE, GetWindowLong(windowHwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW);
+}
+
+void WindowManager::setTransparentLayeredWindow(QWindow* window)
+{
+	HWND windowHwnd = getWindowHwnd(window);
+	SetWindowLong(windowHwnd, GWL_EXSTYLE, GetWindowLong(windowHwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_COMPOSITED);
 }
 
 void WindowManager::onWindowAdded(HWND hwnd, QString title)

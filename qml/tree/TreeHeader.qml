@@ -3,6 +3,7 @@ import QtQuick.Window 2.11
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.4
 import QtQuick.Controls.Styles 1.4
+import QtQuick.Controls.Universal 2.3
 import QtGraphicalEffects 1.0
 
 import ".."
@@ -20,7 +21,23 @@ Item {
     }
 
     property bool hwndValid: false
-    property bool isRoot: treeItem ? treeItem.depth == 1 : false
+    property bool isRoot: treeItem ? treeItem.depth <= 1 : false
+
+    function attachToOverlay(item, pos, size) {
+        overlayWindow.x = pos.x
+        overlayWindow.y = pos.y
+        overlayWindow.width = size.width
+        overlayWindow.height = size.height
+        item.parent = overlayWindow.contentItem
+    }
+
+    function detachFromOverlay(item) {
+        overlayWindow.x = 0
+        overlayWindow.y = 0
+        overlayWindow.width = 0
+        overlayWindow.height = 0
+        item.parent = nestedHeader
+    }
 
     Rectangle {
         width: parent.width
@@ -28,6 +45,8 @@ Item {
 
         color: {
             if(!treeItem) return settings.colorActiveHeader
+
+            if(isRoot) return settings.colorActiveHeader
 
             if(treeItem.parent.layout === "Split") {
                 return settings.colorActiveHeader
@@ -103,59 +122,48 @@ Item {
         }
 
         Component.onCompleted: {
-            windowComboBox.popup.parent = popupWrapper
             windowComboBox.popup.topMargin = 0
             windowComboBox.popup.bottomMargin = 0
+            windowComboBox.popup.y = settings.headerSize
         }
 
-        OverlayWindow {
-            property point rootTransform: {
-                // Dependencies
-                windowComboBox.popup.opened
-
-                return mapToGlobal(windowComboBox.x, windowComboBox.y + windowComboBox.height)
+        Connections {
+            target: windowComboBox.popup
+            onOpened: {
+                var globalPos = windowComboBox.mapToGlobal(0, settings.headerSize)
+                var size = Qt.size(windowComboBox.popup.width, windowComboBox.popup.height)
+                nestedHeader.attachToOverlay(windowComboBox.popup, globalPos, size)
+                treeItem.moveWindowOffscreen()
             }
-
-            x: rootTransform.x
-            y: rootTransform.y
-            width: windowComboBox.popup.width
-            height: windowComboBox.popup.height
-
-            visible: windowComboBox.popup.visible
-
-            onActiveChanged: {
-                if(!active)
-                {
-                    windowComboBox.popup.close()
-                }
-            }
-
-            Item {
-                id: popupWrapper
-                anchors.fill: parent
+            onClosed: {
+                nestedHeader.detachFromOverlay(windowComboBox.popup)
+                treeItem.moveWindowOnscreen()
             }
         }
     }
 
-    OverlayWindow {
+    Item {
         id: configWindow
-
-        property point rootTransform: {
-            // Dependencies
-            windowComboBox.popup.opened
-
-            return mapToGlobal(nestedHeader.x, nestedHeader.y + nestedHeader.height)
-        }
 
         width: treeItem ? treeItem.contentBounds.width : 0
         height: treeItem ? treeItem.contentBounds.height : 0
 
+        visible: false
+
+        parent: visible ? parent : overlayWindow.contentItem
+
         function toggle() {
             this.visible = !this.visible
-
-            var pos = mapToGlobal(nestedHeader.x, nestedHeader.y + nestedHeader.height)
-            this.x = pos.x
-            this.y = pos.y
+            if(this.visible) {
+                var globalPos = nestedHeader.parent.mapToGlobal(treeItem.contentBounds.x, treeItem.contentBounds.y)
+                var size = Qt.size(width, height)
+                nestedHeader.attachToOverlay(configWindow, globalPos, size)
+                treeItem.moveWindowOffscreen()
+            }
+            else {
+                nestedHeader.detachFromOverlay(configWindow)
+                treeItem.moveWindowOnscreen()
+            }
         }
 
         Rectangle {
@@ -393,6 +401,7 @@ Item {
             visible: !isRoot
             enabled: {
                 if(!treeItem) return false
+                if(!treeItem.parent) return false
 
                 return treeItem.parent.children.length > 0 && treeItem.index > 0
             }
@@ -428,6 +437,7 @@ Item {
             visible: !isRoot
             enabled: {
                 if(!treeItem) return false
+                if(!treeItem.parent) return false
 
                 return treeItem.parent.children.length > 0 && treeItem.index < treeItem.parent.children.length - 1
             }
@@ -629,8 +639,8 @@ Item {
         }
 
         Button {
-            id: quitButton
-            objectName: "quitButton"
+            id: powerButton
+            objectName: "powerButton"
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
@@ -639,12 +649,85 @@ Item {
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
-            text: "\uE8BB"
+            text: "\uE7E8"
 
             visible: isRoot
 
             onClicked: {
-                Qt.quit()
+                powerWindow.toggle()
+            }
+            
+
+            Item {
+                id: powerWindow
+
+                width: 100
+                height: 150
+
+                visible: false
+
+                function toggle() {
+                    visible = !visible
+                    if(visible) {
+                        var globalPos = powerButton.mapToGlobal(powerButton.width - width, powerButton.height)
+                        var size = Qt.size(powerWindow.width, powerWindow.height)
+                        nestedHeader.attachToOverlay(powerWindow, globalPos, size)
+                        treeItem.moveWindowOffscreen()
+                    }
+                    else {
+                        nestedHeader.detachFromOverlay(powerWindow)
+                        treeItem.moveWindowOnscreen()
+                    }
+                }
+
+                Rectangle {
+                    color: "white"
+                    anchors.fill: parent
+                }
+
+                ColumnLayout {
+                    id: powerMenu
+                    spacing: 0
+
+                    anchors.fill: parent
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: "Exit"
+                        onClicked: {
+                            Qt.quit();
+                        }
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: "Shut Down"
+                        onClicked: {
+                            appCore.shutdown()
+                        }
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: "Restart"
+                        onClicked: {
+                            appCore.restart()
+                        }
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: "Sleep"
+                        onClicked: {
+                            appCore.sleep()
+                        }
+                    }
+                }
             }
         }
     }
