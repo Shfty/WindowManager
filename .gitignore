@@ -1,6 +1,7 @@
 .vscode
-build
-autosave.dat
-*.pdb
 .qmake.stash
+autosave.dat
+build
 Makefile*
+*.pdb
+*.pro.user

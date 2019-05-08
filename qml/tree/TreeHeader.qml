@@ -10,7 +10,7 @@ import ".."
 
 Item {
     id: nestedHeader
-    
+
     property var treeItem: null
 
     property var hwnd: treeItem ? treeItem.hwnd : null
@@ -32,39 +32,38 @@ Item {
     }
 
     function detachFromOverlay(item) {
-        overlayWindow.x = 0
-        overlayWindow.y = 0
-        overlayWindow.width = 0
-        overlayWindow.height = 0
+        var offscreen = appCore.windowView.getOffscreenArea()
+        overlayWindow.x = offscreen.x
+        overlayWindow.y = offscreen.y
         item.parent = nestedHeader
     }
 
     Rectangle {
         width: parent.width
-        height: settings.headerSize
+        height: appCore.settingsContainer.headerSize
 
         color: {
-            if(!treeItem) return settings.colorActiveHeader
+            if(!treeItem) return appCore.settingsContainer.colorActiveHeader
 
-            if(isRoot) return settings.colorActiveHeader
+            if(isRoot) return appCore.settingsContainer.colorActiveHeader
 
-            if(treeItem.parent.layout === "Split") {
-                return settings.colorActiveHeader
+            if(treeItem.treeParent.layout === "Split") {
+                return appCore.settingsContainer.colorActiveHeader
             }
 
-            if(treeItem.parent.activeIndex === treeItem.index) {
-                return settings.colorActiveHeader
+            if(treeItem.treeParent.activeIndex === treeItem.index) {
+                return appCore.settingsContainer.colorActiveHeader
             }
 
-            return settings.colorInactiveHeader
+            return appCore.settingsContainer.colorInactiveHeader
         }
     }
-    
+
     TextField {
         id: titleTextField
 
         width: 100
-        height: settings.headerSize
+        height: appCore.settingsContainer.headerSize
 
         background: Rectangle {
             color: "#50000000"
@@ -89,15 +88,15 @@ Item {
 
         anchors.left: titleTextField.right
         anchors.right: buttonLayout.left
-        height: settings.headerSize
+        height: appCore.settingsContainer.headerSize
 
-        property var windowList: windowManager.windowList
+        property var windowList: appCore.windowView.windowList
 
         model: {
             var strlist = []
-            for(var i in windowManager.windowList)
+            for(var i in windowList)
             {
-                var wi = windowManager.windowList[i]
+                var wi = windowList[i]
                 strlist.push(wi.winTitle);
             }
             return strlist;
@@ -106,9 +105,9 @@ Item {
         currentIndex: {
             if(!treeItem) return 0
 
-            for(var i in windowManager.windowList)
+            for(var i in windowList)
             {
-                var wi = windowManager.windowList[i]
+                var wi = windowList[i]
                 if(wi.hwnd == treeItem.hwnd) return i
             }
 
@@ -118,26 +117,24 @@ Item {
         onActivated: function(selectedIndex) {
             if(!treeItem) return
 
-            treeItem.hwnd = windowManager.windowList[selectedIndex].hwnd
+            treeItem.hwnd = windowList[selectedIndex].hwnd
         }
 
         Component.onCompleted: {
             windowComboBox.popup.topMargin = 0
             windowComboBox.popup.bottomMargin = 0
-            windowComboBox.popup.y = settings.headerSize
+            windowComboBox.popup.y = appCore.settingsContainer.headerSize
         }
 
         Connections {
             target: windowComboBox.popup
             onOpened: {
-                var globalPos = windowComboBox.mapToGlobal(0, settings.headerSize)
+                var globalPos = windowComboBox.mapToGlobal(0, appCore.settingsContainer.headerSize)
                 var size = Qt.size(windowComboBox.popup.width, windowComboBox.popup.height)
                 nestedHeader.attachToOverlay(windowComboBox.popup, globalPos, size)
-                treeItem.moveWindowOffscreen()
             }
             onClosed: {
                 nestedHeader.detachFromOverlay(windowComboBox.popup)
-                treeItem.moveWindowOnscreen()
             }
         }
     }
@@ -158,11 +155,9 @@ Item {
                 var globalPos = nestedHeader.parent.mapToGlobal(treeItem.contentBounds.x, treeItem.contentBounds.y)
                 var size = Qt.size(width, height)
                 nestedHeader.attachToOverlay(configWindow, globalPos, size)
-                treeItem.moveWindowOffscreen()
             }
             else {
                 nestedHeader.detachFromOverlay(configWindow)
-                treeItem.moveWindowOnscreen()
             }
         }
 
@@ -180,7 +175,7 @@ Item {
                     Button {
                         Layout.minimumWidth: 100
                         Layout.fillWidth: false
-                        height: settings.headerSize
+                        height: appCore.settingsContainer.headerSize
 
                         text: "Launch URI"
                     }
@@ -188,7 +183,7 @@ Item {
                         id: launchUriTextField
 
                         Layout.fillWidth: true
-                        height: settings.headerSize
+                        height: appCore.settingsContainer.headerSize
 
                         background: Rectangle {
                             color: "#50000000"
@@ -216,7 +211,7 @@ Item {
                     Button {
                         Layout.minimumWidth: 100
                         Layout.fillWidth: false
-                        height: settings.headerSize
+                        height: appCore.settingsContainer.headerSize
 
                         text: "Launch Params"
                     }
@@ -224,7 +219,7 @@ Item {
                         id: launchParamsTextField
 
                         Layout.fillWidth: true
-                        height: settings.headerSize
+                        height: appCore.settingsContainer.headerSize
 
                         background: Rectangle {
                             color: "#50000000"
@@ -252,7 +247,7 @@ Item {
         id: buttonLayout
 
         anchors.right: parent.right
-        height: settings.headerSize
+        height: appCore.settingsContainer.headerSize
 
         spacing: 0
 
@@ -260,7 +255,7 @@ Item {
             id: flipButton
             objectName: "flipButton"
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -285,7 +280,7 @@ Item {
             id: layoutButton
             objectName: "layoutButton"
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -314,7 +309,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Add Child")
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -383,16 +378,16 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Left")
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
             text: {
                 if(!treeItem) return "\uE76B"
 
-                if(treeItem.parent)
+                if(treeItem.treeParent)
                 {
-                    return treeItem.parent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
+                    return treeItem.treeParent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
                 }
 
                 return "\uE76B"
@@ -401,9 +396,9 @@ Item {
             visible: !isRoot
             enabled: {
                 if(!treeItem) return false
-                if(!treeItem.parent) return false
+                if(!treeItem.treeParent) return false
 
-                return treeItem.parent.children.length > 0 && treeItem.index > 0
+                return treeItem.treeParent.children.length > 0 && treeItem.index > 0
             }
 
             onClicked: {
@@ -421,14 +416,14 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Right")
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
             text: {
-                if(treeItem.parent)
+                if(treeItem.treeParent)
                 {
-                    return treeItem.parent.flow === "Horizontal" ? "\uE76C" : "\uE70D"
+                    return treeItem.treeParent.flow === "Horizontal" ? "\uE76C" : "\uE70D"
                 }
 
                 return "\uE76C"
@@ -437,9 +432,9 @@ Item {
             visible: !isRoot
             enabled: {
                 if(!treeItem) return false
-                if(!treeItem.parent) return false
+                if(!treeItem.treeParent) return false
 
-                return treeItem.parent.children.length > 0 && treeItem.index < treeItem.parent.children.length - 1
+                return treeItem.treeParent.children.length > 0 && treeItem.index < treeItem.treeParent.children.length - 1
             }
 
             onClicked: {
@@ -457,7 +452,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Swap")
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -532,7 +527,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Close")
 
-            width: settings.headerSize
+            width: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -563,8 +558,8 @@ Item {
             visible: isRoot
 
             onClicked: {
-                var pos = mapToGlobal(0, settings.headerSize)
-                rootObject.showTrayIconWindow(Qt.point(pos.x, pos.y))
+                var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
+                appCore.winShellController.showTrayIconWindow(Qt.point(pos.x, pos.y))
             }
         }
 
@@ -634,7 +629,7 @@ Item {
             visible: isRoot
 
             onClicked: {
-                rootObject.showConfigWindow()
+                appCore.configWindow.show()
             }
         }
 
@@ -656,7 +651,7 @@ Item {
             onClicked: {
                 powerWindow.toggle()
             }
-            
+
 
             Item {
                 id: powerWindow
@@ -672,11 +667,9 @@ Item {
                         var globalPos = powerButton.mapToGlobal(powerButton.width - width, powerButton.height)
                         var size = Qt.size(powerWindow.width, powerWindow.height)
                         nestedHeader.attachToOverlay(powerWindow, globalPos, size)
-                        treeItem.moveWindowOffscreen()
                     }
                     else {
                         nestedHeader.detachFromOverlay(powerWindow)
-                        treeItem.moveWindowOnscreen()
                     }
                 }
 
@@ -744,11 +737,11 @@ Item {
 
         font.family: "Segoe MDL2 Assets"
 
-        visible: !isRoot && treeItem.parent.layout !== "Split" && treeItem.index != treeItem.parent.activeIndex
+        visible: !isRoot && treeItem.treeParent.layout !== "Split" && treeItem.index != treeItem.treeParent.activeIndex
 
         onClicked: {
             if(!treeItem) return
-            
+
             treeItem.setActive();
         }
     }

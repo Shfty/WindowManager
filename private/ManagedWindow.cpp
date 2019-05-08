@@ -3,7 +3,7 @@
 #include <Win.h>
 #include <tchar.h>
 
-#include "WindowManager.h"
+#include "WindowController.h"
 
 ManagedWindow::ManagedWindow(QQuickItem *parent) : QQuickItem(parent),
 												   m_hwnd(nullptr),
@@ -11,6 +11,8 @@ ManagedWindow::ManagedWindow(QQuickItem *parent) : QQuickItem(parent),
 												   m_thumbnailOpacity(1.0),
 												   m_thumbnail(nullptr)
 {
+	setObjectName("Managed Window");
+
 	connect(this, SIGNAL(hwndChanged()), this, SLOT(updateThumbnail()));
 	connect(this, SIGNAL(parentHwndChanged()), this, SLOT(updateThumbnail()));
 	
@@ -56,12 +58,12 @@ void ManagedWindow::drawThumbnail()
 		return;
 	}
 
-	WindowManager& wm = WindowManager::instance();
-
 	// Calculate source / dest rectangles
-	QPointF sourcePos = QPointF(0, 0);
-	QSizeF sourceSize = wm.getWindowSize(m_hwnd);
+	RECT winRect;
+	GetWindowRect(m_hwnd, &winRect);
 
+	QPointF sourcePos = QPointF(0, 0);
+	QSizeF sourceSize = QSizeF(winRect.right - winRect.left, winRect.bottom - winRect.top);
 	QPointF destPos = mapToScene(QPointF(0, 0));
 	QSizeF destSize = QSizeF(width(), height());
 

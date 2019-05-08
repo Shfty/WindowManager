@@ -8,7 +8,6 @@ SettingsTab 1.0 config/SettingsTab.qml
 
 ManagedWindow 1.0 items/ManagedWindow.qml
 OverlayWindow 1.0 items/OverlayWindow.qml
-MonitorWindow 1.0 items/MonitorWindow.qml
 
 ItemWindow 1.0 tree/ItemWindow.qml
 HeaderWindow 1.0 tree/HeaderWindow.qml

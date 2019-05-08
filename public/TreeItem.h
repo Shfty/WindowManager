@@ -1,22 +1,26 @@
 #ifndef TREEITEM_H
 #define TREEITEM_H
 
-#include <QObject>
+#include "WMObject.h"
 
 #include "Win.h"
 #include <QRect>
 #include <QString>
 #include <QVariant>
 
+class AppCore;
+class SettingsContainer;
+class WindowController;
+class WindowView;
 class QScreen;
 class QQuickWindow;
 class QQuickView;
 
-class TreeItem : public QObject
+class TreeItem : public WMObject
 {
 	Q_OBJECT
 
-	Q_PROPERTY(TreeItem* parent READ getTreeParent() NOTIFY parentChanged)
+	Q_PROPERTY(TreeItem* treeParent READ getTreeParent() NOTIFY parentChanged)
 	Q_PROPERTY(QList<QObject*> children READ getTreeChildren() NOTIFY childrenChanged)
 	Q_PROPERTY(int activeIndex READ getActiveIndex() NOTIFY activeIndexChanged)
 
@@ -55,7 +59,9 @@ public:
 
 	Q_INVOKABLE void toggleFlow();
 	Q_INVOKABLE void toggleLayout();
-	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", int monitorIndex = -1, HWND hwnd = nullptr);
+		Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", int monitorIndex = -1, HWND hwnd = nullptr);
+		QVariant addChild(TreeItem* newChild);
+		bool removeChild(TreeItem* childToRemove);
 	Q_INVOKABLE void resetHwnd();
 	Q_INVOKABLE void moveUp();
 	Q_INVOKABLE void moveDown();
@@ -67,8 +73,6 @@ public:
 	QObjectList getTreeChildren() const;
 
 	void moveChild(TreeItem* child, int delta);
-
-	virtual void childEvent(QChildEvent* event) override;
 
 	QDataStream& serialize(QDataStream& out) const;
 	QDataStream& deserialize(QDataStream& in);
@@ -106,6 +110,13 @@ private slots:
 	void handleAnimatingChanged();
 
 private:
+	SettingsContainer* getSettingsContainer();
+	WindowController* getWindowController();
+	WindowView* getWindowView();
+
+	qreal getItemMargin();
+	qreal getHeaderSize();
+
 	// Serialized properties
 	QString m_flow;
 	QString m_layout;
@@ -114,15 +125,15 @@ private:
 	QString m_launchUri;
 	QString m_launchParams;
 
-	QQuickWindow* m_itemWindow;
-	QQuickWindow* m_headerWindow;
-	QQuickWindow* m_overlayWindow;
-
 	QList<TreeItem*> m_children;
 
 	// Trasient properties
 	TreeItem* m_activeChild;
 	bool m_isAnimating;
+
+	QQuickWindow* m_itemWindow;
+	QQuickWindow* m_headerWindow;
+	QQuickWindow* m_overlayWindow;
 };
 
 QDataStream& operator<<(QDataStream& out, const TreeItem* nestedItem);

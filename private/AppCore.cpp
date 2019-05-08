@@ -1,21 +1,17 @@
 #include "AppCore.h"
 
-#include <QDebug>
 #include <QFileInfo>
-#include <QQmlContext>
-#include <QQuickStyle>
-#include <QQuickView>
 #include <QScreen>
+#include <QGuiApplication>
+#include <QQuickWindow>
+#include <QQmlContext>
 
-#include "ManagedWindow.h"
-#include "QMLApplication.h"
-#include "Settings.h"
-#include "SystemWindow/TaskBarWindow.h"
-#include "SystemWindow/TrayIconWindow.h"
-#include "TrayIcon.h"
+#include "WindowController.h"
+#include "WindowView.h"
+#include "WinShellController.h"
 #include "TreeItem.h"
-#include "Win.h"
-#include "WindowManager.h"
+#include "QmlController.h"
+#include "SettingsContainer.h"
 
 #define WORKING_DIRECTORY "P:/Personal/C++/WindowManager"
 #define AUTOSAVE_FILE "autosave.dat"
@@ -23,52 +19,45 @@
 
 AppCore::AppCore(QObject* parent)
 	: QObject(parent)
-	, m_trayIcon(new TrayIcon(this))
-	, m_trayIconWindow(new TrayIconWindow(this))
-	, m_taskBarWindow(new TaskBarWindow(this))
+	, m_windowController(new WindowController(this))
+	, m_windowView(new WindowView(this))
+	, m_winShellController(new WinShellController(this))
+	, m_settingsContainer(new SettingsContainer(this))
+	, m_qmlController(new QmlController(this))
 	, m_rootItem(nullptr)
+	, m_configWindow(nullptr)
 {
-	// Connect save and close handlers
-	QObject::connect(&WindowManager::instance(), SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 	elevatePrivileges();
+
+	qRegisterMetaType<TreeItem*>();
+	setObjectName("App Core");
+
+	m_qmlController->getRootContext()->setContextProperty("appCore", this);
+	m_configWindow = m_qmlController->createWindow(QUrl("qrc:/qml/config/ConfigWindow.qml"), QRect(0, 0, 1280, 720));
+
+	connect(QGuiApplication::instance(), SIGNAL(aboutToQuit()), this, SLOT(save()));
+	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 }
 
 AppCore::~AppCore()
 {
-	
+
 }
 
 void AppCore::windowManagerReady()
 {
 	// Create nested model and pass a reference to the QML app
 	m_rootItem = loadModel(AUTOSAVE_PATH);
-
-	QMLApplication& qmlApp = QMLApplication::instance();
-
-	qmlApp.getRootContext()->setContextProperty("appCore", this);
-	qmlApp.getRootContext()->setContextProperty("treeItem", m_rootItem);
 	m_rootItem->moveWindowOnscreen();
-
-	qmlApp.showConfigWindow();
+	treeModelChanged();
 
 	// Disconnect signal
-	QObject::disconnect(&WindowManager::instance(), SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
-
-	// Connect QML signals
-	QObject::connect(m_trayIcon, SIGNAL(onClicked()), &qmlApp, SLOT(showConfigWindow()));
-
-	/*
-	QObject::connect(root, SIGNAL(showTrayIconWindow(QPointF)), this, SLOT(showTrayIconWindow(QPointF)));
-	QObject::connect(root, SIGNAL(shutdown()), this, SLOT(shutdown()));
-	QObject::connect(root, SIGNAL(restart()), this, SLOT(restart()));
-	QObject::connect(root, SIGNAL(sleep()), this, SLOT(sleep()));
-	*/
+	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 }
 
-void AppCore::showTrayIconWindow(QPointF position)
+void AppCore::save()
 {
-	m_trayIconWindow->setPosition(position.toPoint());
-	m_trayIconWindow->toggle();
+	saveModel(AUTOSAVE_PATH, m_rootItem);
 }
 
 void AppCore::shutdown()
@@ -86,9 +75,20 @@ void AppCore::sleep()
 	SetSuspendState(true, false, false);
 }
 
-void AppCore::handleAboutToQuit()
+void AppCore::elevatePrivileges()
 {
-	this->handleSave();
+	HANDLE hToken = nullptr;
+
+	int result = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
+
+	TOKEN_PRIVILEGES tkp;
+
+	result = LookupPrivilegeValue(nullptr, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
+
+	tkp.PrivilegeCount = 1;
+	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	result = AdjustTokenPrivileges(hToken, false, &tkp, 0, nullptr, 0);
 }
 
 TreeItem* AppCore::loadModel(QString filename)
@@ -136,32 +136,4 @@ void AppCore::saveDefaultModel(QString filename)
 	}
 
 	saveModel(filename, model);
-}
-
-void AppCore::handleSave()
-{
-	saveModel(AUTOSAVE_PATH, m_rootItem);
-}
-
-void AppCore::handleQuit()
-{
-	handleSave();
-	m_trayIcon->hide();
-	qApp->quit();
-}
-
-void AppCore::elevatePrivileges()
-{
-	HANDLE hToken = nullptr;
-
-	int result = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
-
-	TOKEN_PRIVILEGES tkp;
-
-	result = LookupPrivilegeValue(nullptr, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
-
-	tkp.PrivilegeCount = 1;
-	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-	result = AdjustTokenPrivileges(hToken, false, &tkp, 0, nullptr, 0);
 }

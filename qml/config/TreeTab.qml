@@ -2,26 +2,27 @@ import QtQuick 2.11
 import QtQuick.Layouts 1.3
 
 RowLayout {
-	id: treeTab
+    id: treeTab
 
-	spacing: 10
+    spacing: 10
 
-	property var model: treeItem ? treeItem : null
+    property var hasAppCore: typeof (appCore != 'undefined')
+    property var model: hasAppCore ? appCore.treeModel : null
 
-	ConfigView {
-		id: configView
-		
-		Layout.fillWidth: true
-		Layout.fillHeight: true
+    ConfigView {
+        id: configView
 
-		model: treeTab.model
-	}
-	DetailView {
-		id: detailView
+        Layout.fillWidth: true
+        Layout.fillHeight: true
 
-		Layout.fillWidth: true
-		Layout.fillHeight: true
+        model: treeTab.model
+    }
+    DetailView {
+        id: detailView
 
-		detailObject: configView.selectedItem
-	}
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+
+        detailObject: configView.selectedItem
+    }
 }

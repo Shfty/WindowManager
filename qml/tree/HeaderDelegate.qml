@@ -8,209 +8,209 @@ import QtQuick.Controls.Universal 2.3
 import ".."
 
 Item {
-	id: itemWrapper
+    id: itemWrapper
 
-	property var parentItem: null
+    property var parentItem: null
 
-	property var model: null
-	property var delegate: null
+    property var model: null
+    property var delegate: null
 
-	property var animationEasing: Easing.OutCubic
-	property int animationDuration: 200 * (model.monitor.refreshRate / 60)
+    property var animationEasing: Easing.OutCubic
+    property int animationDuration: 200 * (model.monitor.refreshRate / 60)
 
-	property rect bounds: model ? model.bounds : Qt.rect(0, 0, 0, 0)
-	property rect headerBounds: model ? model.headerBounds : Qt.rect(0, 0, 0, 0)
-	property rect contentBounds: model ? model.contentBounds : Qt.rect(0, 0, 0, 0)
-	property var hwnd: model ? model.hwnd : null
-	property bool hwndValid: false
-	onHwndChanged: {
-		hwndValid = model ? model.isHwndValid() : false
-	}
-	
-	x: bounds.x
-	y: bounds.y
-	width: bounds.width
-	height: bounds.height
+    property rect bounds: model ? model.bounds : Qt.rect(0, 0, 0, 0)
+    property rect headerBounds: model ? model.headerBounds : Qt.rect(0, 0, 0, 0)
+    property rect contentBounds: model ? model.contentBounds : Qt.rect(0, 0, 0, 0)
+    property var hwnd: model ? model.hwnd : null
+    property bool hwndValid: false
+    onHwndChanged: {
+        hwndValid = model ? model.isHwndValid() : false
+    }
 
-	TreeHeader {
-		id: itemBackground
+    x: bounds.x
+    y: bounds.y
+    width: bounds.width
+    height: bounds.height
 
-		x: headerBounds.x
-		y: headerBounds.y
-		width: headerBounds.width
-		height: headerBounds.height
+    TreeHeader {
+        id: itemBackground
 
-		Behavior on x {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        x: headerBounds.x
+        y: headerBounds.y
+        width: headerBounds.width
+        height: headerBounds.height
 
-		Behavior on y {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        Behavior on x {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		Behavior on width {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        Behavior on y {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		Behavior on height {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
-			
-		treeItem: itemWrapper.model
-	}
-	
-	Item {
-		id: childWrapper
+        Behavior on width {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		clip: model ? model.layout == "Tabbed" : false
+        Behavior on height {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		x: contentBounds.x
-		y: contentBounds.y
-		width: contentBounds.width
-		height: contentBounds.height
+        treeItem: itemWrapper.model
+    }
 
-		Behavior on x {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+    Item {
+        id: childWrapper
 
-		Behavior on y {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        clip: model ? model.layout === "Tabbed" : false
 
-		Behavior on width {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        x: contentBounds.x
+        y: contentBounds.y
+        width: contentBounds.width
+        height: contentBounds.height
 
-		Behavior on height {
-			SequentialAnimation {
-				ScriptAction { script: model.isAnimating = true }
-				NumberAnimation {
-					duration: animationDuration
-					easing.type: animationEasing
-				}
-				ScriptAction { script: model.isAnimating = false }
-			}
-		}
+        Behavior on x {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		Component.onCompleted: {
-			if(!model) return
+        Behavior on y {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-			for(var i = 0; i < model.children.length; ++i)
-			{
-				childWrapper.addChild(model.children[i])
-			}
-		}
+        Behavior on width {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		property var model: itemWrapper.model
-		property var delegate: null
+        Behavior on height {
+            SequentialAnimation {
+                ScriptAction { script: model.isAnimating = true }
+                NumberAnimation {
+                    duration: animationDuration
+                    easing.type: animationEasing
+                }
+                ScriptAction { script: model.isAnimating = false }
+            }
+        }
 
-		property var childItems: []
-		property var itemBuffer: []
-		property var incubator: null
+        Component.onCompleted: {
+            if(!model) return
 
-		function addChild(model) {
-			if(incubator == null)
-			{
-				incubateItem(model);
-			}
-			else
-			{
-				itemBuffer.push(model);
-			}
-		}
+            for(var i = 0; i < model.children.length; ++i)
+            {
+                childWrapper.addChild(model.children[i])
+            }
+        }
 
-		function incubateItem(model) {
-			incubator = headerDelegate.incubateObject(
-				childWrapper,
-				{
-					model: model
-				}
-			);
+        property var model: itemWrapper.model
+        property var delegate: null
 
-			if (incubator.status != Component.Ready) {
-				incubator.onStatusChanged = function(status) {
-					if (status == Component.Ready) {
-						incubatorReady();
-					}
-				}
-			} else {
-				incubatorReady();
-			}
-		}
+        property var childItems: []
+        property var itemBuffer: []
+        property var incubator: null
 
-		function incubatorReady() {
-			childItems.push(incubator.object)
-			if(itemBuffer.length > 0) {
-				var item = itemBuffer.shift()
-				incubateItem(item)
-			}
-		}
+        function addChild(model) {
+            if(incubator == null)
+            {
+                incubateItem(model);
+            }
+            else
+            {
+                itemBuffer.push(model);
+            }
+        }
 
-		Connections {
-			target: model
-			onChildAdded: function(index, child) {
-				childWrapper.addChild(child)
-			}
-			onChildRemoved: function(index, child) {
-				for(var i = 0; i < childWrapper.childItems.length; ++i)
-				{
-					var candidate = childWrapper.childItems[i]
-					if(candidate.model === child)
-					{
-						childWrapper.childItems.splice(i, 1)
-						candidate.destroy()
-					}
-				}
-			}
-		}
-	}
+        function incubateItem(model) {
+            incubator = headerDelegate.incubateObject(
+                childWrapper,
+                {
+                    model: model
+                }
+            );
+
+            if (incubator.status != Component.Ready) {
+                incubator.onStatusChanged = function(status) {
+                    if (status == Component.Ready) {
+                        incubatorReady();
+                    }
+                }
+            } else {
+                incubatorReady();
+            }
+        }
+
+        function incubatorReady() {
+            childItems.push(incubator.object)
+            if(itemBuffer.length > 0) {
+                var item = itemBuffer.shift()
+                incubateItem(item)
+            }
+        }
+
+        Connections {
+            target: model
+            onChildAdded: function(index, child) {
+                childWrapper.addChild(child)
+            }
+            onChildRemoved: function(index, child) {
+                for(var i = 0; i < childWrapper.childItems.length; ++i)
+                {
+                    var candidate = childWrapper.childItems[i]
+                    if(candidate.model === child)
+                    {
+                        childWrapper.childItems.splice(i, 1)
+                        candidate.destroy()
+                    }
+                }
+            }
+        }
+    }
 }

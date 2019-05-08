@@ -1,11 +1,14 @@
 #ifndef SYSTEMWINDOW_H
 #define SYSTEMWINDOW_H
 
-#include <QObject>
+#include "WMObject.h"
 
 #include "Win.h"
 
-class SystemWindow : public QObject
+class WindowController;
+class WindowView;
+
+class SystemWindow : public WMObject
 {
 	Q_OBJECT
 
@@ -20,6 +23,8 @@ public:
 	void toggle();
 
 protected:
+	WindowController* getWindowController();
+	WindowView* getWindowView();
 	HWND getWindowHwnd();
 
 	QString m_windowTitle;

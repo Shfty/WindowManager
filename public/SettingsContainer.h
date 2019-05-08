@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QColor>
 
-class Settings : public QObject
+class SettingsContainer : public QObject
 {
 	Q_OBJECT
 
@@ -19,14 +19,8 @@ class Settings : public QObject
 	Q_PROPERTY(QColor colorContainerPlaceholder MEMBER m_colorContainerPlaceholder NOTIFY colorContainerPlaceholderChanged)
 
 public:
-	explicit Settings(QObject* parent = nullptr);
-	~Settings();
-
-	static Settings& instance()
-	{
-		static Settings inst;
-		return inst;
-	}
+	explicit SettingsContainer(QObject* parent = nullptr);
+	~SettingsContainer();
 
 	qreal getHeaderSize() const { return m_headerSize; }
 	qreal getItemMargin() const { return m_itemMargin; }

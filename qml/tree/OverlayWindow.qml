@@ -7,7 +7,9 @@ import ".."
 
 Item {
     id: overlayWindow
-    objectName: treeItem.objectName + " Overlay"
+
+    property var hasTreeItem: typeof treeItem != 'undefined'
+    objectName: hasTreeItem ? treeItem.objectName + " Overlay" : "Overlay"
 
     Universal.theme: Universal.Dark
 }

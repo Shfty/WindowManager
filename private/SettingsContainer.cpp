@@ -1,6 +1,6 @@
-#include "Settings.h"
+#include "SettingsContainer.h"
 
-Settings::Settings(QObject* parent)
+SettingsContainer::SettingsContainer(QObject* parent)
 	: QObject(parent)
 	, m_wallpaperUrl("file:///C:/Users/Josh/Pictures/wallpaper-space.jpg")
 	, m_wallpaperFillMode(2)
@@ -10,9 +10,10 @@ Settings::Settings(QObject* parent)
 	, m_colorActiveHeader("#80007acc")
 	, m_colorContainerPlaceholder("#80007acc")
 {
-	setObjectName("Settings");
+	qRegisterMetaType<SettingsContainer*>();
+	setObjectName("Settings Container");
 }
 
-Settings::~Settings()
+SettingsContainer::~SettingsContainer()
 {
 }

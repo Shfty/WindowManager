@@ -30,34 +30,37 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    public/TreeItem.h \
-    public/SystemWindow/StartMenuWindow.h \
-    public/SystemWindow/TaskBarWindow.h \
-    public/SystemWindow/TrayIconWindow.h \
-    public/AppCore.h \
-    public/EnumWindowsThread.h \
-    public/ManagedWindow.h \
-    public/Process.h \
-    public/QMLApplication.h \
-    public/Settings.h \
-    public/SystemWindow.h \
-    public/TrayIcon.h \
-    public/Win.h \
-    public/WindowInfo.h \
-    public/WindowManager.h
+	public/AppCore.h \
+	public/EnumWindowsThread.h \
+	public/ManagedWindow.h \
+	public/QmlController.h \
+	public/SettingsContainer.h \
+	public/SystemWindow.h \
+	public/TreeItem.h \
+	public/WMObject.h \
+	public/Win.h \
+	public/WinShellController.h \
+	public/WinShellController/TaskBarWindow.h \
+	public/WinShellController/TrayIcon.h \
+	public/WinShellController/TrayWindow.h \
+	public/WindowController.h \
+	public/WindowView.h \
+	public/WindowInfo.h
 
 SOURCES += \
-    private/TreeItem.cpp \
-    private/SystemWindow/StartMenuWindow.cpp \
-    private/SystemWindow/TaskBarWindow.cpp \
-    private/SystemWindow/TrayIconWindow.cpp \
-    private/AppCore.cpp \
-    private/EnumWindowsThread.cpp \
-    private/ManagedWindow.cpp \
-    private/QMLApplication.cpp \
-    private/Settings.cpp \
-    private/SystemWindow.cpp \
-    private/TrayIcon.cpp \
-    private/WindowInfo.cpp \
-    private/WindowManager.cpp \
-    main.cpp
+	main.cpp \
+	private/AppCore.cpp \
+	private/EnumWindowsThread.cpp \
+	private/ManagedWindow.cpp \
+	private/QmlController.cpp \
+	private/SettingsContainer.cpp \
+	private/SystemWindow.cpp \
+	private/TreeItem.cpp \
+	private/WMObject.cpp \
+	private/WinShellController.cpp \
+	private/WinShellController/TaskBarWindow.cpp \
+	private/WinShellController/TrayIcon.cpp \
+	private/WinShellController/TrayIconWindow.cpp \
+	private/WindowController.cpp \
+	private/WindowView.cpp \
+	private/WindowInfo.cpp

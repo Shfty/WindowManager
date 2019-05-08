@@ -3,8 +3,8 @@
 
 #include <QMetaType>
 #include "Windows.h"
-#include "Winbase.h"
-#include "Processthreadsapi.h"
+#include "WinBase.h"
+#include "processthreadsapi.h"
 #include "powrprof.h"
 
 #undef HWND_TOP

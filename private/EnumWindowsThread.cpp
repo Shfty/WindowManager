@@ -5,6 +5,7 @@
 EnumWindowsThread::EnumWindowsThread(QObject* parent)
 	: QThread(parent)
 {
+	setObjectName("EnumWindowsThread");
 }
 
 void EnumWindowsThread::startProcess()
