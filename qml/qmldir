@@ -3,15 +3,16 @@ ConfigView 1.0 config/ConfigView.qml
 ConfigDelegate 1.0 config/ConfigDelegate.qml
 DetailView 1.0 config/DetailView.qml
 TreeTab 1.0 config/TreeTab.qml
-WindowsTab 1.0 config/WindowsTab.qml
+WindowList 1.0 config/WindowList.qml
 SettingsTab 1.0 config/SettingsTab.qml
 
-ManagedWindow 1.0 items/ManagedWindow.qml
-OverlayWindow 1.0 items/OverlayWindow.qml
+WindowListOverlay 1.0 overlays/WindowListOverlay.qml
+PowerMenuOverlay 1.0 overlays/PowerMenuOverlay.qml
+ItemSettingsOverlay 1.0 overlays/ItemSettingsOverlay.qml
 
-ItemWindow 1.0 tree/ItemWindow.qml
+NodeWindow 1.0 tree/NodeWindow.qml
+NodeDelegate 1.0 tree/NodeDelegate.qml
+
 HeaderWindow 1.0 tree/HeaderWindow.qml
-OverlayWindow 1.0 tree/OverlayWindow.qml
-ItemDelegate 1.0 tree/ItemDelegate.qml
 HeaderDelegate 1.0 tree/HeaderDelegate.qml
 TreeHeader 1.0 tree/TreeHeader.qml

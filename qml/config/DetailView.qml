@@ -1,80 +1,65 @@
-import QtQuick 2.11
-import QtQuick.Window 2.11
-import QtGraphicalEffects 1.0
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.4
-import QtQuick.Controls.Universal 2.3
-
-import ".."
+import QtQuick 2.12
+import QtQuick.Controls 2.5
 
 // Root item
 Item {
-	id: detailView
+    id: detailView
 
-	property var detailObject: null
-	property var blacklistProperties: []
+    property var detailObject: null
+    property var blacklistProperties: []
 
-	signal propertyClicked(var key, var value)
+    signal propertyClicked(var key, var value)
 
-	Flickable {
-		anchors.fill: parent
-		contentHeight: wrapperColumn.height
+    ListView {
+        anchors.fill: parent
 
-		ColumnLayout {
-			id: wrapperColumn
-			anchors.left: parent.left
-			anchors.right: parent.right
+        ScrollIndicator.vertical: ScrollIndicator { }
 
-			Repeater {
-				model: {
-					var arr = []
+        model: {
+            var arr = []
 
-					for (var prop in detailObject) {
-						if(typeof detailObject[prop] == "function") continue
-						if(blacklistProperties.indexOf(prop) != -1) continue
+            for (var prop in detailObject) {
+                if(typeof detailObject[prop] == "function") continue
+                if(blacklistProperties.indexOf(prop) != -1) continue
 
-						arr.push({
-							"key": prop,
-							"value": detailObject[prop].toString()
-						})
-					}
-					
-					return arr
-				}
-				delegate: RowLayout {
-					Layout.fillWidth: true
-					Layout.fillHeight: false
-					Layout.minimumHeight: 30
+                arr.push({
+                    "key": prop,
+                    "value": detailObject[prop] ? detailObject[prop].toString() : null
+                })
+            }
 
-					Button {
-						Layout.fillWidth: false
-						Layout.fillHeight: true
-						Layout.minimumWidth: 200
+            return arr
+        }
 
-						text: model.modelData["key"]
+        delegate: ItemDelegate {
+            id: itemControl
 
-						onClicked: {
-							var prop = model.modelData["key"]
-							detailView.propertyClicked(prop, detailObject[prop])
-						}
-					}
+            width: parent.width
+            text: modelData.key
 
-					Button {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
+            contentItem: Label {
+                Label {
+                    id: keyText
 
-						text: model.modelData["value"]
-						ToolTip.visible: hovered
-						ToolTip.delay: 500
-						ToolTip.text: text
+                    anchors.left: parent.left
 
-						onClicked: {
-							var prop = model.modelData["key"]
-							detailView.propertyClicked(prop, detailObject[prop])
-						}
-					}
-				}
-			}
-		}
-	}
+                    text: modelData.key
+                    font: itemControl.font
+                }
+                Label {
+                    id: valueText
+
+                    anchors.right: parent.right
+
+                    text: modelData.value
+                    font: itemControl.font
+                }
+            }
+
+            onClicked: {
+                var prop = model.modelData["key"]
+                detailView.propertyClicked(prop, detailObject[prop])
+            }
+        }
+    }
 }

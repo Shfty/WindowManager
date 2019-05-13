@@ -1,42 +1,21 @@
-import QtQuick 2.11
-import QtQuick.Window 2.11
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.4
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.5
 import QtQuick.Controls.Universal 2.3
-import QtGraphicalEffects 1.0
-
 import ".."
 
 Item {
     id: nestedHeader
 
+    Universal.theme: Universal.Dark
+
     property var treeItem: null
 
-    property var hwnd: treeItem ? treeItem.hwnd : null
-    onHwndChanged: {
-        if(!treeItem) return
+    property var windowInfo: treeItem.windowInfo
+    property var hwnd: windowInfo !== null ? windowInfo.hwnd : null
 
-        hwndValid = treeItem.isHwndValid()
-    }
-
-    property bool hwndValid: false
+    property bool hwndValid: hwnd !== null
     property bool isRoot: treeItem ? treeItem.depth <= 1 : false
-
-    function attachToOverlay(item, pos, size) {
-        overlayWindow.x = pos.x
-        overlayWindow.y = pos.y
-        overlayWindow.width = size.width
-        overlayWindow.height = size.height
-        item.parent = overlayWindow.contentItem
-    }
-
-    function detachFromOverlay(item) {
-        var offscreen = appCore.windowView.getOffscreenArea()
-        overlayWindow.x = offscreen.x
-        overlayWindow.y = offscreen.y
-        item.parent = nestedHeader
-    }
 
     Rectangle {
         width: parent.width
@@ -59,187 +38,63 @@ Item {
         }
     }
 
-    TextField {
-        id: titleTextField
+    Button {
+        id: titleButton
 
         width: 100
         height: appCore.settingsContainer.headerSize
 
-        background: Rectangle {
-            color: "#50000000"
-            border.width: 2
-            border.color: "#65FFFFFF"
-        }
+        text: treeItem.objectName !== "" ? treeItem.objectName : ""
 
-        color: "white"
-
-        text: treeItem ? treeItem.objectName : ""
-        placeholderText: qsTr("Title")
-
-        onEditingFinished: {
-            if(!treeItem) return
-
-            treeItem.objectName = titleTextField.text
+        onClicked: {
+            var pos = titleButton.mapToGlobal(0, titleButton.height)
+            appCore.itemSettingsOverlay.toggle(treeItem, pos.x, pos.y)
         }
     }
 
-    ComboBox {
-        id: windowComboBox
+    Button {
+        id: launchButton
+        objectName: "launchButton"
 
-        anchors.left: titleTextField.right
+        ToolTip.visible: hovered
+        ToolTip.delay: 500
+        ToolTip.text: qsTr("Launch")
+
+        anchors.left: titleButton.right
+        width: appCore.settingsContainer.headerSize
+        height: appCore.settingsContainer.headerSize
+
+        font.family: "Segoe MDL2 Assets"
+        text: "\uE768"
+
+        enabled: treeItem.launchUri !== "" || treeItem.children.length > 0
+
+        onClicked: {
+            if(!treeItem) return
+
+            treeItem.launch()
+        }
+    }
+
+    Button {
+        id: windowSelectButton
+
+        anchors.left: launchButton.right
         anchors.right: buttonLayout.left
         height: appCore.settingsContainer.headerSize
 
-        property var windowList: appCore.windowView.windowList
+        enabled: treeItem.children.length === 0
 
-        model: {
-            var strlist = []
-            for(var i in windowList)
-            {
-                var wi = windowList[i]
-                strlist.push(wi.winTitle);
-            }
-            return strlist;
+        contentItem: Label {
+            text: treeItem.windowInfo !== null ? treeItem.windowInfo.winTitle : "[Container]"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHLeft
+            verticalAlignment: Text.AlignVCenter
         }
 
-        currentIndex: {
-            if(!treeItem) return 0
-
-            for(var i in windowList)
-            {
-                var wi = windowList[i]
-                if(wi.hwnd == treeItem.hwnd) return i
-            }
-
-            return -1
-        }
-
-        onActivated: function(selectedIndex) {
-            if(!treeItem) return
-
-            treeItem.hwnd = windowList[selectedIndex].hwnd
-        }
-
-        Component.onCompleted: {
-            windowComboBox.popup.topMargin = 0
-            windowComboBox.popup.bottomMargin = 0
-            windowComboBox.popup.y = appCore.settingsContainer.headerSize
-        }
-
-        Connections {
-            target: windowComboBox.popup
-            onOpened: {
-                var globalPos = windowComboBox.mapToGlobal(0, appCore.settingsContainer.headerSize)
-                var size = Qt.size(windowComboBox.popup.width, windowComboBox.popup.height)
-                nestedHeader.attachToOverlay(windowComboBox.popup, globalPos, size)
-            }
-            onClosed: {
-                nestedHeader.detachFromOverlay(windowComboBox.popup)
-            }
-        }
-    }
-
-    Item {
-        id: configWindow
-
-        width: treeItem ? treeItem.contentBounds.width : 0
-        height: treeItem ? treeItem.contentBounds.height : 0
-
-        visible: false
-
-        parent: visible ? parent : overlayWindow.contentItem
-
-        function toggle() {
-            this.visible = !this.visible
-            if(this.visible) {
-                var globalPos = nestedHeader.parent.mapToGlobal(treeItem.contentBounds.x, treeItem.contentBounds.y)
-                var size = Qt.size(width, height)
-                nestedHeader.attachToOverlay(configWindow, globalPos, size)
-            }
-            else {
-                nestedHeader.detachFromOverlay(configWindow)
-            }
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            color: "#80000000"
-
-            ColumnLayout {
-                anchors.fill: parent
-
-                RowLayout {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    Button {
-                        Layout.minimumWidth: 100
-                        Layout.fillWidth: false
-                        height: appCore.settingsContainer.headerSize
-
-                        text: "Launch URI"
-                    }
-                    TextField {
-                        id: launchUriTextField
-
-                        Layout.fillWidth: true
-                        height: appCore.settingsContainer.headerSize
-
-                        background: Rectangle {
-                            color: "#50000000"
-                            border.width: 2
-                            border.color: "#65FFFFFF"
-                        }
-
-                        color: "white"
-
-                        text: treeItem ? treeItem.launchUri : ""
-                        placeholderText: qsTr("Launch URI")
-
-                        onEditingFinished: {
-                            if(!treeItem) return
-
-                            treeItem.launchUri = launchUriTextField.text
-                        }
-                    }
-                }
-
-                RowLayout {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    Button {
-                        Layout.minimumWidth: 100
-                        Layout.fillWidth: false
-                        height: appCore.settingsContainer.headerSize
-
-                        text: "Launch Params"
-                    }
-                    TextField {
-                        id: launchParamsTextField
-
-                        Layout.fillWidth: true
-                        height: appCore.settingsContainer.headerSize
-
-                        background: Rectangle {
-                            color: "#50000000"
-                            border.width: 2
-                            border.color: "#65FFFFFF"
-                        }
-
-                        color: "white"
-
-                        text: treeItem ? treeItem.launchParams : ""
-                        placeholderText: qsTr("Launch Params")
-
-                        onEditingFinished: {
-                            if(!treeItem) return
-
-                            treeItem.launchParams = launchParamsTextField.text
-                        }
-                    }
-                }
-            }
+        onClicked: {
+            var pos = windowSelectButton.mapToGlobal(0, windowSelectButton.height)
+            appCore.windowListOverlay.toggle(treeItem, pos.x, pos.y, windowSelectButton.width)
         }
     }
 
@@ -255,7 +110,7 @@ Item {
             id: flipButton
             objectName: "flipButton"
 
-            width: appCore.settingsContainer.headerSize
+            Layout.minimumWidth: 80
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -280,7 +135,7 @@ Item {
             id: layoutButton
             objectName: "layoutButton"
 
-            width: appCore.settingsContainer.headerSize
+            Layout.minimumWidth: 80
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
@@ -327,46 +182,6 @@ Item {
                         "Split"
                     )
                 }
-            }
-        }
-
-        Button {
-            id: launchButton
-            objectName: "launchButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Launch")
-
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE768"
-
-            onClicked: {
-                if(!treeItem) return
-
-                treeItem.launch()
-            }
-        }
-
-        Button {
-            id: configButton
-            objectName: "configButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Configure")
-
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE713"
-
-            enabled: treeItem ? treeItem.children.length == 0 : false
-
-            onClicked: {
-                configWindow.toggle()
             }
         }
 
@@ -649,78 +464,8 @@ Item {
             visible: isRoot
 
             onClicked: {
-                powerWindow.toggle()
-            }
-
-
-            Item {
-                id: powerWindow
-
-                width: 100
-                height: 150
-
-                visible: false
-
-                function toggle() {
-                    visible = !visible
-                    if(visible) {
-                        var globalPos = powerButton.mapToGlobal(powerButton.width - width, powerButton.height)
-                        var size = Qt.size(powerWindow.width, powerWindow.height)
-                        nestedHeader.attachToOverlay(powerWindow, globalPos, size)
-                    }
-                    else {
-                        nestedHeader.detachFromOverlay(powerWindow)
-                    }
-                }
-
-                Rectangle {
-                    color: "white"
-                    anchors.fill: parent
-                }
-
-                ColumnLayout {
-                    id: powerMenu
-                    spacing: 0
-
-                    anchors.fill: parent
-
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        text: "Exit"
-                        onClicked: {
-                            Qt.quit();
-                        }
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        text: "Shut Down"
-                        onClicked: {
-                            appCore.shutdown()
-                        }
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        text: "Restart"
-                        onClicked: {
-                            appCore.restart()
-                        }
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        text: "Sleep"
-                        onClicked: {
-                            appCore.sleep()
-                        }
-                    }
-                }
+                var pos = powerButton.mapToGlobal(powerButton.width - appCore.powerMenuOverlay.width, powerButton.height)
+                appCore.powerMenuOverlay.toggle(pos.x, pos.y)
             }
         }
     }

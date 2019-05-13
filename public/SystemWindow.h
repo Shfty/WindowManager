@@ -3,6 +3,8 @@
 
 #include "WMObject.h"
 
+#include <QPoint>
+
 #include "Win.h"
 
 class WindowController;
@@ -21,6 +23,13 @@ public:
 	void show();
 	void hide();
 	void toggle();
+
+signals:
+	void beginMoveWindows();
+	void moveWindow(HWND hwnd, QPoint position);
+	void endMoveWindows();
+	void showWindow(HWND);
+	void hideWindow(HWND);
 
 protected:
 	WindowController* getWindowController();

@@ -4,21 +4,21 @@ import QtQuick.Window 2.12
 import ".."
 
 Item {
-    id: headerWindow
-    objectName: treeItem.objectName + " Header"
+    id: nodeWindow
+    objectName: treeItem.objectName + " Item"
     anchors.fill: parent
 
     property real animationRate: Window.screen ? Window.screen.refreshRate / 60 : 1
 
     // Recursive tree delegate
     Component {
-        id: headerDelegate
-        HeaderDelegate {}
+        id: nodeDelegate
+        NodeDelegate {}
     }
 
     // Root tree item
-    HeaderDelegate {
-        id: rootItem
+    NodeDelegate {
+        id: rootNode
         model: treeItem
     }
 }

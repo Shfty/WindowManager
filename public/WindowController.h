@@ -19,12 +19,13 @@ public:
 	explicit WindowController(QObject* parent = nullptr);
 	~WindowController();
 
-	Q_INVOKABLE void beginMoveWindows();
-	Q_INVOKABLE void moveWindow(HWND hwnd, QPoint position, QSize size = QSize(), int layer = -2);
-	Q_INVOKABLE void endMoveWindows();
+public slots:
+	void beginMoveWindows();
+	void moveWindow(HWND hwnd, QPoint position, QSize size = QSize(), qlonglong layer = -2LL);
+	void endMoveWindows();
 
-	Q_INVOKABLE void showWindow(HWND hwnd);
-	Q_INVOKABLE void hideWindow(HWND hwnd);
+	void showWindow(HWND hwnd);
+	void hideWindow(HWND hwnd);
 
 private:
 	HDWP m_dwp;

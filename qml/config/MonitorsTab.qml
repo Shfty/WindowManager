@@ -1,34 +1,23 @@
-import QtQuick 2.11
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.4
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.5
 
 RowLayout {
-    Flickable {
+    ListView {
+        id: windowsList
+
         Layout.fillWidth: true
         Layout.fillHeight: true
 
-        contentHeight: windowsColumn.height
+        ScrollIndicator.vertical: ScrollIndicator { }
 
-        ColumnLayout {
-            id: windowsColumn
-            anchors.left: parent.left
-            anchors.right: parent.right
+        model: appCore.windowView.screenList
 
-            Repeater {
-                model: appCore.windowView.screenList
-                delegate: RowLayout {
-                    Layout.fillWidth: true
-
-                    Button {
-                        text: modelData.name
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        onClicked: {
-                            detailView.detailObject = modelData
-                        }
-                    }
-                }
+        delegate: ItemDelegate {
+            text: modelData.name
+            width: parent.width
+            onClicked: {
+                detailView.detailObject = modelData
             }
         }
     }

@@ -12,7 +12,7 @@ WindowController::WindowController(QObject* parent)
 
 WindowController::~WindowController()
 {
-	
+
 }
 
 void WindowController::beginMoveWindows()
@@ -20,7 +20,7 @@ void WindowController::beginMoveWindows()
 	m_dwp = BeginDeferWindowPos(0);
 }
 
-void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, int layer)
+void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer)
 {
 	Q_ASSERT_X(hwnd != nullptr, "moveWindow", "moveWindow called with invalid HWND");
 	Q_ASSERT_X(m_dwp != nullptr, "moveWindow", "moveWindow called before beginMoveWindows");
@@ -31,7 +31,30 @@ void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, int la
 		flags |= SWP_NOSIZE;
 	}
 
-	DeferWindowPos(m_dwp, hwnd, reinterpret_cast<HWND>(layer), position.x(), position.y(), size.width(), size.height(), flags);
+	// Calculate extended frame
+	RECT winRect;
+	GetWindowRect(hwnd, &winRect);
+
+	RECT extendedFrame;
+	DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
+
+	QMargins extendedMargins = QMargins(
+		extendedFrame.left - winRect.left,
+		extendedFrame.top - winRect.top,
+		winRect.right - extendedFrame.right,
+		winRect.bottom - extendedFrame.bottom
+	);
+
+	DeferWindowPos(
+		m_dwp,
+		hwnd,
+		reinterpret_cast<HWND>(layer),
+		position.x() - extendedMargins.left(),
+		position.y() - extendedMargins.top(),
+		size.width() + extendedMargins.left() + extendedMargins.right(),
+		size.height() + extendedMargins.top() + extendedMargins.bottom(),
+		flags
+	);
 }
 
 void WindowController::endMoveWindows()

@@ -11,7 +11,8 @@ class TaskBarWindow : public SystemWindow
 
 public:
 	explicit TaskBarWindow(QObject* parent = nullptr);
-	~TaskBarWindow();
+	~TaskBarWindow() override;
+
 };
 
 #endif // TASKBARWINDOW_H

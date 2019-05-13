@@ -2,6 +2,7 @@
 #define APPCORE_H
 
 #include <QObject>
+#include <QThread>
 
 class WinShellController;
 class WindowController;
@@ -10,6 +11,7 @@ class TreeItem;
 class SettingsContainer;
 class QmlController;
 class QQuickWindow;
+class QQuickItem;
 
 class AppCore : public QObject
 {
@@ -21,7 +23,12 @@ class AppCore : public QObject
 	Q_PROPERTY(SettingsContainer* settingsContainer MEMBER m_settingsContainer NOTIFY settingsContainerChanged)
 	Q_PROPERTY(QmlController* qmlController MEMBER m_qmlController NOTIFY qmlControllerChanged)
 	Q_PROPERTY(TreeItem* treeModel MEMBER m_rootItem NOTIFY treeModelChanged)
+
 	Q_PROPERTY(QQuickWindow* configWindow MEMBER m_configWindow NOTIFY configWindowChanged)
+
+	Q_PROPERTY(QQuickItem* windowListOverlay READ getWindowListOverlay() NOTIFY windowListOverlayChanged)
+	Q_PROPERTY(QQuickItem* powerMenuOverlay READ getPowerMenuOverlay() NOTIFY powerMenuOverlayChanged)
+	Q_PROPERTY(QQuickItem* itemSettingsOverlay READ getItemSettingsOverlay() NOTIFY itemSettingsOverlayChanged)
 
 public:
 	explicit AppCore(QObject* parent = nullptr);
@@ -35,7 +42,11 @@ signals:
 	void settingsContainerChanged();
 	void qmlControllerChanged();
 	void treeModelChanged();
+
 	void configWindowChanged();
+	void windowListOverlayChanged();
+	void powerMenuOverlayChanged();
+	void itemSettingsOverlayChanged();
 
 public slots:
 	void windowManagerReady();
@@ -49,9 +60,15 @@ public slots:
 private:
 	void elevatePrivileges();
 
+	QQuickItem* getWindowListOverlay();
+	QQuickItem* getPowerMenuOverlay();
+	QQuickItem* getItemSettingsOverlay();
+
 	TreeItem* loadModel(QString filename);
 	void saveModel(QString filename, const TreeItem* nestedModel);
 	void saveDefaultModel(QString filename);
+
+	QThread m_windowControllerThread;
 
 	WindowController* m_windowController;
 	WindowView* m_windowView;
@@ -59,7 +76,11 @@ private:
 	SettingsContainer* m_settingsContainer;
 	QmlController* m_qmlController;
 	TreeItem* m_rootItem;
+
 	QQuickWindow* m_configWindow;
+	QQuickWindow* m_windowListOverlay;
+	QQuickWindow* m_powerMenuOverlay;
+	QQuickWindow* m_itemSettingsOverlay;
 };
 
 #endif // APPCORE_H

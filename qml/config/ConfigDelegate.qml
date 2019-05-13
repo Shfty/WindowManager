@@ -1,9 +1,6 @@
-import QtQuick 2.11
-import QtQuick.Window 2.11
-import QtGraphicalEffects 1.0
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.4
-import QtQuick.Controls.Universal 2.3
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.5
 
 import ".."
 
@@ -15,10 +12,10 @@ Item {
 
     anchors.top: {
         if(!parent) return anchors.top
-        if(treeItem.index == 0) return parent.top
-        
+        if(treeItem.index === 0) return parent.top
+
         var target = parent.children[treeItem.index - 1]
-        if(target != this) {
+        if(target !== this) {
             return parent.children[treeItem.index - 1].bottom
         }
 
@@ -76,7 +73,7 @@ Item {
 
             background: Rectangle {
                 color: {
-                    if(treeItem == configView.selectedItem) return "#C0FFFFFF"
+                    if(treeItem === configView.selectedItem) return "#C0FFFFFF"
                     if(itemButton.pressed) return "#C0FFFFFF"
                     if(itemButton.hovered) return "#80FFFFFF"
                     return "#40FFFFFF"

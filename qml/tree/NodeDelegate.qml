@@ -1,23 +1,24 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.5
+import DWMThumbnail 1.0
 
 import ".."
 
 Item {
-    id: headerWrapper
+    id: itemWrapper
 
-    parent: headerWindow
+    parent: nodeWindow
 
     property var model: null
 
     property var animationEasing: Easing.OutCubic
-    property int animationDuration: 300 * headerWindow.animationRate
+    property int animationDuration: 300 * nodeWindow.animationRate
 
     // Positioning and animation
-    x: model ? model.headerBounds.x : 0
-    y: model ? model.headerBounds.y : 0
-    width: model ? model.headerBounds.width : 0
-    height: model ? model.headerBounds.height : 0
+    x: model ? model.contentBounds.x : 0
+    y: model ? model.contentBounds.y : 0
+    width: model ? model.contentBounds.width : 0
+    height: model ? model.contentBounds.height : 0
 
     Behavior on x {
         SequentialAnimation {
@@ -64,12 +65,18 @@ Item {
     }
 
     // Visual components
-    TreeHeader {
-        id: treeHeader
-
+    Rectangle {
+        id: itemBackground
         anchors.fill: parent
 
-        treeItem: headerWrapper.model
+        visible: model ? model.depth > 1 : false
+
+        color: appCore.settingsContainer.colorContainerPlaceholder
+    }
+
+    DWMThumbnail {
+        anchors.fill: parent
+        hwnd: model.windowInfo ? model.windowInfo.hwnd : appCore.windowView.windowList[0].hwnd
     }
 
     // Child handling
@@ -89,8 +96,8 @@ Item {
     }
 
     function incubateItem(childModel) {
-        incubator = headerDelegate.incubateObject(
-            headerWindow,
+        incubator = nodeDelegate.incubateObject(
+            nodeWindow,
             {
                 model: childModel
             }

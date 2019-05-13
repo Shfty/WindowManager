@@ -7,7 +7,7 @@
 
 class EnumWindowsThread : public QThread
 {
-		Q_OBJECT
+	Q_OBJECT
 
 	public:
 		explicit EnumWindowsThread(QObject *parent = nullptr);
@@ -15,10 +15,11 @@ class EnumWindowsThread : public QThread
 		void startProcess();
 
 	signals:
-		void windowAdded(HWND window, QString title);
+		void windowAdded(HWND window, QString winTitle, QString winClass);
 		void windowTitleChanged(HWND window, QString title);
 		void windowRemoved(HWND window);
 		void windowScanFinished();
+		void windowListChanged();
 
 	public slots:
 		void stopProcess();

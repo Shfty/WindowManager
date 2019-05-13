@@ -1,7 +1,7 @@
 #include "QmlController.h"
 #include "Win.h"
 
-#include "ManagedWindow.h"
+#include "DWMThumbnail.h"
 #include "SettingsContainer.h"
 #include "TreeItem.h"
 #include "WindowController.h"
@@ -41,7 +41,7 @@ QmlController::QmlController(QObject* parent)
 	qRegisterMetaType<QmlController*>();
 	setObjectName("QML Controller");
 
-	qmlRegisterType<ManagedWindow>("ManagedWindow", 1, 0, "ManagedWindow");
+	qmlRegisterType<DWMThumbnail>("DWMThumbnail", 1, 0, "DWMThumbnail");
 	qmlRegisterInterface<HWND>("HWND");
 
 	static PeriodicIncubationController inc;

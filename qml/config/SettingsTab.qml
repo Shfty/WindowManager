@@ -1,6 +1,5 @@
-import QtQuick 2.11
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick 2.12
+import QtQuick.Dialogs 1.2
 
 import ".."
 

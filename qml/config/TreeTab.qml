@@ -1,12 +1,12 @@
-import QtQuick 2.11
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
 
 RowLayout {
     id: treeTab
 
     spacing: 10
 
-    property var hasAppCore: typeof (appCore != 'undefined')
+    property var hasAppCore: typeof (appCore !== 'undefined')
     property var model: hasAppCore ? appCore.treeModel : null
 
     ConfigView {

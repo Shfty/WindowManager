@@ -31,8 +31,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
 	public/AppCore.h \
-	public/EnumWindowsThread.h \
-	public/ManagedWindow.h \
+	public/DWMThumbnail.h \
 	public/QmlController.h \
 	public/SettingsContainer.h \
 	public/SystemWindow.h \
@@ -45,13 +44,13 @@ HEADERS += \
 	public/WinShellController/TrayWindow.h \
 	public/WindowController.h \
 	public/WindowView.h \
+	public/WindowView/EnumWindowsThread.h \
 	public/WindowInfo.h
 
 SOURCES += \
 	main.cpp \
 	private/AppCore.cpp \
-	private/EnumWindowsThread.cpp \
-	private/ManagedWindow.cpp \
+	private/DWMThumbnail.cpp \
 	private/QmlController.cpp \
 	private/SettingsContainer.cpp \
 	private/SystemWindow.cpp \
@@ -63,4 +62,5 @@ SOURCES += \
 	private/WinShellController/TrayIconWindow.cpp \
 	private/WindowController.cpp \
 	private/WindowView.cpp \
+	private/WindowView/EnumWindowsThread.cpp \
 	private/WindowInfo.cpp

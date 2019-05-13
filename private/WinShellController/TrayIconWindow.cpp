@@ -1,7 +1,5 @@
 #include "WinShellController/TrayWindow.h"
 
-#include <QDebug>
-
 #include "Win.h"
 #include "WindowController.h"
 

@@ -1,16 +1,20 @@
 #include "SystemWindow.h"
 
-#include <QDebug>
-
 #include "AppCore.h"
 #include "WindowController.h"
 #include "WindowView.h"
-#include "Win.h"
 
 SystemWindow::SystemWindow(QObject* parent)
 	: WMObject(parent)
 {
 	setObjectName("System Window");
+
+	WindowController* wc = getWindowController();
+	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
+	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
+	connect(this, SIGNAL(showWindow(HWND)), wc, SLOT(showWindow(HWND)));
+	connect(this, SIGNAL(hideWindow(HWND)), wc, SLOT(hideWindow(HWND)));
 }
 
 SystemWindow::~SystemWindow()
@@ -19,28 +23,25 @@ SystemWindow::~SystemWindow()
 
 void SystemWindow::setPosition(QPoint position)
 {
-	WindowController* wc = getWindowController();
 	HWND trayIconHwnd = getWindowHwnd();
 
-	wc->beginMoveWindows();
-	wc->moveWindow(trayIconHwnd, position);
-	wc->endMoveWindows();
+	emit beginMoveWindows();
+	emit moveWindow(trayIconHwnd, position);
+	emit endMoveWindows();
 }
 
 void SystemWindow::show()
 {
-	WindowController* wc = getWindowController();
-	HWND trayIconHwnd = getWindowHwnd();
+	HWND hwnd = getWindowHwnd();
 
-	wc->showWindow(trayIconHwnd);
+	emit showWindow(hwnd);
 }
 
 void SystemWindow::hide()
 {
-	WindowController* wc = getWindowController();
-	HWND trayIconHwnd = getWindowHwnd();
+	HWND hwnd = getWindowHwnd();
 
-	wc->hideWindow(trayIconHwnd);
+	emit hideWindow(hwnd);
 }
 
 void SystemWindow::toggle()

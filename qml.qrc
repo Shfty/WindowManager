@@ -1,26 +1,21 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/qmldir</file>
-        <file>qml/main.qml</file>
-        <file>qml/test.qml</file>
-
         <file>qml/config/ConfigWindow.qml</file>
         <file>qml/config/ConfigView.qml</file>
         <file>qml/config/ConfigDelegate.qml</file>
         <file>qml/config/DetailView.qml</file>
         <file>qml/config/TreeTab.qml</file>
-        <file>qml/config/WindowsTab.qml</file>
         <file>qml/config/MonitorsTab.qml</file>
         <file>qml/config/SettingsTab.qml</file>
-
-        <file>qml/items/ManagedWindow.qml</file>
-        <file>qml/items/OverlayWindow.qml</file>
-
-        <file>qml/tree/ItemWindow.qml</file>
+        <file>qml/config/WindowList.qml</file>
         <file>qml/tree/HeaderWindow.qml</file>
-        <file>qml/tree/OverlayWindow.qml</file>
-        <file>qml/tree/ItemDelegate.qml</file>
         <file>qml/tree/HeaderDelegate.qml</file>
         <file>qml/tree/TreeHeader.qml</file>
+        <file>qml/tree/NodeDelegate.qml</file>
+        <file>qml/tree/NodeWindow.qml</file>
+        <file>qml/overlays/ItemSettingsOverlay.qml</file>
+        <file>qml/overlays/PowerMenuOverlay.qml</file>
+        <file>qml/overlays/WindowListOverlay.qml</file>
     </qresource>
 </RCC>

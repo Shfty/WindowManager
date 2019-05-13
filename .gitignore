@@ -1,6 +1,7 @@
 .vscode
 .qmake.stash
 autosave.dat
+autosave.json
 build
 Makefile*
 *.pdb

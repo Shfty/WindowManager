@@ -1,4 +1,6 @@
-#include "EnumWindowsThread.h"
+#include "WindowView/EnumWindowsThread.h"
+
+#include <QGuiApplication>
 
 #include "Win.h"
 
@@ -21,18 +23,18 @@ void EnumWindowsThread::stopProcess()
 
 BOOL CALLBACK enumWindowsProc(__in HWND hwnd, __in LPARAM lParam)
 {
-	int titleLength = GetWindowTextLength(hwnd);
+	if(hwnd == GetShellWindow()) return TRUE;
+	if(!IsWindowVisible(hwnd)) return TRUE;
 
-	if(!IsWindowVisible(hwnd) || titleLength == 0)
-	{
-		return TRUE;
-	}
+	int titleLength = GetWindowTextLength(hwnd);
+	if(titleLength == 0) return TRUE;
 
 	// Retrieve the pointer passed into this callback, and re-'type' it.
 	// The only way for a C API to pass arbitrary data is by means of a void*.
 	QList<HWND>& windowList = *reinterpret_cast<QList<HWND>*>(lParam);
-	windowList.append(hwnd);
+	if(windowList.indexOf(hwnd) != -1) return TRUE;
 
+	windowList.append(hwnd);
 	return TRUE;
 }
 
@@ -60,6 +62,14 @@ void EnumWindowsThread::run()
 			wchar_t* wt = new wchar_t[titleLength + 1];
 			GetWindowText(hwnd, wt, titleLength + 1);
 			QString winTitle = QString::fromStdWString(wt);
+			delete[] wt;
+
+			if(winTitle == QGuiApplication::applicationName()) continue;
+
+			wchar_t* wc = new wchar_t[256];
+			GetClassName(hwnd, wc, 256);
+			QString winClass = QString::fromStdWString(wc);
+			delete[] wc;
 
 			if(m_windowMap.contains(hwnd))
 			{
@@ -73,14 +83,14 @@ void EnumWindowsThread::run()
 			else
 			{
 				m_windowMap.insert(hwnd, winTitle);
-				emit windowAdded(hwnd, winTitle);
+				emit windowAdded(hwnd, winTitle, winClass);
 			}
 		}
 
 		emit windowScanFinished();
 
-		msleep(10);
+		msleep(33);
 	}
-	
+
 	quit();
 }

@@ -6,7 +6,6 @@
 #include "WindowController.h"
 #include "WindowView.h"
 
-#include <QDebug>
 #include <QApplication>
 #include <QDesktopServices>
 #include <QDir>
@@ -18,16 +17,16 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
+#include <QJsonArray>
 
 TreeItem::TreeItem(QObject* parent)
-	: WMObject(parent)
-	, m_monitorIndex(-1)
-	, m_hwnd(nullptr)
-	, m_activeChild(nullptr)
-	, m_isAnimating(false)
-	, m_itemWindow(nullptr)
-	, m_headerWindow(nullptr)
-	, m_overlayWindow(nullptr)
+: WMObject(parent)
+, m_monitorIndex(-1)
+, m_windowInfo(nullptr)
+, m_activeChild(nullptr)
+, m_isAnimating(false)
+, m_itemWindow(nullptr)
+, m_headerWindow(nullptr)
 {
 	setObjectName("Tree Item");
 
@@ -37,6 +36,25 @@ TreeItem::TreeItem(QObject* parent)
 	{
 		connect(parent, SIGNAL(contentBoundsChanged()), this, SIGNAL(boundsChanged()));
 	}
+
+	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(contentBoundsChanged()));
+	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(headerBoundsChanged()));
+
+	connect(this, SIGNAL(activeIndexChanged()), this, SIGNAL(contentBoundsChanged()));
+	connect(this, SIGNAL(flowChanged()), this, SIGNAL(contentBoundsChanged()));
+	connect(this, SIGNAL(layoutChanged()), this, SIGNAL(contentBoundsChanged()));
+	connect(this, SIGNAL(childrenChanged()), this, SIGNAL(boundsChanged()));
+
+	connect(this, SIGNAL(windowInfoChanged()), this, SLOT(moveWindowOnscreen()));
+
+	connect(this, SIGNAL(isAnimatingChanged()), this, SLOT(handleAnimatingChanged()));
+
+	// Window management signals
+	WindowController* wc = getWindowController();
+	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize)), wc, SLOT(moveWindow(HWND, QPoint, QSize)));
+	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
 }
 
 TreeItem::~TreeItem()
@@ -60,12 +78,19 @@ QScreen* TreeItem::getMonitor()
 	return parent->getMonitor();
 }
 
+void TreeItem::setMonitor(QScreen* newMonitor)
+{
+	QList<QScreen*> screens = qApp->screens();
+	m_monitorIndex = screens.indexOf(newMonitor);
+	monitorChanged();
+}
+
 QRectF TreeItem::calculateBounds()
 {
 	if(m_monitorIndex != -1)
 	{
 		QScreen* monitor = getMonitor();
-		return monitor->geometry();
+		return QRectF(QPoint(), monitor->size());
 	}
 
 	TreeItem* treeParent = getTreeParent();
@@ -75,12 +100,9 @@ QRectF TreeItem::calculateBounds()
 	}
 
 	QRectF parentContentBounds = treeParent->calculateContentBounds();
-	QRectF newBounds;
-	newBounds.setWidth(parentContentBounds.width());
-	newBounds.setHeight(parentContentBounds.height());
 
 	qreal margin = getItemMargin();
-	return newBounds.marginsRemoved(QMarginsF(margin, margin, margin, margin));
+	return parentContentBounds.marginsRemoved(QMarginsF(margin, margin, margin, margin));
 }
 
 QRectF TreeItem::calculateHeaderBounds()
@@ -108,22 +130,32 @@ QRectF TreeItem::calculateHeaderBounds()
 	int parentChildCount = parentChildren.length();
 	QString parentFlow = parent->property("flow").toString();
 	QString parentLayout = parent->property("layout").toString();
+	qreal itemMargin = getItemMargin();
 
-	QRectF headerBounds;
+
+	QRectF headerBounds = QRectF(bounds);
 	if(parentFlow == "Horizontal")
 	{
 		qreal newWidth = bounds.width() / parentChildCount;
 		qreal headerSize = getHeaderSize();
 
-		headerBounds.setX(index * newWidth);
 		headerBounds.setWidth(newWidth);
 		headerBounds.setHeight(headerSize);
 
+		qreal dx = index * newWidth;
+		headerBounds.adjust(dx, 0, dx, 0);
+
 		if(parentLayout == "Split")
 		{
-			qreal itemMargin = getItemMargin();
-			QMarginsF margins = QMarginsF(index > 0 ? itemMargin / 2 : 0, 0, index < parentChildCount - 1 ? itemMargin / 2 : 0, 0);
-			headerBounds = headerBounds.marginsRemoved(margins);
+			if(index > 0)
+			{
+				headerBounds.adjust(itemMargin * 0.5, 0, 0, 0);
+			}
+
+			if(index < parentChildCount - 1)
+			{
+				headerBounds.adjust(0, 0, -itemMargin * 0.5, 0);
+			}
 		}
 	}
 	else
@@ -132,23 +164,26 @@ QRectF TreeItem::calculateHeaderBounds()
 		{
 			qreal newHeight = bounds.height() / parentChildCount;
 			qreal headerSize = getHeaderSize();
-			qreal itemMargin = getItemMargin();
 
-			headerBounds.setY(index * newHeight);
-			if(index > 0)
-			{
-				headerBounds.setY(headerBounds.y() + itemMargin / 2);
-			}
 			headerBounds.setWidth(bounds.width());
 			headerBounds.setHeight(headerSize);
+
+			qreal dy = index * newHeight;
+			headerBounds.adjust(0, dy, 0, dy);
+
+			if(index > 0)
+			{
+				headerBounds.adjust(0, itemMargin * 0.5, 0, itemMargin * 0.5);
+			}
 		}
 		else
 		{
 			qreal headerSize = getHeaderSize();
-
-			headerBounds.setY(index * headerSize);
 			headerBounds.setWidth(bounds.width());
 			headerBounds.setHeight(headerSize);
+
+			qreal dy = index * headerSize;
+			headerBounds.adjust(0, dy, 0, dy);
 		}
 	}
 
@@ -183,32 +218,49 @@ QRectF TreeItem::calculateContentBounds()
 	QString parentLayout = parent->property("layout").toString();
 	int parentActiveIndex = parent->property("activeIndex").toInt();
 
-	QRectF newBounds;
-		qreal headerSize = getHeaderSize();
-		qreal itemMargin = getItemMargin();
+	QRectF newBounds = QRectF(bounds);
+	qreal headerSize = getHeaderSize();
+	qreal itemMargin = getItemMargin();
+
 	if(parentLayout == "Split")
 	{
 		if(parentFlow == "Horizontal")
 		{
 			qreal newWidth = bounds.width() / parentChildCount;
+			qreal dx = index * newWidth;
 
-			newBounds.setX(index * newWidth);
-			newBounds.setY(headerSize);
 			newBounds.setWidth(newWidth);
-			newBounds.setHeight(bounds.height() - headerSize);
+			newBounds.adjust(dx, headerSize, dx, 0);
 
-			QMarginsF margins = QMarginsF(index > 0 ? itemMargin / 2 : 0, 0, index < parentChildCount - 1 ? itemMargin / 2 : 0, 0);
-			newBounds = newBounds.marginsRemoved(margins);
+			if(parentLayout == "Split")
+			{
+				if(index > 0)
+				{
+					newBounds.adjust(itemMargin * 0.5, 0, 0, 0);
+				}
+
+				if(index < parentChildCount - 1)
+				{
+					newBounds.adjust(0, 0, -itemMargin * 0.5, 0);
+				}
+			}
 		}
 		else
 		{
 			qreal newHeight = bounds.height() / parentChildCount;
-			newBounds.setY(index * newHeight + headerSize);
+			newBounds.setY(bounds.y() + (index * newHeight + headerSize));
 			newBounds.setWidth(bounds.width());
 			newBounds.setHeight(newHeight - headerSize);
 
-			QMarginsF margins = QMarginsF(0, index > 0 ? itemMargin / 2 : 0, 0, index < parentChildCount - 1 ? itemMargin / 2 : 0);
-			newBounds = newBounds.marginsRemoved(margins);
+			if(index > 0)
+			{
+				newBounds.adjust(0, itemMargin * 0.5, 0, 0);
+			}
+
+			if(index < parentChildCount - 1)
+			{
+				newBounds.adjust(0, 0, 0, -itemMargin * 0.5);
+			}
 		}
 	}
 	else
@@ -216,29 +268,14 @@ QRectF TreeItem::calculateContentBounds()
 		int deltaIndex = parentActiveIndex - index;
 		if(parentFlow == "Horizontal")
 		{
-			qreal itemWidth = bounds.width() + itemMargin;
-			newBounds.setX(itemWidth * -deltaIndex);
-			newBounds.setY(headerSize);
-
-			newBounds.setWidth(bounds.width());
-			newBounds.setHeight(bounds.height() - headerSize);
+			qreal dx = (itemMargin + bounds.width()) * -deltaIndex;
+			newBounds.adjust(dx, headerSize, dx, 0);
 		}
 		else
 		{
-			qreal itemHeight = bounds.height() + itemMargin;
-			newBounds.setX(0);
-
-			if(index == parentActiveIndex)
-			{
-				newBounds.setY(headerSize * parentChildCount);
-			}
-			else
-			{
-				newBounds.setY(itemHeight * -deltaIndex);
-			}
-
-			newBounds.setWidth(bounds.width());
-			newBounds.setHeight(bounds.height() - headerSize * parentChildCount);
+			qreal dy = (itemMargin + bounds.height()) * -deltaIndex;
+			qreal headerHeight = headerSize * parentChildCount;
+			newBounds.adjust(0, dy + headerHeight, 0, dy);
 		}
 	}
 
@@ -331,11 +368,6 @@ void TreeItem::setActive()
 	}
 }
 
-bool TreeItem::isHwndValid()
-{
-	return m_hwnd != nullptr;
-}
-
 void TreeItem::toggleFlow()
 {
 	m_flow = m_flow == "Horizontal" ? "Vertical" : "Horizontal";
@@ -348,7 +380,7 @@ void TreeItem::toggleLayout()
 	layoutChanged();
 }
 
-QVariant TreeItem::addChild(QString title, QString flow, QString layout, int monitorIndex, HWND hwnd)
+QVariant TreeItem::addChild(QString title, QString flow, QString layout, QScreen* monitor, WindowInfo* windowInfo)
 {
 	TreeItem* child = new TreeItem(this);
 
@@ -356,12 +388,10 @@ QVariant TreeItem::addChild(QString title, QString flow, QString layout, int mon
 	child->setProperty("title", title);
 	child->setProperty("flow", flow);
 	child->setProperty("layout", layout);
-	child->setProperty("monitorIndex", monitorIndex);
-	child->setProperty("hwnd", QVariant::fromValue<HWND>(hwnd));
+	child->setProperty("monitor", QVariant::fromValue(monitor));
+	child->setProperty("windowInfo", QVariant::fromValue(windowInfo));
 
-	addChild(child);
-
-	return QVariant::fromValue<TreeItem*>(child);
+	return addChild(child);
 }
 
 QVariant TreeItem::addChild(TreeItem* newChild)
@@ -416,12 +446,6 @@ bool TreeItem::removeChild(TreeItem* childToRemove)
 	return true;
 }
 
-void TreeItem::resetHwnd()
-{
-	m_hwnd = nullptr;
-	hwndChanged();
-}
-
 void TreeItem::moveUp()
 {
 	TreeItem* parent = getTreeParent();
@@ -451,17 +475,7 @@ void TreeItem::remove()
 
 QPointF TreeItem::getScreenPosition()
 {
-	QPointF topLeft;
-
-	TreeItem* candidate = this;
-	do
-	{
-		topLeft += candidate->property("bounds").toRect().topLeft();
-		topLeft += candidate->property("contentBounds").toRect().topLeft();
-		candidate = candidate->getTreeParent();
-	} while(candidate != nullptr);
-
-	return topLeft;
+	return property("contentBounds").toRect().topLeft();
 }
 
 TreeItem* TreeItem::getTreeParent() const
@@ -513,20 +527,133 @@ void TreeItem::moveChild(TreeItem* child, int delta)
 	childrenChanged();
 }
 
+QJsonObject TreeItem::toJsonObject() const
+{
+	HWND hwnd = nullptr;
+
+	if(m_windowInfo != nullptr)
+	{
+		hwnd = m_windowInfo->property("hwnd").value<HWND>();
+	}
+
+	QJsonObject jo
+	{
+		{"objectName", objectName()},
+		{"flow", m_flow},
+		{"layout", m_layout},
+		{"monitorIndex", m_monitorIndex},
+		{"hwnd", reinterpret_cast<qlonglong>(hwnd)},
+		{"launchUri", m_launchUri},
+		{"launchParams", m_launchParams},
+		{"autoGrabTitle", m_autoGrabTitle},
+		{"autoGrabClass", m_autoGrabClass}
+	};
+
+	QJsonArray children;
+
+	for(TreeItem* child : m_children)
+	{
+		children.append(child->toJsonObject());
+	}
+
+	jo["children"] = children;
+
+	return jo;
+}
+
+void TreeItem::loadFromJson(QJsonObject jsonObject)
+{
+	setObjectName(jsonObject.value("objectName").toString());
+
+	m_flow = jsonObject.value("flow").toString();
+	m_layout = jsonObject.value("layout").toString();
+
+	m_monitorIndex = jsonObject.value("monitorIndex").toInt();
+	if(m_monitorIndex != -1)
+	{
+		QScreen* monitor = QGuiApplication::screens()[m_monitorIndex];
+
+		AppCore* appCore = getAppCore();
+		QmlController* qmlController = appCore->property("qmlController").value<QmlController*>();
+
+		QQmlContext* rootContext = qmlController->getRootContext();
+		QQmlContext* newContext = new QQmlContext(rootContext, this);
+		newContext->setContextProperty("treeItem", this);
+
+		m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
+		m_headerWindow->setColor(Qt::transparent);
+		m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
+		Qt::WA_TranslucentBackground |
+		Qt::FramelessWindowHint |
+		Qt::WindowStaysOnBottomHint |
+		Qt::WindowDoesNotAcceptFocus
+		));
+		m_headerWindow->setScreen(monitor);
+		m_headerWindow->setVisibility(QWindow::Maximized);
+
+		m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
+		m_itemWindow->setColor(Qt::transparent);
+		m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
+		Qt::WA_TranslucentBackground |
+		Qt::FramelessWindowHint |
+		Qt::WindowStaysOnBottomHint |
+		Qt::WindowDoesNotAcceptFocus
+		));
+		m_itemWindow->setScreen(monitor);
+		m_itemWindow->setVisibility(QWindow::Maximized);
+
+
+		m_headerWindow->showMaximized();
+		m_itemWindow->showMaximized();
+
+		m_headerWindow->lower();
+		m_itemWindow->lower();
+
+		if(monitor != nullptr)
+		{
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
+		}
+	}
+
+	WindowView* wv = getWindowView();
+	HWND loadedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
+	m_windowInfo = wv->getWindowInfo(loadedHwnd);
+
+	connect(this, SIGNAL(autoGrabTitleChanged()), this, SLOT(tryAutoGrabWindow()));
+	connect(this, SIGNAL(autoGrabClassChanged()), this, SLOT(tryAutoGrabWindow()));
+	connect(wv, SIGNAL(windowListChanged()), this, SLOT(tryAutoGrabWindow()));
+
+	m_launchUri = jsonObject.value("launchUri").toString();
+	m_launchParams = jsonObject.value("launchParams").toString();
+
+	m_autoGrabTitle = jsonObject.value("autoGrabTitle").toString();
+	m_autoGrabClass = jsonObject.value("autoGrabClass").toString();
+
+	tryAutoGrabWindow();
+
+	QJsonArray childArray = jsonObject.value("children").toArray();
+	for(int i = 0; i < childArray.count(); ++i)
+	{
+		TreeItem* item = new TreeItem(this);
+		item->loadFromJson(childArray[i].toObject());
+		addChild(item);
+	}
+}
+
 void TreeItem::moveWindowOnscreen()
 {
-	WindowController* wc = getWindowController();
-	wc->beginMoveWindows();
+	emit beginMoveWindows();
 	moveWindowOnscreen_Internal();
-	wc->endMoveWindows();
+	emit endMoveWindows();
 }
 
 void TreeItem::moveWindowOffscreen()
 {
-	WindowController* wc = getWindowController();
-	wc->beginMoveWindows();
+	emit beginMoveWindows();
 	moveWindowOffscreen_Internal();
-	wc->endMoveWindows();
+	emit endMoveWindows();
 }
 
 void TreeItem::launch()
@@ -552,13 +679,17 @@ void TreeItem::launch()
 
 void TreeItem::moveWindowOnscreen_Internal()
 {
-	if(isHwndValid())
+	if(m_windowInfo != nullptr)
 	{
-		WindowView* wv = getWindowView();
-		QPoint position = getIsVisible() ? getScreenPosition().toPoint() : wv->getOffscreenArea();
+		QPointF desktopPosition = getMonitor()->geometry().topLeft();
+		QPointF screenPosition = property("contentBounds").toRect().topLeft();
+		QPointF globalPosition = desktopPosition + screenPosition;
+		QPoint offscreenArea = getWindowView()->getOffscreenArea();
 
-		WindowController* wc = getWindowController();
-		wc->moveWindow(m_hwnd, position, property("contentBounds").toRect().size());
+		QPoint position = getIsVisible() ? globalPosition.toPoint() : offscreenArea;
+		QSize size = property("contentBounds").toRect().size();
+
+		emit moveWindow(m_windowInfo->getHwnd(), position, size);
 	}
 
 	for(TreeItem* child : m_children)
@@ -569,34 +700,19 @@ void TreeItem::moveWindowOnscreen_Internal()
 
 void TreeItem::moveWindowOffscreen_Internal()
 {
-	if(isHwndValid())
+	if(m_windowInfo != nullptr)
 	{
-		WindowController* wc = getWindowController();
+		HWND hwnd = m_windowInfo->getHwnd();
+
 		WindowView* wv = getWindowView();
-		wc->moveWindow(m_hwnd, wv->getOffscreenArea());
+		QPoint offscreenArea = wv->getOffscreenArea();
+
+		emit moveWindow(hwnd, offscreenArea);
 	}
 
 	for(TreeItem* child : m_children)
 	{
 		child->moveWindowOffscreen_Internal();
-	}
-}
-
-void TreeItem::handleMonitorBoundsChanged()
-{
-	QScreen* monitor = getMonitor();
-	if(monitor != nullptr)
-	{
-		QRect geo = monitor->geometry();
-		if(m_itemWindow != nullptr)
-		{
-			m_itemWindow->setGeometry(geo);
-		}
-
-		if(m_headerWindow != nullptr)
-		{
-			m_headerWindow->setGeometry(geo);
-		}
 	}
 }
 
@@ -608,7 +724,30 @@ void TreeItem::handleAnimatingChanged()
 	}
 	else
 	{
-		moveWindowOnscreen();
+		if(getIsVisible())
+		{
+			moveWindowOnscreen();
+		}
+	}
+}
+
+void TreeItem::tryAutoGrabWindow()
+{
+	if(m_children.length() > 0) return;
+	if(m_autoGrabTitle.isEmpty() && m_autoGrabClass.isEmpty()) return;
+
+	WindowView* wv = getAppCore()->property("windowView").value<WindowView*>();
+	WindowInfo* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
+
+	if(foundWindow != nullptr)
+	{
+		m_windowInfo = foundWindow;
+		windowInfoChanged();
+	}
+	else if(false && m_windowInfo != nullptr)
+	{
+		m_windowInfo = nullptr;
+		windowInfoChanged();
 	}
 }
 
@@ -651,136 +790,4 @@ qreal TreeItem::getHeaderSize()
 	Q_ASSERT(settings != nullptr);
 
 	return settings->property("headerSize").toReal();
-}
-
-QDataStream& TreeItem::serialize(QDataStream& out) const
-{
-	out << objectName();
-	out << m_flow;
-	out << m_layout;
-	out << m_monitorIndex;
-	out << QVariant(qulonglong(m_hwnd));
-	out << m_launchUri;
-	out << m_launchParams;
-	out << m_children.length();
-
-	for(TreeItem* child : m_children)
-	{
-		out << child;
-	}
-
-	return out;
-}
-
-QDataStream& TreeItem::deserialize(QDataStream& in)
-{
-	QString title;
-	QString flow;
-	QString layout;
-	int monitorIndex;
-	QVariant hwnd;
-	QString launchUri;
-	QString launchParams;
-
-	in >> title;
-	in >> flow;
-	in >> layout;
-	in >> monitorIndex;
-	in >> hwnd;
-	in >> launchUri;
-	in >> launchParams;
-
-	setObjectName(title);
-	m_flow = flow;
-	m_layout = layout;
-
-	m_monitorIndex = monitorIndex;
-	if(m_monitorIndex != -1)
-	{
-		QScreen* monitor = QGuiApplication::screens()[m_monitorIndex];
-		if(monitor != nullptr)
-		{
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SLOT(handleMonitorBoundsChanged()));
-		}
-
-		AppCore* appCore = getAppCore();
-		QmlController* qmlController = appCore->property("qmlController").value<QmlController*>();
-
-		m_overlayWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/OverlayWindow.qml"), QRect());
-		m_overlayWindow->setColor(Qt::transparent);
-		m_overlayWindow->setFlags(m_overlayWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::WA_TranslucentBackground |
-			Qt::FramelessWindowHint |
-			Qt::WindowStaysOnTopHint
-		));
-		m_overlayWindow->show();
-
-		QQmlContext* rootContext = qmlController->getRootContext();
-		QQmlContext* newContext = new QQmlContext(rootContext, this);
-		newContext->setContextProperty("treeItem", this);
-		newContext->setContextProperty("overlayWindow", m_overlayWindow);
-
-		m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
-		m_headerWindow->setColor(Qt::transparent);
-		m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::WA_TranslucentBackground |
-			Qt::FramelessWindowHint |
-			Qt::WindowStaysOnBottomHint |
-			Qt::WindowDoesNotAcceptFocus
-		));
-		m_headerWindow->show();
-
-		m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/ItemWindow.qml"), monitor->geometry(), newContext);
-		m_itemWindow->setColor(Qt::transparent);
-		m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::WA_TranslucentBackground |
-			Qt::FramelessWindowHint |
-			Qt::WindowStaysOnBottomHint |
-			Qt::WindowDoesNotAcceptFocus
-		));
-		m_itemWindow->show();
-	}
-
-	HWND loadedHwnd = HWND(hwnd.toULongLong());
-	WindowView* wv = getWindowView();
-	if(wv->hasWindowInfo(loadedHwnd))
-	{
-		m_hwnd = loadedHwnd;
-	}
-
-	m_launchUri = launchUri;
-	m_launchParams = launchParams;
-
-	int childCount;
-	in >> childCount;
-	for(int i = 0; i < childCount; ++i)
-	{
-		TreeItem* item = new TreeItem(this);
-		in >> item;
-		addChild(item);
-	}
-
-	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(contentBoundsChanged()));
-	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(headerBoundsChanged()));
-
-	connect(this, SIGNAL(activeIndexChanged()), this, SIGNAL(contentBoundsChanged()));
-	connect(this, SIGNAL(flowChanged()), this, SIGNAL(contentBoundsChanged()));
-	connect(this, SIGNAL(layoutChanged()), this, SIGNAL(contentBoundsChanged()));
-	connect(this, SIGNAL(childrenChanged()), this, SIGNAL(boundsChanged()));
-
-	connect(this, SIGNAL(hwndChanged()), this, SLOT(moveWindowOnscreen()));
-
-	connect(this, SIGNAL(isAnimatingChanged()), this, SLOT(handleAnimatingChanged()));
-
-	return in;
-}
-
-QDataStream& operator<<(QDataStream& out, const TreeItem* itemParams)
-{
-	return itemParams->serialize(out);
-}
-
-QDataStream& operator>>(QDataStream& in, TreeItem* itemParams)
-{
-	return itemParams->deserialize(in);
 }

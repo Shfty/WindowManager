@@ -22,7 +22,7 @@ public:
 	explicit WindowView(QObject* parent = nullptr);
 	~WindowView();
 
-	HWND getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
+	WindowInfo* getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
 
 	QObjectList getWindowList();
 	QObjectList getScreenList();
@@ -44,7 +44,7 @@ signals:
 	void screenListChanged();
 
 public slots:
-	void onWindowAdded(HWND hwnd, QString title);
+	void onWindowAdded(HWND hwnd, QString title, QString winClass);
 	void onWindowTitleChanged(HWND hwnd, QString title);
 	void onWindowRemoved(HWND hwnd);
 
@@ -53,7 +53,7 @@ private:
 	WindowInfo* m_placeholder;
 
 	EnumWindowsThread* m_thread;
-	QMap<QString, WindowInfo*> m_windowMap;
+	QMap<HWND, WindowInfo*> m_windowMap;
 };
 
 #endif // WINDOWVIEW_H
