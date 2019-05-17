@@ -6,3 +6,4 @@ build
 Makefile*
 *.pdb
 *.pro.user
+*.bak
