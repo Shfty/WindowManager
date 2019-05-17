@@ -17,5 +17,6 @@
         <file>qml/overlays/ItemSettingsOverlay.qml</file>
         <file>qml/overlays/PowerMenuOverlay.qml</file>
         <file>qml/overlays/WindowListOverlay.qml</file>
+        <file>qml/tree/RecursiveDelegate.qml</file>
     </qresource>
 </RCC>

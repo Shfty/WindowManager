@@ -61,13 +61,15 @@ Rectangle {
         model: ListModel {
             ListElement {
                 name: "Title"
+                category: "Node"
                 target: "objectName"
                 isEnabled: function() {
                     return true
                 }
             }
             ListElement {
-                name: "Launch URI"
+                name: "URI"
+                category: "Launch"
                 target: "launchUri"
                 isEnabled: function() {
                     if(!targetItem) return false
@@ -76,7 +78,8 @@ Rectangle {
                 }
             }
             ListElement {
-                name: "Launch Parameters"
+                name: "Parameters"
+                category: "Launch"
                 target: "launchParams"
                 isEnabled: function() {
                     if(!targetItem) return false
@@ -85,7 +88,8 @@ Rectangle {
                 }
             }
             ListElement {
-                name: "Auto Grab Window Title"
+                name: "Window Title"
+                category: "Auto Grab"
                 target: "autoGrabTitle"
                 isEnabled: function() {
                     if(!targetItem) return false
@@ -94,7 +98,8 @@ Rectangle {
                 }
             }
             ListElement {
-                name: "Auto Grab Window Class"
+                name: "Window Class"
+                category: "Auto Grab"
                 target: "autoGrabClass"
                 isEnabled: function() {
                     if(!targetItem) return false
@@ -143,6 +148,22 @@ Rectangle {
                     }
                 }
             }
+        }
+
+        section.property: "category"
+        section.criteria: ViewSection.FullString
+        section.delegate: Label {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 10
+
+            height: contentHeight + anchors.margins * 2
+
+            verticalAlignment: Text.AlignVCenter
+
+            font.bold: true
+
+            text: section
         }
     }
 }

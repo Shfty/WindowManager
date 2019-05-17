@@ -8,9 +8,6 @@ class SettingsContainer : public QObject
 {
 	Q_OBJECT
 
-	Q_PROPERTY(QString wallpaperUrl MEMBER m_wallpaperUrl NOTIFY wallpaperUrlChanged)
-	Q_PROPERTY(int wallpaperFillMode MEMBER m_wallpaperFillMode NOTIFY wallpaperFillModeChanged)
-
 	Q_PROPERTY(qreal headerSize MEMBER m_headerSize NOTIFY headerSizeChanged)
 	Q_PROPERTY(qreal itemMargin MEMBER m_itemMargin NOTIFY itemMarginChanged)
 
@@ -26,9 +23,6 @@ public:
 	qreal getItemMargin() const { return m_itemMargin; }
 
 signals:
-	void wallpaperUrlChanged();
-	void wallpaperFillModeChanged();
-
 	void headerSizeChanged();
 	void itemMarginChanged();
 
@@ -37,9 +31,6 @@ signals:
 	void colorContainerPlaceholderChanged();
 
 private:
-	QString m_wallpaperUrl;
-	int m_wallpaperFillMode;
-
 	qreal m_headerSize;
 	qreal m_itemMargin;
 

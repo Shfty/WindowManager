@@ -9,28 +9,34 @@ Item {
 
     Universal.theme: Universal.Dark
 
-    property var treeItem: null
+    property var model: null
 
-    property var windowInfo: treeItem.windowInfo
+    property var windowInfo: model.windowInfo
     property var hwnd: windowInfo !== null ? windowInfo.hwnd : null
 
     property bool hwndValid: hwnd !== null
-    property bool isRoot: treeItem ? treeItem.depth <= 1 : false
+    property bool isRoot: model ? model.depth <= 1 : false
+    property bool hasLaunchProperties: {
+        return  model.launchUri !== "" ||
+                model.launchParams !== "" ||
+                model.autoGrabTitle !== "" ||
+                model.autoGrabClass !== ""
+    }
 
     Rectangle {
         width: parent.width
         height: appCore.settingsContainer.headerSize
 
         color: {
-            if(!treeItem) return appCore.settingsContainer.colorActiveHeader
+            if(!model) return appCore.settingsContainer.colorActiveHeader
 
             if(isRoot) return appCore.settingsContainer.colorActiveHeader
 
-            if(treeItem.treeParent.layout === "Split") {
+            if(model.treeParent.layout === "Split") {
                 return appCore.settingsContainer.colorActiveHeader
             }
 
-            if(treeItem.treeParent.activeIndex === treeItem.index) {
+            if(model.treeParent.activeIndex === model.index) {
                 return appCore.settingsContainer.colorActiveHeader
             }
 
@@ -44,11 +50,11 @@ Item {
         width: 100
         height: appCore.settingsContainer.headerSize
 
-        text: treeItem.objectName !== "" ? treeItem.objectName : ""
+        text: model.objectName !== "" ? model.objectName : ""
 
         onClicked: {
             var pos = titleButton.mapToGlobal(0, titleButton.height)
-            appCore.itemSettingsOverlay.toggle(treeItem, pos.x, pos.y)
+            appCore.itemSettingsOverlay.toggle(model, pos.x, pos.y)
         }
     }
 
@@ -67,12 +73,12 @@ Item {
         font.family: "Segoe MDL2 Assets"
         text: "\uE768"
 
-        enabled: treeItem.launchUri !== "" || treeItem.children.length > 0
+        enabled: !hwndValid
 
         onClicked: {
-            if(!treeItem) return
+            if(!model) return
 
-            treeItem.launch()
+            model.launch()
         }
     }
 
@@ -83,10 +89,10 @@ Item {
         anchors.right: buttonLayout.left
         height: appCore.settingsContainer.headerSize
 
-        enabled: treeItem.children.length === 0
+        enabled: model.children.length === 0
 
         contentItem: Label {
-            text: treeItem.windowInfo !== null ? treeItem.windowInfo.winTitle : "[Container]"
+            text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHLeft
             verticalAlignment: Text.AlignVCenter
@@ -94,7 +100,7 @@ Item {
 
         onClicked: {
             var pos = windowSelectButton.mapToGlobal(0, windowSelectButton.height)
-            appCore.windowListOverlay.toggle(treeItem, pos.x, pos.y, windowSelectButton.width)
+            appCore.windowListOverlay.toggle(model, pos.x, pos.y, windowSelectButton.width)
         }
     }
 
@@ -118,15 +124,15 @@ Item {
             ToolTip.text: qsTr("Flip Orientation")
 
             font.family: "Segoe MDL2 Assets"
-            text: treeItem ? treeItem.flow : ""
+            text: model ? model.flow : ""
 
-            visible: !hwndValid
+            visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
                 if(!pressed) {
-                    treeItem.toggleFlow()
+                    model.toggleFlow()
                 }
             }
         }
@@ -143,15 +149,15 @@ Item {
             ToolTip.text: qsTr("Switch Layout")
 
             font.family: "Segoe MDL2 Assets"
-            text: treeItem ? treeItem.layout : ""
+            text: model ? model.layout : ""
 
-            visible: !hwndValid
+            visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
                 if(!pressed) {
-                    treeItem.toggleLayout()
+                    model.toggleLayout()
                 }
             }
         }
@@ -170,15 +176,15 @@ Item {
             font.family: "Segoe MDL2 Assets"
             text: "\uE710"
 
-            visible: !hwndValid
+            visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
                 if(!pressed) {
-                    treeItem.addChild(
+                    model.addChild(
                         "",
-                        treeItem.flow === "Horizontal" ? "Vertical" : "Horizontal",
+                        model.flow === "Horizontal" ? "Vertical" : "Horizontal",
                         "Split"
                     )
                 }
@@ -198,11 +204,11 @@ Item {
 
             font.family: "Segoe MDL2 Assets"
             text: {
-                if(!treeItem) return "\uE76B"
+                if(!model) return "\uE76B"
 
-                if(treeItem.treeParent)
+                if(model.treeParent)
                 {
-                    return treeItem.treeParent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
+                    return model.treeParent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
                 }
 
                 return "\uE76B"
@@ -210,16 +216,16 @@ Item {
 
             visible: !isRoot
             enabled: {
-                if(!treeItem) return false
-                if(!treeItem.treeParent) return false
+                if(!model) return false
+                if(!model.treeParent) return false
 
-                return treeItem.treeParent.children.length > 0 && treeItem.index > 0
+                return model.treeParent.children.length > 0 && model.index > 0
             }
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
-                treeItem.moveUp()
+                model.moveUp()
             }
         }
 
@@ -236,9 +242,9 @@ Item {
 
             font.family: "Segoe MDL2 Assets"
             text: {
-                if(treeItem.treeParent)
+                if(model.treeParent)
                 {
-                    return treeItem.treeParent.flow === "Horizontal" ? "\uE76C" : "\uE70D"
+                    return model.treeParent.flow === "Horizontal" ? "\uE76C" : "\uE70D"
                 }
 
                 return "\uE76C"
@@ -246,16 +252,16 @@ Item {
 
             visible: !isRoot
             enabled: {
-                if(!treeItem) return false
-                if(!treeItem.treeParent) return false
+                if(!model) return false
+                if(!model.treeParent) return false
 
-                return treeItem.treeParent.children.length > 0 && treeItem.index < treeItem.treeParent.children.length - 1
+                return model.treeParent.children.length > 0 && model.index < model.treeParent.children.length - 1
             }
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
-                treeItem.moveDown()
+                model.moveDown()
             }
         }
 
@@ -302,11 +308,11 @@ Item {
 
                 width: parent.width
 
-                property int parentIndex: treeItem.index
-                property string parentTitle: treeItem.objectName
+                property int parentIndex: model.index
+                property string parentTitle: model.objectName
 
-                property bool hasParentBounds: treeItem.bounds ? true : false
-                property rect parentBounds: hasParentBounds ? treeItem.bounds : Qt.rect(-1, -1, -1, -1)
+                property bool hasParentBounds: model.bounds ? true : false
+                property rect parentBounds: hasParentBounds ? model.bounds : Qt.rect(-1, -1, -1, -1)
 
                 property rect cachedItemBounds
                 property rect cachedParentBounds
@@ -315,14 +321,14 @@ Item {
                     id: swapRepeater
                     model: nestedModel
                     MenuItem {
-                        text: treeItem.objectName
-                        enabled: treeItem.index != swapMenu.parentIndex
+                        text: model.objectName
+                        enabled: model.index != swapMenu.parentIndex
                         width: parent.width
                         onTriggered: {
                             var fromIndex = nestedModel.index(index, 3)
                             var toIndex = nestedModel.index(swapMenu.parentIndex, 3)
 
-                            swapMenu.cachedItemBounds = treeItem.bounds
+                            swapMenu.cachedItemBounds = model.bounds
                             swapMenu.cachedParentBounds = swapMenu.parentBounds
 
                             nestedModel.setData(fromIndex, swapMenu.cachedParentBounds)
@@ -351,9 +357,9 @@ Item {
             visible: !isRoot
 
             onClicked: {
-                if(!treeItem) return
+                if(!model) return
 
-                treeItem.remove()
+                model.remove()
             }
         }
 
@@ -482,12 +488,36 @@ Item {
 
         font.family: "Segoe MDL2 Assets"
 
-        visible: !isRoot && treeItem.treeParent.layout !== "Split" && treeItem.index != treeItem.treeParent.activeIndex
+        visible: !isRoot && model.treeParent.layout !== "Split" && model.index !== model.treeParent.activeIndex
 
         onClicked: {
-            if(!treeItem) return
+            if(!model) return
 
-            treeItem.setActive();
+            model.setActive();
         }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onWheel: function(event) {
+            var delta = -Math.sign(event.angleDelta.y)
+
+            if(model.treeParent.layout === "Tabbed")
+            {
+                model.treeParent.scrollActiveIndex(delta)
+            }
+            else
+            {
+                if(delta > 0)
+                {
+                    model.moveDown()
+                }
+                else if(delta < 0)
+                {
+                    model.moveUp()
+                }
+            }
+        }
+        onPressed: mouse.accepted = false
     }
 }

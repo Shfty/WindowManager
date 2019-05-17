@@ -57,19 +57,8 @@ void DWMThumbnail::drawThumbnail()
 	qreal winWidth = winRect.right - winRect.left;
 	qreal winHeight = winRect.bottom - winRect.top;
 
-	RECT extendedFrame;
-	DwmGetWindowAttribute(m_hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
-
-	QMargins extendedMargins = QMargins(
-		extendedFrame.left - winRect.left,
-		extendedFrame.top - winRect.top,
-		winRect.right - extendedFrame.right,
-		winRect.bottom - extendedFrame.bottom
-	);
-
-	QPoint sourcePos = QPoint(extendedFrame.left - winRect.left, extendedFrame.top - winRect.top);
-	QSizeF sourceSize = QSizeF(winWidth - (extendedMargins.left() + extendedMargins.right()),
-							   winHeight - (extendedMargins.top() + extendedMargins.bottom()));
+	QPoint sourcePos = QPoint(0, 0);
+	QSizeF sourceSize = QSizeF(winWidth, winHeight);
 
 	QPointF destPos = mapToScene(QPointF(0, 0));
 	QSizeF destSize = QSizeF(width(), height());
@@ -89,6 +78,32 @@ void DWMThumbnail::drawThumbnail()
 		QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
 
 		sourceRect = sourceRect.intersected(relativeClipRect);
+	}
+
+	// Account for extended margins
+	RECT extendedFrame;
+	DwmGetWindowAttribute(m_hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
+
+	QMargins extendedMargins = QMargins(
+		extendedFrame.left - winRect.left,
+		extendedFrame.top - winRect.top,
+		extendedFrame.right - winRect.right,
+		extendedFrame.bottom - winRect.bottom
+	);
+
+	if(m_clipTarget == nullptr)
+	{
+		sourceRect.adjust(extendedMargins.left(),
+						  extendedMargins.top(),
+						  extendedMargins.right(),
+						  extendedMargins.bottom());
+	}
+	else
+	{
+		sourceRect.adjust(extendedMargins.left(),
+						  extendedMargins.top(),
+						  extendedMargins.left(),
+						  extendedMargins.top());
 	}
 
 	// Convert rectangles into winapi format

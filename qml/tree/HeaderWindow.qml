@@ -10,15 +10,25 @@ Item {
 
     property real animationRate: Window.screen ? Window.screen.refreshRate / 60 : 1
 
-    // Recursive tree delegate
+    // Visual delegate
     Component {
-        id: headerDelegate
+        id: visualDelegate
         HeaderDelegate {}
     }
 
+    // Recursive tree delegate
+    Component {
+        id: recursiveDelegate
+        RecursiveDelegate {
+            delegate: visualDelegate
+            animationDuration: 300 * animationRate
+        }
+    }
+
     // Root tree item
-    HeaderDelegate {
-        id: rootItem
+    RecursiveDelegate {
+        id: rootNode
         model: treeItem
+        delegate: visualDelegate
     }
 }

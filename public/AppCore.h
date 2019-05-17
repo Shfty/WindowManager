@@ -12,6 +12,7 @@ class SettingsContainer;
 class QmlController;
 class QQuickWindow;
 class QQuickItem;
+class QWindow;
 
 class AppCore : public QObject
 {
@@ -33,6 +34,10 @@ class AppCore : public QObject
 public:
 	explicit AppCore(QObject* parent = nullptr);
 	~AppCore();
+
+	QQuickItem* getWindowListOverlay();
+	QQuickItem* getPowerMenuOverlay();
+	QQuickItem* getItemSettingsOverlay();
 
 signals:
 
@@ -59,10 +64,6 @@ public slots:
 
 private:
 	void elevatePrivileges();
-
-	QQuickItem* getWindowListOverlay();
-	QQuickItem* getPowerMenuOverlay();
-	QQuickItem* getItemSettingsOverlay();
 
 	TreeItem* loadModel(QString filename);
 	void saveModel(QString filename, const TreeItem* nestedModel);

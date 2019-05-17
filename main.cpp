@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
 {
 	Q_INIT_RESOURCE(graphics);
 
+	QGuiApplication::setAttribute(Qt::AA_UseOpenGLES);
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 	QQuickStyle::setStyle("Universal");
 	QQuickWindow::setDefaultAlphaBuffer(true);

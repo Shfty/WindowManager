@@ -35,9 +35,10 @@ class TreeItem : public WMObject
 	Q_PROPERTY(int depth READ getDepth() NOTIFY depthChanged)
 
 	Q_PROPERTY(QScreen* monitor READ getMonitor() WRITE setMonitor NOTIFY monitorChanged)
-	Q_PROPERTY(QRectF bounds READ calculateBounds() NOTIFY boundsChanged)
-	Q_PROPERTY(QRectF headerBounds READ calculateHeaderBounds() NOTIFY headerBoundsChanged)
-	Q_PROPERTY(QRectF contentBounds READ calculateContentBounds() NOTIFY contentBoundsChanged)
+
+	Q_PROPERTY(QRectF bounds READ getBoundsLocal() NOTIFY boundsChanged)
+	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
+	Q_PROPERTY(QRectF contentBounds READ getContentBoundsLocal() NOTIFY contentBoundsChanged)
 
 	Q_PROPERTY(WindowInfo* windowInfo MEMBER m_windowInfo NOTIFY windowInfoChanged)
 
@@ -48,25 +49,31 @@ class TreeItem : public WMObject
 	Q_PROPERTY(QString autoGrabClass MEMBER m_autoGrabClass NOTIFY autoGrabClassChanged)
 
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
+	Q_PROPERTY(bool isVisible READ getIsVisible NOTIFY isVisibleChanged)
 
 public:
 	explicit TreeItem(QObject* parent = nullptr);
 	~TreeItem();
 
-	Q_INVOKABLE int getActiveIndex();
+	int getActiveIndex();
 	Q_INVOKABLE void setActiveChild(TreeItem* activeChild);
+	Q_INVOKABLE void scrollActiveIndex(int delta);
 	Q_INVOKABLE void setActive();
 
-	Q_INVOKABLE int getIndex();
-	Q_INVOKABLE int getDepth();
-	Q_INVOKABLE bool getIsVisible();
+	int getIndex();
+	int getDepth();
+	bool getIsVisible();
 
-	Q_INVOKABLE QScreen* getMonitor();
+	QScreen* getMonitor();
 	Q_INVOKABLE void setMonitor(QScreen* newMonitor);
 
-	Q_INVOKABLE QRectF calculateBounds();
-	Q_INVOKABLE QRectF calculateHeaderBounds();
-	Q_INVOKABLE QRectF calculateContentBounds();
+	QRectF getBounds();
+	QRectF getHeaderBounds();
+	QRectF getContentBounds();
+
+	QRectF getBoundsLocal();
+	QRectF getHeaderBoundsLocal();
+	QRectF getContentBoundsLocal();
 
 	Q_INVOKABLE void toggleFlow();
 	Q_INVOKABLE void toggleLayout();
@@ -116,10 +123,11 @@ signals:
 	void autoGrabClassChanged();
 
 	void isAnimatingChanged();
+	void isVisibleChanged();
 
 	void beginMoveWindows();
 	void moveWindow(HWND hwnd, QPoint position);
-	void moveWindow(HWND hwnd, QPoint position, QSize size);
+	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer);
 	void endMoveWindows();
 
 public slots:
@@ -127,11 +135,11 @@ public slots:
 	void moveWindowOffscreen();
 	void launch();
 
-private slots:
+protected:
 	void moveWindowOnscreen_Internal();
 	void moveWindowOffscreen_Internal();
 
-	void handleAnimatingChanged();
+protected slots:
 	void tryAutoGrabWindow();
 
 private:

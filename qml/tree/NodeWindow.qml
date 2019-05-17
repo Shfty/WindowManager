@@ -1,5 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Window 2.12
+import DWMThumbnail 1.0
 
 import ".."
 
@@ -10,15 +11,26 @@ Item {
 
     property real animationRate: Window.screen ? Window.screen.refreshRate / 60 : 1
 
-    // Recursive tree delegate
+    // Visual delegate
     Component {
-        id: nodeDelegate
+        id: visualDelegate
         NodeDelegate {}
     }
 
+    // Recursive tree delegate
+    Component {
+        id: recursiveDelegate
+        RecursiveDelegate {
+            delegate: visualDelegate
+            animationDuration: 300 * animationRate
+        }
+    }
+
+
     // Root tree item
-    NodeDelegate {
+    RecursiveDelegate {
         id: rootNode
         model: treeItem
+        delegate: visualDelegate
     }
 }

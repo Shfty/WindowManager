@@ -10,6 +10,8 @@ WindowListOverlay 1.0 overlays/WindowListOverlay.qml
 PowerMenuOverlay 1.0 overlays/PowerMenuOverlay.qml
 ItemSettingsOverlay 1.0 overlays/ItemSettingsOverlay.qml
 
+RecursiveDelegate 1.0 tree/RecursiveDelegate.qml
+
 NodeWindow 1.0 tree/NodeWindow.qml
 NodeDelegate 1.0 tree/NodeDelegate.qml
 
