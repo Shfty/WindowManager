@@ -43,6 +43,7 @@ void DWMThumbnail::updateThumbnail()
 	DwmRegisterThumbnail(parentHwnd, m_hwnd, &m_thumbnail);
 	QObject::disconnect(this, SLOT(drawThumbnail()));
 	QObject::connect(parentWindow, SIGNAL(frameSwapped()), this, SLOT(drawThumbnail()));
+	parentWindow->update();
 }
 
 void DWMThumbnail::drawThumbnail()
