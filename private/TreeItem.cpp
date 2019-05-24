@@ -562,6 +562,17 @@ void TreeItem::moveChild(TreeItem* child, int delta)
 	displacedChild->boundsChanged();
 
 	childrenChanged();
+	childMoved(childIndex, targetIndex);
+}
+
+void TreeItem::moveChild(int fromIndex, int toIndex)
+{
+	if(fromIndex < 0 || fromIndex >= m_children.length()) return;
+	if(toIndex < 0 || toIndex >= m_children.length()) return;
+
+	TreeItem* child = m_children[fromIndex];
+	int delta = toIndex - fromIndex;
+	moveChild(child, delta);
 }
 
 QJsonObject TreeItem::toJsonObject() const

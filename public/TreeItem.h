@@ -92,6 +92,7 @@ public:
 	QObjectList getTreeChildren() const;
 
 	void moveChild(TreeItem* child, int delta);
+	Q_INVOKABLE void moveChild(int fromIndex, int toIndex);
 
 	QJsonObject toJsonObject() const;
 	void loadFromJson(QJsonObject jsonObject);
@@ -100,6 +101,7 @@ signals:
 	void parentChanged();
 	void childrenChanged();
 	void childAdded(int index, TreeItem* child);
+	void childMoved(int fromIndex, int toIn);
 	void childRemoved(int index, TreeItem* child);
 	void activeIndexChanged();
 
