@@ -480,7 +480,10 @@ Item {
         id: activateButton
         objectName: "activateButton"
 
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: appCore.settingsContainer.headerSize
 
         ToolTip.visible: hovered
         ToolTip.delay: 500
@@ -498,7 +501,11 @@ Item {
     }
 
     MouseArea {
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: appCore.settingsContainer.headerSize
+
         onWheel: function(event) {
             var delta = -Math.sign(event.angleDelta.y)
 
