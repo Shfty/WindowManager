@@ -5,6 +5,7 @@
 #include "QmlController.h"
 #include "WindowController.h"
 #include "WindowView.h"
+#include "Win.h"
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -731,14 +732,40 @@ void TreeItem::moveWindowOnscreen_Internal()
 
 	if(m_windowInfo != nullptr)
 	{
+		HWND hwnd = m_windowInfo->getHwnd();
+
 		QRectF contentBounds = getContentBounds();
 
 		QPointF desktopPosition = getMonitor()->geometry().topLeft();
 		QPointF screenPosition = contentBounds.topLeft();
+
 		QPointF globalPosition = desktopPosition + screenPosition;
+		QSizeF globalSize = contentBounds.size();
+
+		QScreen* monitor = getMonitor();
+		qreal dpr = monitor->devicePixelRatio();
+		globalPosition *= dpr;
+		globalSize *= dpr;
+
+		// Calculate extended frame
+		RECT winRect;
+		GetWindowRect(hwnd, &winRect);
+
+		RECT extendedFrame;
+		DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
+
+		QMargins extendedMargins = QMargins(
+			extendedFrame.left - winRect.left,
+			extendedFrame.top - winRect.top,
+			winRect.right - extendedFrame.right,
+			winRect.bottom - extendedFrame.bottom
+		);
+
+		globalPosition -= QPointF(extendedMargins.left(), extendedMargins.top());
+		globalSize += QSizeF(extendedMargins.left() + extendedMargins.right(), extendedMargins.top() + extendedMargins.bottom());
 
 		QPoint position = globalPosition.toPoint();
-		QSize size = contentBounds.size().toSize();
+		QSize size = globalSize.toSize();
 
 		emit moveWindow(m_windowInfo->getHwnd(), position, size, -2LL);
 	}

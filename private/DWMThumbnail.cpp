@@ -2,6 +2,7 @@
 
 #include <tchar.h>
 #include <QQuickWindow>
+#include <QScreen>
 
 #include "WindowController.h"
 
@@ -80,6 +81,24 @@ void DWMThumbnail::drawThumbnail()
 
 		sourceRect = sourceRect.intersected(relativeClipRect);
 	}
+
+	QQuickWindow* parentWindow = window();
+	QScreen* parentScreen = parentWindow->screen();
+	qreal dpr = parentScreen->devicePixelRatio();
+
+	sourceRect.setRect(
+		sourceRect.x() * dpr,
+		sourceRect.y() * dpr,
+		sourceRect.width() * dpr,
+		sourceRect.height() * dpr
+	);
+
+	destRect.setRect(
+		destRect.x() * dpr,
+		destRect.y() * dpr,
+		destRect.width() * dpr,
+		destRect.height() * dpr
+	);
 
 	// Account for extended margins
 	RECT extendedFrame;

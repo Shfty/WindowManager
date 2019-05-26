@@ -31,28 +31,14 @@ void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, qlongl
 		flags |= SWP_NOSIZE;
 	}
 
-	// Calculate extended frame
-	RECT winRect;
-	GetWindowRect(hwnd, &winRect);
-
-	RECT extendedFrame;
-	DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
-
-	QMargins extendedMargins = QMargins(
-		extendedFrame.left - winRect.left,
-		extendedFrame.top - winRect.top,
-		winRect.right - extendedFrame.right,
-		winRect.bottom - extendedFrame.bottom
-	);
-
 	DeferWindowPos(
 		m_dwp,
 		hwnd,
 		reinterpret_cast<HWND>(layer),
-		position.x() - extendedMargins.left(),
-		position.y() - extendedMargins.top(),
-		size.width() + extendedMargins.left() + extendedMargins.right(),
-		size.height() + extendedMargins.top() + extendedMargins.bottom(),
+		position.x(),
+		position.y(),
+		size.width(),
+		size.height(),
 		flags
 	);
 }
