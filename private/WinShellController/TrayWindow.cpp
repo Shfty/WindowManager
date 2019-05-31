@@ -8,7 +8,3 @@ TrayWindow::TrayWindow(QObject* parent)
 {
 	m_windowClass = "NotifyIconOverflowWindow";
 }
-
-TrayWindow::~TrayWindow()
-{
-}

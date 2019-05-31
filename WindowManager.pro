@@ -59,7 +59,7 @@ SOURCES += \
 	private/WinShellController.cpp \
 	private/WinShellController/TaskBarWindow.cpp \
 	private/WinShellController/TrayIcon.cpp \
-	private/WinShellController/TrayIconWindow.cpp \
+	private/WinShellController/TrayWindow.cpp \
 	private/WindowController.cpp \
 	private/WindowView.cpp \
 	private/WindowView/EnumWindowsThread.cpp \
