@@ -78,11 +78,6 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
 }
 
-TreeItem::~TreeItem()
-{
-
-}
-
 QScreen* TreeItem::getMonitor()
 {
 	if(m_monitorIndex != -1)
@@ -638,7 +633,6 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 		Qt::WindowDoesNotAcceptFocus
 		));
 		m_headerWindow->setScreen(monitor);
-		m_headerWindow->setVisibility(QWindow::Maximized);
 
 		m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
 		m_itemWindow->setColor(Qt::transparent);
@@ -649,11 +643,9 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 		Qt::WindowDoesNotAcceptFocus
 		));
 		m_itemWindow->setScreen(monitor);
-		m_itemWindow->setVisibility(QWindow::Maximized);
 
-
-		m_headerWindow->showMaximized();
-		m_itemWindow->showMaximized();
+		m_headerWindow->show();
+		m_itemWindow->show();
 
 		m_headerWindow->lower();
 		m_itemWindow->lower();
@@ -662,7 +654,9 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 		{
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
+
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
+			connect(monitor, SIGNAL(physicalDotsPerInchChanged(qreal)), this, SIGNAL(boundsChanged()));
 		}
 	}
 

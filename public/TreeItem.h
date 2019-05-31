@@ -53,7 +53,6 @@ class TreeItem : public WMObject
 
 public:
 	explicit TreeItem(QObject* parent = nullptr);
-	~TreeItem();
 
 	int getActiveIndex();
 	Q_INVOKABLE void setActiveChild(TreeItem* activeChild);

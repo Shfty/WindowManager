@@ -10,11 +10,6 @@ WindowController::WindowController(QObject* parent)
 	setObjectName("Window Controller");
 }
 
-WindowController::~WindowController()
-{
-
-}
-
 void WindowController::beginMoveWindows()
 {
 	m_dwp = BeginDeferWindowPos(0);

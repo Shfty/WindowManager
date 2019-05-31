@@ -16,7 +16,6 @@ class WindowInfo : public QObject
 
 public:
 	explicit WindowInfo(QObject* parent = nullptr);
-	~WindowInfo();
 
 	HWND getHwnd() const { return m_hwnd; }
 	QString getWinTitle() const { return m_winTitle; }

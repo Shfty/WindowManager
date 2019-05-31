@@ -11,7 +11,6 @@ class TrayWindow : public SystemWindow
 
 public:
 	explicit TrayWindow(QObject* parent = nullptr);
-	~TrayWindow();
 };
 
 #endif // TRAYWINDOW_H

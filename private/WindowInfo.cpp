@@ -9,7 +9,3 @@ WindowInfo::WindowInfo(QObject* parent)
 {
 	setObjectName("Window Info");
 }
-
-WindowInfo::~WindowInfo()
-{
-}

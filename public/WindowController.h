@@ -17,7 +17,6 @@ class WindowController : public QObject
 
 public:
 	explicit WindowController(QObject* parent = nullptr);
-	~WindowController();
 
 public slots:
 	void beginMoveWindows();

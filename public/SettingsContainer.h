@@ -17,7 +17,6 @@ class SettingsContainer : public QObject
 
 public:
 	explicit SettingsContainer(QObject* parent = nullptr);
-	~SettingsContainer();
 
 	qreal getHeaderSize() const { return m_headerSize; }
 	qreal getItemMargin() const { return m_itemMargin; }

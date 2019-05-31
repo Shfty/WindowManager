@@ -11,7 +11,3 @@ SettingsContainer::SettingsContainer(QObject* parent)
 	qRegisterMetaType<SettingsContainer*>();
 	setObjectName("Settings Container");
 }
-
-SettingsContainer::~SettingsContainer()
-{
-}
