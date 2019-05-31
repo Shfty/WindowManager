@@ -1,5 +1,7 @@
 #include "WinShellController/TaskBarWindow.h"
 
+#include <QGuiApplication>
+
 TaskBarWindow::TaskBarWindow(QObject* parent)
 	: SystemWindow(parent)
 {
@@ -7,9 +9,8 @@ TaskBarWindow::TaskBarWindow(QObject* parent)
 
 	m_windowClass = "Shell_TrayWnd";
 	hide();
-}
 
-TaskBarWindow::~TaskBarWindow()
-{
-	show();
+	connect(QGuiApplication::instance(), &QGuiApplication::aboutToQuit, [=]() {
+		show();
+	});
 }
