@@ -18,12 +18,8 @@ WinShellController::WinShellController(QObject* parent)
 	connect(QGuiApplication::instance(), SIGNAL(aboutToQuit()), m_trayIcon, SLOT(hide()));
 }
 
-WinShellController::~WinShellController()
+void WinShellController::showTrayIconWindow(QPointF position, QSizeF size)
 {
-}
-
-void WinShellController::showTrayIconWindow(QPointF position)
-{
-  m_trayWindow->setPosition(position.toPoint());
-  m_trayWindow->toggle();
+	m_trayWindow->setPosition(position.toPoint(), size.toSize());
+	m_trayWindow->toggle();
 }

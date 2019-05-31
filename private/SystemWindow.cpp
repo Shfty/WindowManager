@@ -11,22 +11,18 @@ SystemWindow::SystemWindow(QObject* parent)
 
 	WindowController* wc = getWindowController();
 	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
-	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize)), wc, SLOT(moveWindow(HWND, QPoint, QSize)));
 	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
 	connect(this, SIGNAL(showWindow(HWND)), wc, SLOT(showWindow(HWND)));
 	connect(this, SIGNAL(hideWindow(HWND)), wc, SLOT(hideWindow(HWND)));
 }
 
-SystemWindow::~SystemWindow()
-{
-}
-
-void SystemWindow::setPosition(QPoint position)
+void SystemWindow::setPosition(QPoint position, QSize size)
 {
 	HWND trayIconHwnd = getWindowHwnd();
 
 	emit beginMoveWindows();
-	emit moveWindow(trayIconHwnd, position);
+	emit moveWindow(trayIconHwnd, position, size);
 	emit endMoveWindows();
 }
 
@@ -44,10 +40,15 @@ void SystemWindow::hide()
 	emit hideWindow(hwnd);
 }
 
+#include <QDebug>
 void SystemWindow::toggle()
 {
 	WindowView* wv = getWindowView();
 	HWND trayIconHwnd = getWindowHwnd();
+
+	RECT rect;
+	GetWindowRect(trayIconHwnd, &rect);
+	qDebug() << QRect(rect.left, rect.top, rect.left - rect.right, rect.top - rect.bottom);
 
 	if(wv->isWindowVisible(trayIconHwnd))
 	{

@@ -3,6 +3,7 @@
 
 #include "WMObject.h"
 #include <QPointF>
+#include <QSizeF>
 
 class TrayIcon;
 class TrayWindow;
@@ -14,10 +15,9 @@ class WinShellController : public WMObject
 
 public:
 	explicit WinShellController(QObject* parent = nullptr);
-	~WinShellController();
 
 public slots:
-	void showTrayIconWindow(QPointF position);
+	void showTrayIconWindow(QPointF position, QSizeF size);
 
 private:
 	TrayIcon* m_trayIcon;

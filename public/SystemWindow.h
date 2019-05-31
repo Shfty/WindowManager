@@ -4,6 +4,7 @@
 #include "WMObject.h"
 
 #include <QPoint>
+#include <QSize>
 
 #include "Win.h"
 
@@ -16,9 +17,8 @@ class SystemWindow : public WMObject
 
 public:
 	explicit SystemWindow(QObject* parent = nullptr);
-	~SystemWindow();
 
-	void setPosition(QPoint position);
+	void setPosition(QPoint position, QSize size = QSize());
 
 	void show();
 	void hide();
@@ -26,7 +26,7 @@ public:
 
 signals:
 	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position);
+	void moveWindow(HWND hwnd, QPoint position, QSize size);
 	void endMoveWindows();
 	void showWindow(HWND);
 	void hideWindow(HWND);

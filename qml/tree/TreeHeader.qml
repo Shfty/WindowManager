@@ -380,7 +380,7 @@ Item {
 
             onClicked: {
                 var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
-                appCore.winShellController.showTrayIconWindow(Qt.point(pos.x, pos.y))
+                appCore.winShellController.showTrayIconWindow(Qt.point(pos.x, pos.y), Qt.size(300, 300))
             }
         }
 
