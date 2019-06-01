@@ -88,6 +88,16 @@ Rectangle {
                 }
             }
             ListElement {
+                name: "Auto Launch"
+                category: "Launch"
+                target: "autoLaunch"
+                isEnabled: function() {
+                    if(!targetItem) return false
+
+                    return targetItem.children.length === 0
+                }
+            }
+            ListElement {
                 name: "Window Title"
                 category: "Auto Grab"
                 target: "autoGrabTitle"
@@ -131,20 +141,50 @@ Rectangle {
                     text: name
                 }
 
-                TextField {
-                    id: nameField
+                Loader {
+                    active: {
+                        if(!targetItem) return false
+                        return typeof targetItem[target] === "boolean"
+                    }
+
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: nameLabel.right
+
+                    sourceComponent: CheckBox {
+                        id: nameField
+
+                        enabled: isEnabled()
+
+                        checked: targetItem ? targetItem[target] : false
+                        onCheckedChanged: {
+                            if(!targetItem) return
+                            targetItem[target] = checked
+                        }
+                    }
+                }
+
+                Loader {
+                    active: {
+                        if(!targetItem) return false
+                        return typeof targetItem[target] === "string"
+                    }
 
                     anchors.top: parent.top
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     anchors.left: nameLabel.right
 
-                    enabled: isEnabled()
+                    sourceComponent: TextField {
+                        id: nameField
 
-                    text: targetItem ? targetItem[target] : ""
-                    onEditingFinished: {
-                        if(!targetItem) return
-                        targetItem[target] = text
+                        enabled: isEnabled()
+
+                        text: targetItem ? targetItem[target] : ""
+                        onEditingFinished: {
+                            if(!targetItem) return
+                            targetItem[target] = text
+                        }
                     }
                 }
             }

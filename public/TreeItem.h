@@ -44,6 +44,7 @@ class TreeItem : public WMObject
 
 	Q_PROPERTY(QString launchUri MEMBER m_launchUri NOTIFY launchUriChanged)
 	Q_PROPERTY(QString launchParams MEMBER m_launchParams NOTIFY launchParamsChanged)
+	Q_PROPERTY(bool autoLaunch MEMBER m_autoLaunch NOTIFY autoLaunchChanged)
 
 	Q_PROPERTY(QString autoGrabTitle MEMBER m_autoGrabTitle NOTIFY autoGrabTitleChanged)
 	Q_PROPERTY(QString autoGrabClass MEMBER m_autoGrabClass NOTIFY autoGrabClassChanged)
@@ -119,6 +120,7 @@ signals:
 
 	void launchUriChanged();
 	void launchParamsChanged();
+	void autoLaunchChanged();
 
 	void autoGrabTitleChanged();
 	void autoGrabClassChanged();
@@ -159,6 +161,7 @@ private:
 
 	QString m_launchUri;
 	QString m_launchParams;
+	bool m_autoLaunch;
 
 	QString m_autoGrabTitle;
 	QString m_autoGrabClass;
@@ -168,6 +171,7 @@ private:
 	// Trasient properties
 	TreeItem* m_activeChild;
 	bool m_isAnimating;
+	bool m_wantsAutoLaunch;
 
 	QQuickWindow* m_itemWindow;
 	QQuickWindow* m_headerWindow;

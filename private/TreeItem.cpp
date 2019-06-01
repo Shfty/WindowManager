@@ -24,8 +24,10 @@ TreeItem::TreeItem(QObject* parent)
 : WMObject(parent)
 , m_monitorIndex(-1)
 , m_windowInfo(nullptr)
+, m_autoLaunch(false)
 , m_activeChild(nullptr)
 , m_isAnimating(false)
+, m_wantsAutoLaunch(false)
 , m_itemWindow(nullptr)
 , m_headerWindow(nullptr)
 {
@@ -589,6 +591,7 @@ QJsonObject TreeItem::toJsonObject() const
 		{"hwnd", reinterpret_cast<qlonglong>(hwnd)},
 		{"launchUri", m_launchUri},
 		{"launchParams", m_launchParams},
+		{"autoLaunch", m_autoLaunch},
 		{"autoGrabTitle", m_autoGrabTitle},
 		{"autoGrabClass", m_autoGrabClass}
 	};
@@ -670,11 +673,17 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 
 	m_launchUri = jsonObject.value("launchUri").toString();
 	m_launchParams = jsonObject.value("launchParams").toString();
+	m_autoLaunch = jsonObject.value("autoLaunch").toBool();
 
 	m_autoGrabTitle = jsonObject.value("autoGrabTitle").toString();
 	m_autoGrabClass = jsonObject.value("autoGrabClass").toString();
 
 	tryAutoGrabWindow();
+
+	if(m_autoLaunch && m_windowInfo == nullptr)
+	{
+		launch();
+	}
 
 	QJsonArray childArray = jsonObject.value("children").toArray();
 	for(int i = 0; i < childArray.count(); ++i)
