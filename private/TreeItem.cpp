@@ -610,7 +610,19 @@ void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 		// Restore style
 		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
 
-		// TODO: Position on monitor
+		/* TODO: Re-enable when quit handling is refactored
+		// Center on monitor
+		QScreen* monitor = getMonitor();
+
+		QRect geo = monitor->geometry();
+		int qWidth = geo.width() / 4;
+		int qHeight = geo.height() / 4;
+		geo.adjust(qWidth, qHeight, -qWidth, -qHeight);
+
+		emit beginMoveWindows();
+		emit moveWindow(m_windowInfo->getHwnd(), geo.topLeft(), geo.size(), -2LL);
+		emit endMoveWindows();
+		*/
 	}
 
 	// Assign new window
