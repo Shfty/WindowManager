@@ -15,7 +15,7 @@ class EnumWindowsThread : public QThread
 		void startProcess();
 
 	signals:
-		void windowAdded(HWND window, QString winTitle, QString winClass);
+		void windowAdded(HWND window, QString winTitle, QString winClass, QString winProcess);
 		void windowTitleChanged(HWND window, QString title);
 		void windowRemoved(HWND window);
 		void windowScanFinished();

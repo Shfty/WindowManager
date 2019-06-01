@@ -18,5 +18,6 @@
         <file>qml/overlays/PowerMenuOverlay.qml</file>
         <file>qml/overlays/WindowListOverlay.qml</file>
         <file>qml/tree/RecursiveDelegate.qml</file>
+        <file>qml/config/AppIcon.qml</file>
     </qresource>
 </RCC>

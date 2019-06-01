@@ -69,11 +69,13 @@ Item {
 
         color: appCore.settingsContainer.colorContainerPlaceholder
 
-        Image {
+        AppIcon {
+            id: icon
+
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            visible: model ? model.launchUri !== "" : false
-            source: "image://treeIcon/" + model.launchUri
+
+            model: itemWrapper.model
         }
     }
 

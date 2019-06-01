@@ -82,8 +82,20 @@ void EnumWindowsThread::run()
 			}
 			else
 			{
+
+				DWORD dwProcId = 0;
+				GetWindowThreadProcessId(hwnd, &dwProcId);
+
+				HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ , FALSE, dwProcId);
+				wchar_t buffer[MAX_PATH];
+				GetModuleFileNameEx((HMODULE)hProc, NULL, buffer, MAX_PATH);
+				CloseHandle(hProc);
+
+				QString winProcess = QString::fromStdWString(buffer);
+				winProcess.replace("\\", "/");
+
 				m_windowMap.insert(hwnd, winTitle);
-				emit windowAdded(hwnd, winTitle, winClass);
+				emit windowAdded(hwnd, winTitle, winClass, winProcess);
 			}
 		}
 

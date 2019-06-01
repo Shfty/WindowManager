@@ -7,6 +7,7 @@
 #include "processthreadsapi.h"
 #include "powrprof.h"
 #include "dwmapi.h"
+#include "Psapi.h"
 
 #undef HWND_TOP
 #undef HWND_BOTTOM

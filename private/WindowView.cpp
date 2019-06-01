@@ -21,7 +21,7 @@ WindowView::WindowView(QObject* parent)
 
 	m_placeholder->setProperty("winTitle", "[Container]");
 
-	connect(m_thread, SIGNAL(windowAdded(HWND, QString, QString)), this, SLOT(onWindowAdded(HWND, QString, QString)));
+	connect(m_thread, SIGNAL(windowAdded(HWND, QString, QString, QString)), this, SLOT(onWindowAdded(HWND, QString, QString, QString)));
 	connect(m_thread, SIGNAL(windowTitleChanged(HWND, QString)), this, SLOT(onWindowTitleChanged(HWND, QString)));
 	connect(m_thread, SIGNAL(windowRemoved(HWND)), this, SLOT(onWindowRemoved(HWND)));
 	connect(m_thread, SIGNAL(windowScanFinished()), this, SIGNAL(windowScanFinished()));
@@ -132,12 +132,13 @@ HWND WindowView::findWindow(QString winTitle, QString winClass, HWND after, HWND
 	return FindWindowEx(parent, after, (LPCWSTR)winClass.utf16(), (LPCWSTR)winTitle.utf16());
 }
 
-void WindowView::onWindowAdded(HWND hwnd, QString winTitle, QString winClass)
+void WindowView::onWindowAdded(HWND hwnd, QString winTitle, QString winClass, QString winProcess)
 {
 	WindowInfo* winInfo = new WindowInfo(this);
 	winInfo->setProperty("hwnd", QVariant::fromValue<HWND>(hwnd));
 	winInfo->setProperty("winTitle", winTitle);
 	winInfo->setProperty("winClass", winClass);
+	winInfo->setProperty("winProcess", winProcess);
 
 	m_windowMap.insert(hwnd, winInfo);
 	emit windowListChanged();

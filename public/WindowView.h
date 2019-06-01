@@ -44,7 +44,7 @@ signals:
 	void screenListChanged();
 
 public slots:
-	void onWindowAdded(HWND hwnd, QString title, QString winClass);
+	void onWindowAdded(HWND hwnd, QString title, QString winClass, QString winProcess);
 	void onWindowTitleChanged(HWND hwnd, QString title);
 	void onWindowRemoved(HWND hwnd);
 

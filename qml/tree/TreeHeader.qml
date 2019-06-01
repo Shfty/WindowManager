@@ -88,14 +88,35 @@ Item {
         anchors.left: launchButton.right
         anchors.right: buttonLayout.left
         height: appCore.settingsContainer.headerSize
+        padding: 7
 
         enabled: model.children.length === 0
 
-        contentItem: Label {
-            text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignHLeft
-            verticalAlignment: Text.AlignVCenter
+        contentItem: Item {
+            AppIcon {
+                id: icon
+
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                height: parent.height
+                width: icon.height
+
+                model: nestedHeader.model
+            }
+
+            Label {
+                anchors.top: parent.top
+                anchors.left: icon.right
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                anchors.leftMargin: 7
+
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHLeft
+                verticalAlignment: Text.AlignVCenter
+
+                text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
+            }
         }
 
         onClicked: {

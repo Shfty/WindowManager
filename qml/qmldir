@@ -5,6 +5,7 @@ DetailView 1.0 config/DetailView.qml
 TreeTab 1.0 config/TreeTab.qml
 WindowList 1.0 config/WindowList.qml
 SettingsTab 1.0 config/SettingsTab.qml
+AppIcon 1.0 config/AppIcon.qml
 
 WindowListOverlay 1.0 overlays/WindowListOverlay.qml
 PowerMenuOverlay 1.0 overlays/PowerMenuOverlay.qml
