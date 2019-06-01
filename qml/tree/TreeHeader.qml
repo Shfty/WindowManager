@@ -88,40 +88,37 @@ Item {
         anchors.left: launchButton.right
         anchors.right: buttonLayout.left
         height: appCore.settingsContainer.headerSize
-        padding: 7
 
         enabled: model.children.length === 0
-
-        contentItem: Item {
-            AppIcon {
-                id: icon
-
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                height: parent.height
-                width: icon.height
-
-                model: nestedHeader.model
-            }
-
-            Label {
-                anchors.top: parent.top
-                anchors.left: icon.right
-                anchors.bottom: parent.bottom
-                anchors.right: parent.right
-                anchors.leftMargin: 7
-
-                elide: Text.ElideRight
-                horizontalAlignment: Text.AlignHLeft
-                verticalAlignment: Text.AlignVCenter
-
-                text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
-            }
-        }
+        text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
 
         onClicked: {
             var pos = windowSelectButton.mapToGlobal(0, windowSelectButton.height)
             appCore.windowListOverlay.toggle(model, pos.x, pos.y, windowSelectButton.width)
+        }
+
+        contentItem: Label {
+            anchors.left: parent.left
+            anchors.leftMargin: iconImage.width + (windowSelectButton.padding * 2)
+            anchors.right: parent.right
+
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHLeft
+            verticalAlignment: Text.AlignVCenter
+
+            text: parent.text
+        }
+
+        AppIcon {
+            id: iconImage
+
+            anchors.left: parent.left
+            anchors.leftMargin: parent.padding
+            anchors.verticalCenter: parent.verticalCenter
+
+            sourceSize: Qt.size(parent.height - parent.padding, parent.height - parent.padding)
+
+            model: nestedHeader.model
         }
     }
 
@@ -191,7 +188,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Add Child")
 
-            width: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -220,7 +217,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Left")
 
-            width: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -258,7 +255,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Move Right")
 
-            width: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -294,7 +291,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Swap")
 
-            width: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -369,7 +366,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Close")
 
-            width: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -392,6 +389,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Tray")
 
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"

@@ -57,3 +57,9 @@ void WindowController::hideWindow(HWND hwnd)
 
 	ShowWindow(hwnd, SW_HIDE);
 }
+
+void WindowController::setWindowStyle(HWND hwnd, qint32 style)
+{
+	SetWindowLong(hwnd, GWL_STYLE, style);
+	SetWindowPos(hwnd, hwnd, NULL, NULL, NULL, NULL, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}

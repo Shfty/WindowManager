@@ -101,14 +101,14 @@ AppCore::AppCore(QObject* parent)
 	itemSettingsOverlayChanged();
 
 	// Connections
-	connect(QGuiApplication::instance(), SIGNAL(aboutToQuit()), this, SLOT(save()));
-	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
-}
+	connect(QGuiApplication::instance(), &QGuiApplication::aboutToQuit, [=](){
+		save();
 
-AppCore::~AppCore()
-{
-	m_windowControllerThread.quit();
-	m_windowControllerThread.wait();
+		m_windowControllerThread.quit();
+		m_windowControllerThread.wait();
+	});
+
+	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 }
 
 void AppCore::windowManagerReady()

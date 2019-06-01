@@ -22,14 +22,18 @@ QPixmap TreeIconImageProvider::requestPixmap(const QString& id, QSize* size, con
 	{
 		qreal minReq = qMin(requestedSize.width(), requestedSize.height());
 
-		// TODO: Find closest available size and assign here
-		outSize = availableSizes.last();
+		std::sort(availableSizes.begin(), availableSizes.end(), [=](const QSize& lhs, const QSize& rhs) -> bool {
+			qreal minLhs = qMin(lhs.width(), lhs.height());
+			qreal minRhs = qMin(rhs.width(), rhs.height());
+
+			qreal deltaLhs = qAbs(minReq - minLhs);
+			qreal deltaRhs = qAbs(minReq - minRhs);
+
+			return deltaLhs > deltaRhs;
+		});
 	}
-	else
-	{
-		// Use last (largest) size
-		outSize = availableSizes.last();
-	}
+
+	outSize = availableSizes.last();
 
 	size->setWidth(outSize.width());
 	size->setHeight(outSize.height());

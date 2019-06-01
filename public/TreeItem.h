@@ -40,15 +40,21 @@ class TreeItem : public WMObject
 	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
 	Q_PROPERTY(QRectF contentBounds READ getContentBoundsLocal() NOTIFY contentBoundsChanged)
 
-	Q_PROPERTY(WindowInfo* windowInfo MEMBER m_windowInfo NOTIFY windowInfoChanged)
+	Q_PROPERTY(WindowInfo* windowInfo READ getWindowInfo WRITE setWindowInfo NOTIFY windowInfoChanged)
 
+	// Node Options
+	Q_PROPERTY(bool borderless MEMBER m_borderless NOTIFY borderlessChanged)
+
+	// Launch Options
 	Q_PROPERTY(QString launchUri MEMBER m_launchUri NOTIFY launchUriChanged)
 	Q_PROPERTY(QString launchParams MEMBER m_launchParams NOTIFY launchParamsChanged)
 	Q_PROPERTY(bool autoLaunch MEMBER m_autoLaunch NOTIFY autoLaunchChanged)
 
+	// Auto Grab Options
 	Q_PROPERTY(QString autoGrabTitle MEMBER m_autoGrabTitle NOTIFY autoGrabTitleChanged)
 	Q_PROPERTY(QString autoGrabClass MEMBER m_autoGrabClass NOTIFY autoGrabClassChanged)
 
+	// Misc
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
 	Q_PROPERTY(bool isVisible READ getIsVisible NOTIFY isVisibleChanged)
 
@@ -94,6 +100,9 @@ public:
 	void moveChild(TreeItem* child, int delta);
 	Q_INVOKABLE void moveChild(int fromIndex, int toIndex);
 
+	WindowInfo* getWindowInfo() const { return m_windowInfo; }
+	void setWindowInfo(WindowInfo* newWindowInfo);
+
 	QJsonObject toJsonObject() const;
 	void loadFromJson(QJsonObject jsonObject);
 
@@ -117,6 +126,8 @@ signals:
 
 	void monitorChanged();
 	void windowInfoChanged();
+
+	void borderlessChanged();
 
 	void launchUriChanged();
 	void launchParamsChanged();
@@ -158,6 +169,8 @@ private:
 	QString m_layout;
 	int m_monitorIndex;
 	WindowInfo* m_windowInfo;
+
+	bool m_borderless;
 
 	QString m_launchUri;
 	QString m_launchParams;

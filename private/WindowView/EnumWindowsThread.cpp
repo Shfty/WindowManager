@@ -94,8 +94,10 @@ void EnumWindowsThread::run()
 				QString winProcess = QString::fromStdWString(buffer);
 				winProcess.replace("\\", "/");
 
+				qint32 winStyle = GetWindowLong(hwnd, GWL_STYLE);
+
 				m_windowMap.insert(hwnd, winTitle);
-				emit windowAdded(hwnd, winTitle, winClass, winProcess);
+				emit windowAdded(hwnd, winTitle, winClass, winProcess, winStyle);
 			}
 		}
 

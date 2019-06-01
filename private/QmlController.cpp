@@ -53,11 +53,6 @@ QmlController::QmlController(QObject* parent)
 	connect(m_qmlEngine, SIGNAL(quit()), QGuiApplication::instance(), SLOT(quit()));
 }
 
-QmlController::~QmlController()
-{
-
-}
-
 QQmlContext* QmlController::getRootContext() const
 {
 	if(m_qmlEngine != nullptr)

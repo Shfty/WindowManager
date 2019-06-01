@@ -9,8 +9,6 @@
 
 #include "WindowInfo.h"
 
-class EnumWindowsThread;
-
 class WindowController : public QObject
 {
 	Q_OBJECT
@@ -25,6 +23,8 @@ public slots:
 
 	void showWindow(HWND hwnd);
 	void hideWindow(HWND hwnd);
+
+	void setWindowStyle(HWND hwnd, qint32 style);
 
 private:
 	HDWP m_dwp;

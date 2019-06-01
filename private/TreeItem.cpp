@@ -24,6 +24,7 @@ TreeItem::TreeItem(QObject* parent)
 : WMObject(parent)
 , m_monitorIndex(-1)
 , m_windowInfo(nullptr)
+, m_borderless(false)
 , m_autoLaunch(false)
 , m_activeChild(nullptr)
 , m_isAnimating(false)
@@ -52,12 +53,38 @@ TreeItem::TreeItem(QObject* parent)
 		if(m_windowInfo != nullptr)
 		{
 			connect(m_windowInfo, &QObject::destroyed, [=]() {
-				m_windowInfo = nullptr;
-				windowInfoChanged();
+				setWindowInfo(nullptr);
 			});
 		}
 	});
+
 	connect(this, SIGNAL(windowInfoChanged()), this, SLOT(moveWindowOnscreen()));
+
+	connect(this, &TreeItem::borderlessChanged, [=]() {
+		if(m_windowInfo != nullptr)
+		{
+			WindowController* wc = getWindowController();
+			if(m_borderless)
+			{
+				qint32 winStyle = m_windowInfo->getWinStyle();
+				winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+				wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
+			}
+			else
+			{
+				wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
+			}
+
+			if(getIsVisible())
+			{
+				moveWindowOnscreen();
+			}
+			else
+			{
+				moveWindowOffscreen();
+			}
+		}
+	});
 
 	connect(this, &TreeItem::isAnimatingChanged, [=]() {
 		if(m_isAnimating)
@@ -573,6 +600,43 @@ void TreeItem::moveChild(int fromIndex, int toIndex)
 	moveChild(child, delta);
 }
 
+void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
+{
+	WindowController* wc = getWindowController();
+
+	// Cleanup old window
+	if(m_windowInfo != nullptr)
+	{
+		// Restore style
+		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
+
+		// TODO: Position on monitor
+	}
+
+	// Assign new window
+	m_windowInfo = newWindowInfo;
+	windowInfoChanged();
+
+	// Setup new window
+	if(m_windowInfo)
+	{
+		if(m_borderless)
+		{
+			qint32 winStyle = m_windowInfo->getWinStyle();
+			winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+			wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
+
+			if(getIsVisible())
+			{
+				moveWindowOnscreen();
+			}
+			else {
+				moveWindowOffscreen();
+			}
+		}
+	}
+}
+
 QJsonObject TreeItem::toJsonObject() const
 {
 	HWND hwnd = nullptr;
@@ -589,6 +653,7 @@ QJsonObject TreeItem::toJsonObject() const
 		{"layout", m_layout},
 		{"monitorIndex", m_monitorIndex},
 		{"hwnd", reinterpret_cast<qlonglong>(hwnd)},
+		{"borderless", m_borderless},
 		{"launchUri", m_launchUri},
 		{"launchParams", m_launchParams},
 		{"autoLaunch", m_autoLaunch},
@@ -665,11 +730,18 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 
 	WindowView* wv = getWindowView();
 	HWND loadedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
-	m_windowInfo = wv->getWindowInfo(loadedHwnd);
+	setWindowInfo(wv->getWindowInfo(loadedHwnd));
 
 	connect(this, SIGNAL(autoGrabTitleChanged()), this, SLOT(tryAutoGrabWindow()));
 	connect(this, SIGNAL(autoGrabClassChanged()), this, SLOT(tryAutoGrabWindow()));
-	connect(wv, SIGNAL(windowListChanged()), this, SLOT(tryAutoGrabWindow()));
+	connect(wv, &WindowView::windowListChanged, [=](){
+		if(m_windowInfo == nullptr)
+		{
+			tryAutoGrabWindow();
+		}
+	});
+
+	m_borderless = jsonObject.value("borderless").toBool();
 
 	m_launchUri = jsonObject.value("launchUri").toString();
 	m_launchParams = jsonObject.value("launchParams").toString();
@@ -807,14 +879,14 @@ void TreeItem::tryAutoGrabWindow()
 
 	if(foundWindow != nullptr)
 	{
-		m_windowInfo = foundWindow;
-		windowInfoChanged();
+		setWindowInfo(foundWindow);
 	}
+	/*
 	else if(false && m_windowInfo != nullptr)
 	{
-		m_windowInfo = nullptr;
-		windowInfoChanged();
+		setWindowInfo(nullptr);
 	}
+	*/
 }
 
 SettingsContainer* TreeItem::getSettingsContainer()

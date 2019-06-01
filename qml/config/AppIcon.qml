@@ -3,6 +3,8 @@ import QtQuick 2.12
 Image {
     property var model: null
 
+    asynchronous: true
+
     source: {
         if(model && model.windowInfo)
         {

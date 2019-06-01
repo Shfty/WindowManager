@@ -68,6 +68,14 @@ Rectangle {
                 }
             }
             ListElement {
+                name: "Borderless"
+                category: "Node"
+                target: "borderless"
+                isEnabled: function() {
+                    return true
+                }
+            }
+            ListElement {
                 name: "URI"
                 category: "Launch"
                 target: "launchUri"

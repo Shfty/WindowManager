@@ -15,7 +15,6 @@ class QmlController : public WMObject
 
 	public:
 		explicit QmlController(QObject* parent = nullptr);
-		~QmlController();
 
 		QQmlContext* getRootContext() const;
 		QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);

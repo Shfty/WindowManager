@@ -33,7 +33,6 @@ class AppCore : public QObject
 
 public:
 	explicit AppCore(QObject* parent = nullptr);
-	~AppCore();
 
 	QQuickItem* getWindowListOverlay();
 	QQuickItem* getPowerMenuOverlay();

@@ -14,10 +14,21 @@ ListView {
         width: parent.width
 
         contentItem: Label {
+            Image {
+                id: iconImage
+
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+
+                sourceSize: Qt.size(parent.height, parent.height)
+
+                source: "image://treeIcon/" + modelData.winProcess
+            }
             Label {
                 id: titleText
 
-                anchors.left: parent.left
+                anchors.left: iconImage.right
+                anchors.leftMargin: itemControl.padding
 
                 text: modelData.winTitle
                 font: itemControl.font

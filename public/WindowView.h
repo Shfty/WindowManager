@@ -20,7 +20,6 @@ class WindowView : public QObject
 
 public:
 	explicit WindowView(QObject* parent = nullptr);
-	~WindowView();
 
 	WindowInfo* getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
 
@@ -44,7 +43,7 @@ signals:
 	void screenListChanged();
 
 public slots:
-	void onWindowAdded(HWND hwnd, QString title, QString winClass, QString winProcess);
+	void onWindowAdded(HWND hwnd, QString title, QString winClass, QString winProcess, qint32 winStyle);
 	void onWindowTitleChanged(HWND hwnd, QString title);
 	void onWindowRemoved(HWND hwnd);
 
