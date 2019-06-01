@@ -4,6 +4,7 @@ autosave.dat
 autosave.json
 build
 Makefile*
+TODO
 *.pdb
 *.pro.user
 *.bak
