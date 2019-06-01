@@ -5,6 +5,7 @@
 #include "SettingsContainer.h"
 #include "TreeItem.h"
 #include "WindowController.h"
+#include "TreeIconImageProvider.h"
 
 #include <QQmlEngine>
 #include <QQmlContext>
@@ -46,6 +47,8 @@ QmlController::QmlController(QObject* parent)
 
 	static PeriodicIncubationController inc;
 	m_qmlEngine->setIncubationController(&inc);
+
+	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
 
 	connect(m_qmlEngine, SIGNAL(quit()), QGuiApplication::instance(), SLOT(quit()));
 }

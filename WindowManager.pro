@@ -35,6 +35,7 @@ HEADERS += \
 	public/QmlController.h \
 	public/SettingsContainer.h \
 	public/SystemWindow.h \
+	public/TreeIconImageProvider.h \
 	public/TreeItem.h \
 	public/WMObject.h \
 	public/Win.h \
@@ -54,6 +55,7 @@ SOURCES += \
 	private/QmlController.cpp \
 	private/SettingsContainer.cpp \
 	private/SystemWindow.cpp \
+	private/TreeIconImageProvider.cpp \
 	private/TreeItem.cpp \
 	private/WMObject.cpp \
 	private/WinShellController.cpp \

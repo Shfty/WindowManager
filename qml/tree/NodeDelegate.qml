@@ -68,6 +68,13 @@ Item {
         visible: model ? model.depth > 1 : false
 
         color: appCore.settingsContainer.colorContainerPlaceholder
+
+        Image {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            visible: model ? model.launchUri !== "" : false
+            source: "image://treeIcon/" + model.launchUri
+        }
     }
 
     DWMThumbnail {
