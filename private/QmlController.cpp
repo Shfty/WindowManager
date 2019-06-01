@@ -1,6 +1,7 @@
 #include "QmlController.h"
 #include "Win.h"
 
+#include "AppCore.h"
 #include "DWMThumbnail.h"
 #include "SettingsContainer.h"
 #include "TreeItem.h"
@@ -50,7 +51,16 @@ QmlController::QmlController(QObject* parent)
 
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
 
-	connect(m_qmlEngine, SIGNAL(quit()), QGuiApplication::instance(), SLOT(quit()));
+	connect(m_qmlEngine, &QQmlEngine::quit, this, &QmlController::cleanup);
+}
+
+void QmlController::cleanup()
+{
+	while(m_windows.length() > 0)
+	{
+		QQuickWindow* window = m_windows.takeLast();
+		window->close();
+	}
 }
 
 QQmlContext* QmlController::getRootContext() const
@@ -68,7 +78,6 @@ QQuickWindow* QmlController::createWindow(QUrl url, QRect geometry, QQmlContext*
 
 	QQuickWindow* newWindow = new QQuickWindow();
 	newWindow->setGeometry(geometry);
-	connect(QGuiApplication::instance(), SIGNAL(aboutToQuit()), newWindow, SLOT(deleteLater()));
 
 	QQmlComponent component(m_qmlEngine, url);
 	qDebug() << component.errors();
@@ -77,6 +86,8 @@ QQuickWindow* QmlController::createWindow(QUrl url, QRect geometry, QQmlContext*
 	QQuickItem* newItem = qobject_cast<QQuickItem*>(component.create(parentContext));
 	newItem->setParent(newWindow);
 	newItem->setParentItem(newWindow->contentItem());
+
+	m_windows.append(newWindow);
 
 	return newWindow;
 }

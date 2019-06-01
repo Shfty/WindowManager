@@ -152,7 +152,7 @@ void WindowView::onWindowTitleChanged(HWND hwnd, QString newTitle)
 
 void WindowView::onWindowRemoved(HWND hwnd)
 {
-	m_windowMap.value(hwnd)->deleteLater();
+	m_windowMap.value(hwnd)->windowClosed();
 	m_windowMap.remove(hwnd);
 	emit windowListChanged();
 }

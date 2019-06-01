@@ -15,7 +15,14 @@ WinShellController::WinShellController(QObject* parent)
 	qRegisterMetaType<WinShellController*>();
 	setObjectName("Windows Shell Controller");
 
-	connect(QGuiApplication::instance(), SIGNAL(aboutToQuit()), m_trayIcon, SLOT(hide()));
+	m_trayIcon->show();
+	m_taskBarWindow->hide();
+}
+
+void WinShellController::cleanup()
+{
+	m_trayIcon->hide();
+	m_taskBarWindow->show();
 }
 
 void WinShellController::showTrayIconWindow(QPointF position, QSizeF size)

@@ -8,9 +8,5 @@ TaskBarWindow::TaskBarWindow(QObject* parent)
 	setObjectName("TaskBar Window");
 
 	m_windowClass = "Shell_TrayWnd";
-	hide();
-
-	connect(QGuiApplication::instance(), &QGuiApplication::aboutToQuit, [=]() {
-		show();
-	});
 }
+

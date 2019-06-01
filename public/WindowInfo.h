@@ -30,6 +30,7 @@ signals:
 	void winClassChanged();
 	void winProcessChanged();
 	void winStyleChanged();
+	void windowClosed();
 
 private:
 	HWND m_hwnd;

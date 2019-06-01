@@ -52,7 +52,7 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, &TreeItem::windowInfoChanged, [=]() {
 		if(m_windowInfo != nullptr)
 		{
-			connect(m_windowInfo, &QObject::destroyed, [=]() {
+			connect(m_windowInfo, &WindowInfo::windowClosed, [=]() {
 				setWindowInfo(nullptr);
 			});
 		}
@@ -610,7 +610,6 @@ void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 		// Restore style
 		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
 
-		/* TODO: Re-enable when quit handling is refactored
 		// Center on monitor
 		QScreen* monitor = getMonitor();
 
@@ -622,7 +621,6 @@ void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 		emit beginMoveWindows();
 		emit moveWindow(m_windowInfo->getHwnd(), geo.topLeft(), geo.size(), -2LL);
 		emit endMoveWindows();
-		*/
 	}
 
 	// Assign new window

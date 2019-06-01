@@ -19,8 +19,12 @@ class QmlController : public WMObject
 		QQmlContext* getRootContext() const;
 		QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);
 
+		void cleanup();
+
 	private:
 		QQmlEngine* m_qmlEngine;
+
+		QList<QQuickWindow*> m_windows;
 };
 
 #endif // QMLCONTROLLER_H

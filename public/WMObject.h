@@ -8,14 +8,15 @@ class AppCore;
 class WMObject : public QObject
 {
 		Q_OBJECT
-	public:
-		explicit WMObject(QObject *parent = nullptr);
+public:
+	explicit WMObject(QObject *parent = nullptr);
 
-	protected:
-		AppCore* getAppCore() const { return m_appCore; }
 
-	private:
-		AppCore* m_appCore;
+protected:
+	AppCore* getAppCore() const { return m_appCore; }
+
+private:
+	AppCore* m_appCore;
 };
 
 #endif // WMOBJECT_H

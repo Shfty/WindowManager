@@ -16,6 +16,8 @@ class WinShellController : public WMObject
 public:
 	explicit WinShellController(QObject* parent = nullptr);
 
+	void cleanup();
+
 public slots:
 	void showTrayIconWindow(QPointF position, QSizeF size);
 

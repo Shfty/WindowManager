@@ -9,8 +9,6 @@ TrayIcon::TrayIcon(QObject* parent)
 	setToolTip("Window Manager");
 
 	QObject::connect(this, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(onActivated(QSystemTrayIcon::ActivationReason)));
-	
-	show();
 }
 
 void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason)

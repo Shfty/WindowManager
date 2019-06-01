@@ -8,4 +8,6 @@ WindowInfo::WindowInfo(QObject* parent)
 	, m_winProcess("")
 {
 	setObjectName("Window Info");
+
+	connect(this, &WindowInfo::windowClosed, this, &WindowInfo::deleteLater);
 }

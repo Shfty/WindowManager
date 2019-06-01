@@ -31,6 +31,9 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<QScreen*>();
 
 	QGuiApplication app(argc, argv);
+	app.setQuitOnLastWindowClosed(false);
+
 	AppCore appCore;
+
 	return app.exec();
 }

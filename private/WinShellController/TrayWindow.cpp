@@ -6,5 +6,7 @@
 TrayWindow::TrayWindow(QObject* parent)
 	: SystemWindow(parent)
 {
+	setObjectName("Tray Window");
+
 	m_windowClass = "NotifyIconOverflowWindow";
 }

@@ -101,14 +101,20 @@ AppCore::AppCore(QObject* parent)
 	itemSettingsOverlayChanged();
 
 	// Connections
-	connect(QGuiApplication::instance(), &QGuiApplication::aboutToQuit, [=](){
-		save();
+	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 
+	QGuiApplication* app = static_cast<QGuiApplication*>(QGuiApplication::instance());
+	connect(app, &QGuiApplication::lastWindowClosed, [=](){
+		save();
+		m_winShellController->cleanup();
+
+		QGuiApplication::quit();
+	});
+
+	connect(app, &QGuiApplication::aboutToQuit, [=](){
 		m_windowControllerThread.quit();
 		m_windowControllerThread.wait();
 	});
-
-	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 }
 
 void AppCore::windowManagerReady()
@@ -129,20 +135,20 @@ void AppCore::save()
 
 void AppCore::shutdown()
 {
+	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_SHUTDOWN, 0);
-	QGuiApplication::quit();
 }
 
 void AppCore::restart()
 {
+	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_REBOOT, 0);
-	QGuiApplication::quit();
 }
 
 void AppCore::sleep()
 {
+	m_qmlController->cleanup();
 	SetSuspendState(true, false, false);
-	QGuiApplication::quit();
 }
 
 void AppCore::elevatePrivileges()
