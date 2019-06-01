@@ -31,8 +31,11 @@ Rectangle {
     function hide() {
         var offscreen = appCore.windowView.getOffscreenArea()
 
-        Window.window.x = offscreen.x
-        Window.window.y = offscreen.y
+        if(Window.window)
+        {
+            Window.window.x = offscreen.x
+            Window.window.y = offscreen.y
+        }
 
         isVisible = false
     }
