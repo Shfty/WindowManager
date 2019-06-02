@@ -24,9 +24,9 @@ Rectangle {
     function show(newTargetItem, x, y) {
         targetItem = newTargetItem
 
+        Window.window.height = settingsMenu.contentHeight
         Window.window.x = x
         Window.window.y = y
-        Window.window.height = settingsMenu.contentHeight
         Window.window.requestActivate()
 
         isVisible = true

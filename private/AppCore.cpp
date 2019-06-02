@@ -28,7 +28,7 @@ AppCore::AppCore(QObject* parent)
 	, m_settingsContainer(nullptr)
 	, m_qmlController(nullptr)
 	, m_rootItem(nullptr)
-	, m_configWindow(nullptr)
+	, m_configOverlay(nullptr)
 	, m_windowListOverlay(nullptr)
 	, m_powerMenuOverlay(nullptr)
 	, m_itemSettingsOverlay(nullptr)
@@ -64,8 +64,15 @@ AppCore::AppCore(QObject* parent)
 	qmlControllerChanged();
 
 	// Config Window
-	m_configWindow = m_qmlController->createWindow(QUrl("qrc:/qml/config/ConfigWindow.qml"), QRect(0, 0, 1280, 720));
-	configWindowChanged();
+	m_configOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ConfigOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(1280, 720)));
+	m_configOverlay->setColor(Qt::transparent);
+	m_configOverlay->setFlags(m_configOverlay->flags() | static_cast<Qt::WindowFlags>(
+		Qt::WA_TranslucentBackground |
+		Qt::FramelessWindowHint |
+		Qt::WindowStaysOnTopHint
+	));
+	m_configOverlay->show();
+	configOverlayChanged();
 
 	// Window List Overlay
 	m_windowListOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/WindowListOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(640, 480)));
@@ -81,7 +88,7 @@ AppCore::AppCore(QObject* parent)
 	// Power Menu Overlay
 	m_powerMenuOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/PowerMenuOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(120, 150)));
 	m_powerMenuOverlay->setColor(Qt::transparent);
-	m_powerMenuOverlay->setFlags(m_windowListOverlay->flags() | static_cast<Qt::WindowFlags>(
+	m_powerMenuOverlay->setFlags(m_powerMenuOverlay->flags() | static_cast<Qt::WindowFlags>(
 		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
@@ -92,7 +99,7 @@ AppCore::AppCore(QObject* parent)
 	// Item Settings Overlay
 	m_itemSettingsOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ItemSettingsOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(640, 480)));
 	m_itemSettingsOverlay->setColor(Qt::transparent);
-	m_itemSettingsOverlay->setFlags(m_windowListOverlay->flags() | static_cast<Qt::WindowFlags>(
+	m_itemSettingsOverlay->setFlags(m_itemSettingsOverlay->flags() | static_cast<Qt::WindowFlags>(
 		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
@@ -171,6 +178,11 @@ void AppCore::elevatePrivileges()
 QQuickItem* AppCore::getWindowListOverlay()
 {
 	return m_windowListOverlay->findChild<QQuickItem*>("WindowListOverlay");
+}
+
+QQuickItem* AppCore::getConfigOverlay()
+{
+	return m_configOverlay->findChild<QQuickItem*>("ConfigOverlay");
 }
 
 QQuickItem* AppCore::getPowerMenuOverlay()

@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 	Q_INIT_RESOURCE(graphics);
 
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	QQuickStyle::setStyle("Universal");
+	QGuiApplication::setAttribute(Qt::AA_UseOpenGLES); // Force OpenGL ES to prevent crashes on windows
 
 	// Setup QML renderer
 	QString productType = QSysInfo::productType();
@@ -21,11 +21,8 @@ int main(int argc, char *argv[])
 	{
 		QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Direct3D12);
 	}
-	else
-	{
-		// Force OpenGL ES to prevent crashes on windows
-		QGuiApplication::setAttribute(Qt::AA_UseOpenGLES);
-	}
+
+	QQuickStyle::setStyle("Universal");
 
 	qRegisterMetaType<HWND>();
 	qRegisterMetaType<QScreen*>();

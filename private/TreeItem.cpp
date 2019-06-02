@@ -112,8 +112,6 @@ void TreeItem::cleanupWindow(WindowInfo* wi)
 {
 	if(wi != nullptr)
 	{
-		WindowController* wc = getWindowController();
-
 		disconnect(wi, SIGNAL(windowClosed()));
 
 		// Restore style
@@ -137,8 +135,6 @@ void TreeItem::setupWindow(WindowInfo* wi)
 {
 	if(m_windowInfo)
 	{
-		WindowController* wc = getWindowController();
-
 		connect(wi, &WindowInfo::windowClosed, [=](){
 			setWindowInfo(nullptr);
 		});

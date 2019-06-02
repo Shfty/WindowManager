@@ -1,12 +1,13 @@
-ConfigWindow 1.0 config/ConfigWindow.qml
 ConfigView 1.0 config/ConfigView.qml
 ConfigDelegate 1.0 config/ConfigDelegate.qml
 DetailView 1.0 config/DetailView.qml
 TreeTab 1.0 config/TreeTab.qml
 WindowList 1.0 config/WindowList.qml
 SettingsTab 1.0 config/SettingsTab.qml
+MonitorsTab 1.0 config/MonitorsTab.qml
 AppIcon 1.0 config/AppIcon.qml
 
+ConfigOverlay 1.0 overlays/ConfigOverlay.qml
 WindowListOverlay 1.0 overlays/WindowListOverlay.qml
 PowerMenuOverlay 1.0 overlays/PowerMenuOverlay.qml
 ItemSettingsOverlay 1.0 overlays/ItemSettingsOverlay.qml

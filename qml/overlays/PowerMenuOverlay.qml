@@ -20,9 +20,9 @@ Rectangle {
     }
 
     function show(x, y) {
+        Window.window.height = powerMenu.contentHeight
         Window.window.x = x
         Window.window.y = y
-        Window.window.height = powerMenu.contentHeight
         Window.window.requestActivate()
 
         isVisible = true

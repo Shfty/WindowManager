@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/qmldir</file>
-        <file>qml/config/ConfigWindow.qml</file>
         <file>qml/config/ConfigView.qml</file>
         <file>qml/config/ConfigDelegate.qml</file>
         <file>qml/config/DetailView.qml</file>
@@ -19,5 +18,6 @@
         <file>qml/overlays/WindowListOverlay.qml</file>
         <file>qml/tree/RecursiveDelegate.qml</file>
         <file>qml/config/AppIcon.qml</file>
+        <file>qml/overlays/ConfigOverlay.qml</file>
     </qresource>
 </RCC>

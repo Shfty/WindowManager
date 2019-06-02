@@ -469,7 +469,8 @@ Item {
             visible: isRoot
 
             onClicked: {
-                appCore.configWindow.show()
+                var pos = nestedHeader.mapToGlobal(0, powerButton.height)
+                appCore.configOverlay.toggle(pos.x, pos.y, nestedHeader.width, model.contentBounds.height)
             }
         }
 

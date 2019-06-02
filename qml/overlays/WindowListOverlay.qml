@@ -25,10 +25,10 @@ Rectangle {
     function show(newTargetItem, x, y, width) {
         targetItem = newTargetItem
 
-        Window.window.x = x
-        Window.window.y = y
         Window.window.width = width
         Window.window.height = Math.min(windowList.contentHeight, 500)
+        Window.window.x = x
+        Window.window.y = y
         Window.window.requestActivate()
 
         isVisible = true

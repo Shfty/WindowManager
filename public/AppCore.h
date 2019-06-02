@@ -25,8 +25,7 @@ class AppCore : public QObject
 	Q_PROPERTY(QmlController* qmlController MEMBER m_qmlController NOTIFY qmlControllerChanged)
 	Q_PROPERTY(TreeItem* treeModel MEMBER m_rootItem NOTIFY treeModelChanged)
 
-	Q_PROPERTY(QQuickWindow* configWindow MEMBER m_configWindow NOTIFY configWindowChanged)
-
+	Q_PROPERTY(QQuickItem* configOverlay READ getConfigOverlay() NOTIFY configOverlayChanged)
 	Q_PROPERTY(QQuickItem* windowListOverlay READ getWindowListOverlay() NOTIFY windowListOverlayChanged)
 	Q_PROPERTY(QQuickItem* powerMenuOverlay READ getPowerMenuOverlay() NOTIFY powerMenuOverlayChanged)
 	Q_PROPERTY(QQuickItem* itemSettingsOverlay READ getItemSettingsOverlay() NOTIFY itemSettingsOverlayChanged)
@@ -34,6 +33,7 @@ class AppCore : public QObject
 public:
 	explicit AppCore(QObject* parent = nullptr);
 
+	QQuickItem* getConfigOverlay();
 	QQuickItem* getWindowListOverlay();
 	QQuickItem* getPowerMenuOverlay();
 	QQuickItem* getItemSettingsOverlay();
@@ -47,7 +47,7 @@ signals:
 	void qmlControllerChanged();
 	void treeModelChanged();
 
-	void configWindowChanged();
+	void configOverlayChanged();
 	void windowListOverlayChanged();
 	void powerMenuOverlayChanged();
 	void itemSettingsOverlayChanged();
@@ -77,7 +77,7 @@ private:
 	QmlController* m_qmlController;
 	TreeItem* m_rootItem;
 
-	QQuickWindow* m_configWindow;
+	QQuickWindow* m_configOverlay;
 	QQuickWindow* m_windowListOverlay;
 	QQuickWindow* m_powerMenuOverlay;
 	QQuickWindow* m_itemSettingsOverlay;
