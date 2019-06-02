@@ -147,6 +147,7 @@ signals:
 	void moveWindow(HWND hwnd, QPoint position);
 	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer);
 	void endMoveWindows();
+	void setWindowStyle(HWND hwnd, qint32 style);
 
 public slots:
 	void moveWindowOnscreen();

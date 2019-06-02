@@ -95,6 +95,7 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
 	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong)), wc, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong)));
 	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
+	connect(this, SIGNAL(setWindowStyle(HWND, qint32)), wc, SLOT(setWindowStyle(HWND, qint32)));
 }
 
 void TreeItem::cleanup()
@@ -116,7 +117,7 @@ void TreeItem::cleanupWindow(WindowInfo* wi)
 		disconnect(wi, SIGNAL(windowClosed()));
 
 		// Restore style
-		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
+		emit setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
 
 		// Center on monitor
 		QScreen* monitor = getMonitor();
@@ -146,7 +147,7 @@ void TreeItem::setupWindow(WindowInfo* wi)
 		{
 			qint32 winStyle = m_windowInfo->getWinStyle();
 			winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-			wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
+			emit setWindowStyle(m_windowInfo->getHwnd(), winStyle);
 
 			if(getIsVisible())
 			{
