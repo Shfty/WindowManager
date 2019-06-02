@@ -23,6 +23,8 @@ ListView {
                 sourceSize: Qt.size(parent.height, parent.height)
 
                 source: "image://treeIcon/" + modelData.winProcess
+
+                visible: modelData.winProcess !== ""
             }
             Label {
                 id: titleText
