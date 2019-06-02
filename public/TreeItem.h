@@ -61,6 +61,10 @@ class TreeItem : public WMObject
 public:
 	explicit TreeItem(QObject* parent = nullptr);
 
+	void cleanup();
+	void cleanupWindow(WindowInfo* wi);
+	void setupWindow(WindowInfo* wi);
+
 	int getActiveIndex();
 	Q_INVOKABLE void setActiveChild(TreeItem* activeChild);
 	Q_INVOKABLE void scrollActiveIndex(int delta);

@@ -48,16 +48,6 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, SIGNAL(flowChanged()), this, SIGNAL(contentBoundsChanged()));
 	connect(this, SIGNAL(layoutChanged()), this, SIGNAL(contentBoundsChanged()));
 	connect(this, SIGNAL(childrenChanged()), this, SIGNAL(contentBoundsChanged()));
-
-	connect(this, &TreeItem::windowInfoChanged, [=]() {
-		if(m_windowInfo != nullptr)
-		{
-			connect(m_windowInfo, &WindowInfo::windowClosed, [=]() {
-				setWindowInfo(nullptr);
-			});
-		}
-	});
-
 	connect(this, SIGNAL(windowInfoChanged()), this, SLOT(moveWindowOnscreen()));
 
 	connect(this, &TreeItem::borderlessChanged, [=]() {
@@ -105,6 +95,68 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
 	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong)), wc, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong)));
 	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
+}
+
+void TreeItem::cleanup()
+{
+	cleanupWindow(m_windowInfo);
+
+	for(TreeItem* child : m_children)
+	{
+		child->cleanup();
+	}
+}
+
+void TreeItem::cleanupWindow(WindowInfo* wi)
+{
+	if(wi != nullptr)
+	{
+		WindowController* wc = getWindowController();
+
+		disconnect(wi, SIGNAL(windowClosed()));
+
+		// Restore style
+		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
+
+		// Center on monitor
+		QScreen* monitor = getMonitor();
+
+		QRect geo = monitor->geometry();
+		int qWidth = geo.width() / 4;
+		int qHeight = geo.height() / 4;
+		geo.adjust(qWidth, qHeight, -qWidth, -qHeight);
+
+		emit beginMoveWindows();
+		emit moveWindow(wi->getHwnd(), geo.topLeft(), geo.size(), -2LL);
+		emit endMoveWindows();
+	}
+}
+
+void TreeItem::setupWindow(WindowInfo* wi)
+{
+	if(m_windowInfo)
+	{
+		WindowController* wc = getWindowController();
+
+		connect(wi, &WindowInfo::windowClosed, [=](){
+			setWindowInfo(nullptr);
+		});
+
+		if(m_borderless)
+		{
+			qint32 winStyle = m_windowInfo->getWinStyle();
+			winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+			wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
+
+			if(getIsVisible())
+			{
+				moveWindowOnscreen();
+			}
+			else {
+				moveWindowOffscreen();
+			}
+		}
+	}
 }
 
 QScreen* TreeItem::getMonitor()
@@ -602,49 +654,13 @@ void TreeItem::moveChild(int fromIndex, int toIndex)
 
 void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 {
-	WindowController* wc = getWindowController();
-
-	// Cleanup old window
-	if(m_windowInfo != nullptr)
-	{
-		// Restore style
-		wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
-
-		// Center on monitor
-		QScreen* monitor = getMonitor();
-
-		QRect geo = monitor->geometry();
-		int qWidth = geo.width() / 4;
-		int qHeight = geo.height() / 4;
-		geo.adjust(qWidth, qHeight, -qWidth, -qHeight);
-
-		emit beginMoveWindows();
-		emit moveWindow(m_windowInfo->getHwnd(), geo.topLeft(), geo.size(), -2LL);
-		emit endMoveWindows();
-	}
+	cleanupWindow(m_windowInfo);
 
 	// Assign new window
 	m_windowInfo = newWindowInfo;
 	windowInfoChanged();
 
-	// Setup new window
-	if(m_windowInfo)
-	{
-		if(m_borderless)
-		{
-			qint32 winStyle = m_windowInfo->getWinStyle();
-			winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-			wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
-
-			if(getIsVisible())
-			{
-				moveWindowOnscreen();
-			}
-			else {
-				moveWindowOffscreen();
-			}
-		}
-	}
+	setupWindow(m_windowInfo);
 }
 
 QJsonObject TreeItem::toJsonObject() const

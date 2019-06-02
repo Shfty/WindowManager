@@ -107,6 +107,7 @@ AppCore::AppCore(QObject* parent)
 	connect(app, &QGuiApplication::lastWindowClosed, [=](){
 		save();
 		m_winShellController->cleanup();
+		m_rootItem->cleanup();
 
 		QGuiApplication::quit();
 	});
