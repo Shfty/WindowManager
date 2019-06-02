@@ -12,6 +12,24 @@ Item {
 
     Universal.theme: Universal.Dark
 
+    TabBar {
+        id: bar
+        width: parent.width
+
+        TabButton {
+            text: qsTr("Tree")
+        }
+        TabButton {
+            text: qsTr("Windows")
+        }
+        TabButton {
+            text: qsTr("Monitors")
+        }
+        TabButton {
+            text: qsTr("Settings")
+        }
+    }
+
     Rectangle {
         anchors.top: bar.bottom
         anchors.left: parent.left
@@ -41,24 +59,6 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }
-        }
-    }
-
-    TabBar {
-        id: bar
-        width: parent.width
-
-        TabButton {
-            text: qsTr("Tree")
-        }
-        TabButton {
-            text: qsTr("Windows")
-        }
-        TabButton {
-            text: qsTr("Monitors")
-        }
-        TabButton {
-            text: qsTr("Settings")
         }
     }
 }
