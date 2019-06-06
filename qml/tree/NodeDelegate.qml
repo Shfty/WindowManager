@@ -18,6 +18,7 @@ Item {
     property int animationDuration: 300
 
     Behavior on x {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -29,6 +30,7 @@ Item {
     }
 
     Behavior on y {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -40,6 +42,7 @@ Item {
     }
 
     Behavior on width {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -51,6 +54,7 @@ Item {
     }
 
     Behavior on height {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {

@@ -15,6 +15,7 @@ TreeHeader {
     property int animationDuration: 300
 
     Behavior on x {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -26,6 +27,7 @@ TreeHeader {
     }
 
     Behavior on y {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -37,6 +39,7 @@ TreeHeader {
     }
 
     Behavior on width {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -48,6 +51,7 @@ TreeHeader {
     }
 
     Behavior on height {
+        enabled: model ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -56,5 +60,16 @@ TreeHeader {
             }
             ScriptAction { script: model.isAnimating = false }
         }
+    }
+
+    Drag.active: dragHandler.active
+    Drag.source: treeHeader
+    Drag.hotSpot.x: treeHeader.width / 2
+    Drag.hotSpot.y: appCore.settingsContainer.headerSize / 2
+
+    DragHandler {
+        id: dragHandler
+        xAxis.enabled: model.treeParent.flow === "Horizontal"
+        yAxis.enabled: model.treeParent.flow === "Vertical"
     }
 }
