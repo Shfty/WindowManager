@@ -5,6 +5,7 @@ autosave.json
 build
 Makefile*
 TODO
+wm-log.*
 *.pdb
 *.pro.user
 *.bak
