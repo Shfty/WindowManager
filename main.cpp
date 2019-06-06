@@ -24,22 +24,31 @@ void streamLog(QTextStream& ts, QString time, QString typePrefix, QString classN
 
 void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
 {
+	static QTextStream stdOutStream(stdout);
+	static QTextStream stdErrStream(stderr);
+
+	QTextStream* os = nullptr;
 	QString typePrefix;
 	switch (type) {
 		case QtDebugMsg:
 			typePrefix = QString("Debug");
+			os = &stdOutStream;
 			break;
 		case QtInfoMsg:
 			typePrefix = QString("Info");
+			os = &stdOutStream;
 			break;
 		case QtWarningMsg:
 			typePrefix = QString("Warning");
+			os = &stdErrStream;
 			break;
 		case QtCriticalMsg:
 			typePrefix = QString("Critical");
+			os = &stdErrStream;
 			break;
 		case QtFatalMsg:
 			typePrefix = QString("Fatal");
+			os = &stdErrStream;
 			break;
 	}
 
@@ -54,8 +63,7 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QStri
 
 	QStringList funcComponents = funcString.split("::");
 
-	QTextStream es(stdout);
-	streamLog(es, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
+	streamLog(*os, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
 
 	QTextStream ts(&outFile);
 	streamLog(ts, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
