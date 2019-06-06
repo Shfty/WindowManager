@@ -700,69 +700,17 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 {
 	setObjectName(jsonObject.value("objectName").toString());
 
+	qInfo() << "Loading" << objectName() << "from JSON";
+
 	m_flow = jsonObject.value("flow").toString();
 	m_layout = jsonObject.value("layout").toString();
 
 	m_monitorIndex = jsonObject.value("monitorIndex").toInt();
-	if(m_monitorIndex != -1)
-	{
-		QScreen* monitor = QGuiApplication::screens()[m_monitorIndex];
 
-		AppCore* appCore = getAppCore();
-		QmlController* qmlController = appCore->property("qmlController").value<QmlController*>();
-
-		QQmlContext* rootContext = qmlController->getRootContext();
-		QQmlContext* newContext = new QQmlContext(rootContext, this);
-		newContext->setContextProperty("treeItem", this);
-
-		m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
-		m_headerWindow->setColor(Qt::transparent);
-		m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
-		Qt::FramelessWindowHint |
-		Qt::WindowStaysOnBottomHint |
-		Qt::WindowDoesNotAcceptFocus
-		));
-		m_headerWindow->setScreen(monitor);
-
-		m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
-		m_itemWindow->setColor(Qt::transparent);
-		m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
-		Qt::FramelessWindowHint |
-		Qt::WindowStaysOnBottomHint |
-		Qt::WindowDoesNotAcceptFocus
-		));
-		m_itemWindow->setScreen(monitor);
-
-		m_headerWindow->show();
-		m_itemWindow->show();
-
-		m_headerWindow->lower();
-		m_itemWindow->lower();
-
-		if(monitor != nullptr)
-		{
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
-
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
-			connect(monitor, SIGNAL(physicalDotsPerInchChanged(qreal)), this, SIGNAL(boundsChanged()));
-		}
-	}
-
+	qInfo() << objectName() << "checking for existing HWND";
 	WindowView* wv = getWindowView();
 	HWND loadedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
 	setWindowInfo(wv->getWindowInfo(loadedHwnd));
-
-	connect(this, SIGNAL(autoGrabTitleChanged()), this, SLOT(tryAutoGrabWindow()));
-	connect(this, SIGNAL(autoGrabClassChanged()), this, SLOT(tryAutoGrabWindow()));
-	connect(wv, &WindowView::windowListChanged, [=](){
-		if(m_windowInfo == nullptr)
-		{
-			tryAutoGrabWindow();
-		}
-	});
 
 	m_borderless = jsonObject.value("borderless").toBool();
 
@@ -773,13 +721,6 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 	m_autoGrabTitle = jsonObject.value("autoGrabTitle").toString();
 	m_autoGrabClass = jsonObject.value("autoGrabClass").toString();
 
-	tryAutoGrabWindow();
-
-	if(m_autoLaunch && m_windowInfo == nullptr)
-	{
-		launch();
-	}
-
 	QJsonArray childArray = jsonObject.value("children").toArray();
 	for(int i = 0; i < childArray.count(); ++i)
 	{
@@ -787,10 +728,85 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 		item->loadFromJson(childArray[i].toObject());
 		addChild(item);
 	}
+
+	// Post-load actions
+	qInfo() << objectName() << "setting up connections";
+	connect(this, SIGNAL(autoGrabTitleChanged()), this, SLOT(tryAutoGrabWindow()));
+	connect(this, SIGNAL(autoGrabClassChanged()), this, SLOT(tryAutoGrabWindow()));
+	connect(wv, &WindowView::windowListChanged, [=](){
+		if(m_windowInfo == nullptr)
+		{
+			tryAutoGrabWindow();
+		}
+	});
+
+	if(m_monitorIndex != -1)
+	{
+		qInfo() << objectName() << "setting up monitor" << m_monitorIndex;
+
+		QScreen* monitor = QGuiApplication::screens()[m_monitorIndex];
+
+		if(monitor != nullptr)
+		{
+			AppCore* appCore = getAppCore();
+			QmlController* qmlController = appCore->property("qmlController").value<QmlController*>();
+
+			QQmlContext* rootContext = qmlController->getRootContext();
+			QQmlContext* newContext = new QQmlContext(rootContext, this);
+			newContext->setContextProperty("treeItem", this);
+
+			m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
+			m_headerWindow->setColor(Qt::transparent);
+			m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
+			Qt::WA_TranslucentBackground |
+			Qt::FramelessWindowHint |
+			Qt::WindowStaysOnBottomHint |
+			Qt::WindowDoesNotAcceptFocus
+			));
+			m_headerWindow->setScreen(monitor);
+
+			m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
+			m_itemWindow->setColor(Qt::transparent);
+			m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
+			Qt::WA_TranslucentBackground |
+			Qt::FramelessWindowHint |
+			Qt::WindowStaysOnBottomHint |
+			Qt::WindowDoesNotAcceptFocus
+			));
+			m_itemWindow->setScreen(monitor);
+
+			m_headerWindow->show();
+			m_itemWindow->show();
+
+			m_headerWindow->lower();
+			m_itemWindow->lower();
+
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
+
+			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
+			connect(monitor, SIGNAL(physicalDotsPerInchChanged(qreal)), this, SIGNAL(boundsChanged()));
+
+			qInfo() << objectName() << "monitor setup complete";
+		}
+		else
+		{
+			qCritical() << "Monitor invalid for" << objectName();
+		}
+	}
+
+	tryAutoGrabWindow();
+
+	if(m_autoLaunch && m_windowInfo == nullptr)
+	{
+		launch();
+	}
 }
 
 void TreeItem::moveWindowOnscreen()
 {
+	qInfo() << objectName() << "moving window onscreen";
+
 	emit beginMoveWindows();
 	moveWindowOnscreen_Internal();
 	emit endMoveWindows();
@@ -798,6 +814,8 @@ void TreeItem::moveWindowOnscreen()
 
 void TreeItem::moveWindowOffscreen()
 {
+	qInfo() << objectName() << "moving window offscreen";
+
 	emit beginMoveWindows();
 	moveWindowOffscreen_Internal();
 	emit endMoveWindows();
@@ -807,6 +825,8 @@ void TreeItem::launch()
 {
 	if(!m_launchUri.isEmpty())
 	{
+		qInfo() << objectName() << "launching";
+
 		QUrl uri = QUrl(m_launchUri + m_launchParams, QUrl::StrictMode);
 		if(uri.isValid())
 		{
@@ -897,12 +917,19 @@ void TreeItem::tryAutoGrabWindow()
 	if(m_children.length() > 0) return;
 	if(m_autoGrabTitle.isEmpty() && m_autoGrabClass.isEmpty()) return;
 
+	//qInfo() << objectName() << "trying auto grab";
+
 	WindowView* wv = getAppCore()->property("windowView").value<WindowView*>();
 	WindowInfo* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
 
 	if(foundWindow != nullptr)
 	{
+		//qInfo() << objectName() << "auto grab successful";
 		setWindowInfo(foundWindow);
+	}
+	else
+	{
+		//qInfo() << objectName() << "auto grab failed";
 	}
 	/*
 	else if(false && m_windowInfo != nullptr)

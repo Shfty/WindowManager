@@ -75,12 +75,16 @@ QQmlContext* QmlController::getRootContext() const
 
 QQuickWindow* QmlController::createWindow(QUrl url, QRect geometry, QQmlContext* newContext)
 {
+	qInfo() << "Creating window for" << url.url() << "with geometry" << geometry << "under context" << newContext;
 
 	QQuickWindow* newWindow = new QQuickWindow();
 	newWindow->setGeometry(geometry);
 
 	QQmlComponent component(m_qmlEngine, url);
-	qDebug() << component.errors();
+	if(component.errors().length() > 0)
+	{
+		qCritical() << component.errors();
+	}
 
 	QQmlContext* parentContext = newContext ? newContext : getRootContext();
 	QQuickItem* newItem = qobject_cast<QQuickItem*>(component.create(parentContext));

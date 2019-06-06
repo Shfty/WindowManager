@@ -33,12 +33,17 @@ AppCore::AppCore(QObject* parent)
 	, m_powerMenuOverlay(nullptr)
 	, m_itemSettingsOverlay(nullptr)
 {
-	elevatePrivileges();
 	setObjectName("App Core");
 
+	qInfo() << "Startup";
+
+	elevatePrivileges();
+
+	qInfo() << "Registering Metatypes";
 	qRegisterMetaType<WindowInfo*>();
 	qRegisterMetaType<TreeItem*>();
 
+	qInfo() << "Initializing WM objects";
 	// Window Controller
 	m_windowController = new WindowController();
 	m_windowController->moveToThread(&m_windowControllerThread);
@@ -63,6 +68,7 @@ AppCore::AppCore(QObject* parent)
 	m_qmlController->getRootContext()->setContextProperty("appCore", this);
 	qmlControllerChanged();
 
+	qInfo() << "Creating Overlay Windows";
 	// Config Window
 	m_configOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ConfigOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(1280, 720)));
 	m_configOverlay->setColor(Qt::transparent);
@@ -107,15 +113,19 @@ AppCore::AppCore(QObject* parent)
 	m_itemSettingsOverlay->show();
 	itemSettingsOverlayChanged();
 
+	qInfo() << "Setup Connections";
 	// Connections
 	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 
 	QGuiApplication* app = static_cast<QGuiApplication*>(QGuiApplication::instance());
 	connect(app, &QGuiApplication::lastWindowClosed, [=](){
+		qInfo() << "All windows closed, shutting down";
+
 		save();
 		m_winShellController->cleanup();
 		m_rootItem->cleanup();
 
+		qInfo() << "Quitting";
 		QGuiApplication::quit();
 	});
 
@@ -127,6 +137,8 @@ AppCore::AppCore(QObject* parent)
 
 void AppCore::windowManagerReady()
 {
+	qInfo() << "Loading Tree Model";
+
 	// Create nested model and pass a reference to the QML app
 	m_rootItem = loadModel(AUTOSAVE_JSON_PATH);
 	m_rootItem->moveWindowOnscreen();
@@ -134,45 +146,58 @@ void AppCore::windowManagerReady()
 
 	// Disconnect signal
 	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
+
+	qInfo() << "Startup Complete";
 }
 
 void AppCore::save()
 {
+	qInfo() << "Saving Tree Model";
 	saveModel(AUTOSAVE_JSON_PATH, m_rootItem);
 }
 
 void AppCore::shutdown()
 {
+	qInfo() << "Triggering Shutdown";
 	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_SHUTDOWN, 0);
 }
 
 void AppCore::restart()
 {
+	qInfo() << "Triggering Reboot";
 	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_REBOOT, 0);
 }
 
 void AppCore::sleep()
 {
-	m_qmlController->cleanup();
+	qInfo() << "Triggering Sleep";
 	SetSuspendState(true, false, false);
 }
 
 void AppCore::elevatePrivileges()
 {
+	qInfo() << "Elevating privileges";
+
 	HANDLE hToken = nullptr;
+	if(OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+	{
+		TOKEN_PRIVILEGES tkp;
+		if(LookupPrivilegeValue(nullptr, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid))
+		{
+			tkp.PrivilegeCount = 1;
+			tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-	int result = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
+			if(AdjustTokenPrivileges(hToken, false, &tkp, 0, nullptr, nullptr))
+			{
+				qInfo() << "Privileges elevated";
+				return;
+			}
+		}
+	}
 
-	TOKEN_PRIVILEGES tkp;
-
-	result = LookupPrivilegeValue(nullptr, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
-
-	tkp.PrivilegeCount = 1;
-	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-	result = AdjustTokenPrivileges(hToken, false, &tkp, 0, nullptr, nullptr);
+	qWarning() << "Privilege elevation failed";
 }
 
 QQuickItem* AppCore::getWindowListOverlay()

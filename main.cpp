@@ -5,6 +5,61 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QScreen>
+#include <QDateTime>
+
+void streamLog(QTextStream& ts, QString time, QString typePrefix, QString className, QString funcName, QString msg)
+{
+	ts.setFieldAlignment(QTextStream::AlignLeft);
+	ts.setFieldWidth(10);
+	ts << time;
+	ts.setFieldWidth(24);
+	ts << typePrefix;
+	ts.setFieldWidth(32);
+	ts << className;
+	ts << funcName;
+	ts << msg;
+	ts.setFieldWidth(0);
+	ts << endl;
+}
+
+void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
+{
+	QString typePrefix;
+	switch (type) {
+		case QtDebugMsg:
+			typePrefix = QString("Debug");
+			break;
+		case QtInfoMsg:
+			typePrefix = QString("Info");
+			break;
+		case QtWarningMsg:
+			typePrefix = QString("Warning");
+			break;
+		case QtCriticalMsg:
+			typePrefix = QString("Critical");
+			break;
+		case QtFatalMsg:
+			typePrefix = QString("Fatal");
+			break;
+	}
+
+	QFile outFile("P:/Personal/C++/WindowManager/wm-log.txt");
+	outFile.open(QIODevice::WriteOnly | QIODevice::Append);
+
+	QString time = QTime::currentTime().toString("HH:mm:ss");
+
+	QRegExp funcRegex("([a-zA-Z]*)(?=::)::([a-zA-Z]*)");
+	funcRegex.indexIn(ctx.function);
+	QString funcString = funcRegex.capturedTexts().first();
+
+	QStringList funcComponents = funcString.split("::");
+
+	QTextStream es(stdout);
+	streamLog(es, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
+
+	QTextStream ts(&outFile);
+	streamLog(ts, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
+}
 
 int main(int argc, char *argv[])
 {
@@ -28,7 +83,11 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<QScreen*>();
 
 	QGuiApplication app(argc, argv);
+	app.setOrganizationName("Josh Palmer");
+	app.setOrganizationDomain("https://josh-palmer.com");
 	app.setQuitOnLastWindowClosed(false);
+
+	qInstallMessageHandler(myMessageHandler);
 
 	AppCore appCore;
 
