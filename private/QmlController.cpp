@@ -46,7 +46,7 @@ QmlController::QmlController(QObject* parent)
 	qmlRegisterType<DWMThumbnail>("DWMThumbnail", 1, 0, "DWMThumbnail");
 	qmlRegisterInterface<HWND>("HWND");
 
-	m_qmlEngine->setIncubationController(new PeriodicIncubationController());
+	//m_qmlEngine->setIncubationController(new PeriodicIncubationController());
 
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
 
