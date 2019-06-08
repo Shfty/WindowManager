@@ -5,7 +5,6 @@
 #include <QPointF>
 #include <QSizeF>
 
-class TrayIcon;
 class TrayWindow;
 class TaskBarWindow;
 
@@ -22,7 +21,6 @@ public slots:
 	void toggleTrayIconWindow(QPointF position);
 
 private:
-	TrayIcon* m_trayIcon;
 	TrayWindow* m_trayWindow;
 	TaskBarWindow* m_taskBarWindow;
 };

@@ -3,6 +3,7 @@
 #include "AppCore.h"
 #include "WindowController.h"
 #include "WindowView.h"
+#include "Win.h"
 
 SystemWindow::SystemWindow(QObject* parent)
 	: WMObject(parent)
@@ -11,7 +12,7 @@ SystemWindow::SystemWindow(QObject* parent)
 
 	WindowController* wc = getWindowController();
 	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
-	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize)), wc, SLOT(moveWindow(HWND, QPoint, QSize)));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong)), wc, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong)));
 	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
 	connect(this, SIGNAL(showWindow(HWND)), wc, SLOT(showWindow(HWND)));
 	connect(this, SIGNAL(hideWindow(HWND)), wc, SLOT(hideWindow(HWND)));
@@ -22,7 +23,7 @@ void SystemWindow::setPosition(QPoint position, QSize size)
 	HWND trayIconHwnd = getWindowHwnd();
 
 	emit beginMoveWindows();
-	emit moveWindow(trayIconHwnd, position, size);
+	emit moveWindow(trayIconHwnd, position, size, reinterpret_cast<qlonglong>(HWND_TOP));
 	emit endMoveWindows();
 }
 

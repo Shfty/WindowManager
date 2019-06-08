@@ -26,7 +26,7 @@ public:
 
 signals:
 	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position, QSize size);
+	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer = -2LL);
 	void endMoveWindows();
 	void showWindow(HWND);
 	void hideWindow(HWND);

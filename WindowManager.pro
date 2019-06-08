@@ -41,7 +41,6 @@ HEADERS += \
 	public/Win.h \
 	public/WinShellController.h \
 	public/WinShellController/TaskBarWindow.h \
-	public/WinShellController/TrayIcon.h \
 	public/WinShellController/TrayWindow.h \
 	public/WindowController.h \
 	public/WindowView.h \
@@ -60,7 +59,6 @@ SOURCES += \
 	private/WMObject.cpp \
 	private/WinShellController.cpp \
 	private/WinShellController/TaskBarWindow.cpp \
-	private/WinShellController/TrayIcon.cpp \
 	private/WinShellController/TrayWindow.cpp \
 	private/WindowController.cpp \
 	private/WindowView.cpp \
