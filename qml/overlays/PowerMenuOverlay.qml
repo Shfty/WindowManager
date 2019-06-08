@@ -69,9 +69,9 @@ Rectangle {
                 }
             }
             ListElement {
-                name: "Restart"
+                name: "Reboot"
                 func: function() {
-                    appCore.restart();
+                    appCore.reboot();
                 }
             }
             ListElement {
