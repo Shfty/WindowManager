@@ -14,6 +14,7 @@
 #include "TreeItem.h"
 #include "QmlController.h"
 #include "SettingsContainer.h"
+#include "Win.h"
 
 #define WORKING_DIRECTORY "P:/Personal/C++/WindowManager"
 #define AUTOSAVE_FILE "autosave.dat"
@@ -137,15 +138,17 @@ AppCore::AppCore(QObject* parent)
 
 void AppCore::windowManagerReady()
 {
+	// Disconnect signal
+	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
+
 	qInfo() << "Loading Tree Model";
 
 	// Create nested model and pass a reference to the QML app
 	m_rootItem = loadModel(AUTOSAVE_JSON_PATH);
-	m_rootItem->moveWindowOnscreen();
 	treeModelChanged();
 
-	// Disconnect signal
-	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
+	m_rootItem->startup();
+	m_rootItem->updateWindowPosition();
 
 	qInfo() << "Startup Complete";
 }
@@ -163,7 +166,7 @@ void AppCore::shutdown()
 	ExitWindowsEx(EWX_SHUTDOWN, 0);
 }
 
-void AppCore::restart()
+void AppCore::reboot()
 {
 	qInfo() << "Triggering Reboot";
 	m_qmlController->cleanup();
@@ -174,6 +177,13 @@ void AppCore::sleep()
 {
 	qInfo() << "Triggering Sleep";
 	SetSuspendState(true, false, false);
+}
+
+void AppCore::logout()
+{
+	qInfo() << "Logging out";
+	m_qmlController->cleanup();
+	ExitWindowsEx(EWX_LOGOFF, 0);
 }
 
 void AppCore::elevatePrivileges()

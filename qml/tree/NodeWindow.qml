@@ -1,6 +1,5 @@
 import QtQuick 2.12
 import QtQuick.Window 2.12
-import DWMThumbnail 1.0
 
 import ".."
 
@@ -25,7 +24,6 @@ Item {
             animationDuration: 300 * animationRate
         }
     }
-
 
     // Root tree item
     RecursiveDelegate {

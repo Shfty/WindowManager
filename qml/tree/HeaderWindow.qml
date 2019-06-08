@@ -31,4 +31,12 @@ Item {
         model: treeItem
         delegate: visualDelegate
     }
+/*
+    FpsItem {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        width: 80
+        height: 20
+    }
+*/
 }

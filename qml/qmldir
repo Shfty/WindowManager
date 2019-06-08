@@ -1,6 +1,7 @@
 ConfigView 1.0 config/ConfigView.qml
 ConfigDelegate 1.0 config/ConfigDelegate.qml
 DetailView 1.0 config/DetailView.qml
+FpsItem 1.0 config/FpsItem.qml
 TreeTab 1.0 config/TreeTab.qml
 WindowList 1.0 config/WindowList.qml
 SettingsTab 1.0 config/SettingsTab.qml

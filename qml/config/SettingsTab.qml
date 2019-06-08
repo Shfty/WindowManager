@@ -18,7 +18,8 @@ DetailView {
     property var colorProperties: [
         "colorInactiveHeader",
         "colorActiveHeader",
-        "colorContainerPlaceholder"
+        "colorContainerPlaceholder",
+        "colorContainerBorder"
     ]
 
     onPropertyClicked: function(key, value) {

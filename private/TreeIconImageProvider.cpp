@@ -13,6 +13,10 @@ QPixmap TreeIconImageProvider::requestPixmap(const QString& id, QSize* size, con
 	url.replace("%5C", "/");
 
 	QFileInfo fileInfo(url);
+	if(!fileInfo.isFile())
+	{
+		return QPixmap();
+	}
 
 	QIcon icon = m_fileIconProvider.icon(fileInfo);
 	QList<QSize> availableSizes = icon.availableSizes();

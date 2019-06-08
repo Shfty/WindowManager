@@ -151,6 +151,7 @@ Item {
 
                 if(!pressed) {
                     model.toggleFlow()
+                    model.updateWindowPosition()
                 }
             }
         }
@@ -176,6 +177,7 @@ Item {
 
                 if(!pressed) {
                     model.toggleLayout()
+                    model.updateWindowPosition()
                 }
             }
         }
@@ -205,6 +207,8 @@ Item {
                         model.flow === "Horizontal" ? "Vertical" : "Horizontal",
                         "Split"
                     )
+
+                    model.updateWindowPosition()
                 }
             }
         }
@@ -244,6 +248,7 @@ Item {
                 if(!model) return
 
                 model.moveUp()
+                model.treeParent.updateWindowPosition()
             }
         }
 
@@ -280,6 +285,7 @@ Item {
                 if(!model) return
 
                 model.moveDown()
+                model.treeParent.updateWindowPosition()
             }
         }
 
@@ -399,7 +405,7 @@ Item {
 
             onClicked: {
                 var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
-                appCore.winShellController.showTrayIconWindow(Qt.point(pos.x, pos.y), Qt.size(300, 300))
+                appCore.winShellController.toggleTrayIconWindow(Qt.point(pos.x, pos.y))
             }
         }
 
@@ -517,6 +523,7 @@ Item {
             if(!model) return
 
             model.setActive();
+            model.treeParent.updateWindowPosition()
         }
     }
 
@@ -531,7 +538,15 @@ Item {
 
             if(model.treeParent.layout === "Tabbed")
             {
-                model.treeParent.scrollActiveIndex(delta)
+                if(delta < 0 && model.treeParent.activeIndex > 0)
+                {
+                    model.treeParent.scrollActiveIndex(delta)
+                }
+
+                if(delta > 0 && model.treeParent.activeIndex < model.treeParent.children.length - 1)
+                {
+                    model.treeParent.scrollActiveIndex(delta)
+                }
             }
             else
             {
@@ -544,6 +559,8 @@ Item {
                     model.moveUp()
                 }
             }
+
+            model.treeParent.updateWindowPosition()
         }
         onPressed: mouse.accepted = false
     }

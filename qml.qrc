@@ -19,5 +19,6 @@
         <file>qml/tree/RecursiveDelegate.qml</file>
         <file>qml/config/AppIcon.qml</file>
         <file>qml/overlays/ConfigOverlay.qml</file>
+        <file>qml/config/FpsItem.qml</file>
     </qresource>
 </RCC>

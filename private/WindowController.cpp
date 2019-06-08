@@ -15,16 +15,17 @@ void WindowController::beginMoveWindows()
 	m_dwp = BeginDeferWindowPos(0);
 }
 
-void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer)
+void WindowController::moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer, quint32 extraFlags)
 {
 	Q_ASSERT_X(hwnd != nullptr, "moveWindow", "moveWindow called with invalid HWND");
 	Q_ASSERT_X(m_dwp != nullptr, "moveWindow", "moveWindow called before beginMoveWindows");
 
-	UINT flags = SWP_NOACTIVATE;
+	UINT flags = SWP_NOACTIVATE | SWP_FRAMECHANGED;
 	if(size.isEmpty())
 	{
 		flags |= SWP_NOSIZE;
 	}
+	flags |= extraFlags;
 
 	DeferWindowPos(
 		m_dwp,

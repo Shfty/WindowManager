@@ -58,8 +58,9 @@ public slots:
 	void save();
 
 	void shutdown();
-	void restart();
+	void reboot();
 	void sleep();
+	void logout();
 
 private:
 	void elevatePrivileges();

@@ -59,6 +59,7 @@ Rectangle {
 
         onWindowSelected: function(windowInfo) {
             targetItem.windowInfo = windowInfo
+            targetItem.updateWindowPosition()
             hide()
         }
     }

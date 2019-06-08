@@ -12,18 +12,22 @@ void streamLog(QTextStream& ts, QString time, QString typePrefix, QString classN
 	ts.setFieldAlignment(QTextStream::AlignLeft);
 	ts.setFieldWidth(10);
 	ts << time;
-	ts.setFieldWidth(24);
 	ts << typePrefix;
-	ts.setFieldWidth(32);
+#ifdef QT_DEBUG
+	ts.setFieldWidth(14);
 	ts << className;
+	ts.setFieldWidth(22);
 	ts << funcName;
-	ts << msg;
+#endif
 	ts.setFieldWidth(0);
+	ts << msg;
 	ts << endl;
 }
 
 void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
 {
+	return;
+
 	static QTextStream stdOutStream(stdout);
 	static QTextStream stdErrStream(stderr);
 
@@ -95,7 +99,7 @@ int main(int argc, char *argv[])
 	app.setOrganizationDomain("https://josh-palmer.com");
 	app.setQuitOnLastWindowClosed(false);
 
-	qInstallMessageHandler(myMessageHandler);
+	//qInstallMessageHandler(myMessageHandler);
 
 	AppCore appCore;
 

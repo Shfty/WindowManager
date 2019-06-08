@@ -25,8 +25,12 @@ void WinShellController::cleanup()
 	m_taskBarWindow->show();
 }
 
-void WinShellController::showTrayIconWindow(QPointF position, QSizeF size)
+void WinShellController::toggleTrayIconWindow(QPointF position)
 {
-	m_trayWindow->setPosition(position.toPoint(), size.toSize());
-	m_trayWindow->toggle();
+	HWND hwndButton = m_taskBarWindow->getTrayButtonHwnd();
+	if(hwndButton)
+	{
+		SendMessage(hwndButton, BM_CLICK , 0, 0);
+		m_trayWindow->setPosition(position.toPoint());
+	}
 }

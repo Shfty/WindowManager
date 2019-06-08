@@ -18,7 +18,7 @@ public:
 
 public slots:
 	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position, QSize size = QSize(), qlonglong layer = -2LL);
+	void moveWindow(HWND hwnd, QPoint position, QSize size = QSize(), qlonglong layer = -2LL, quint32 extraFlags = 0);
 	void endMoveWindows();
 
 	void showWindow(HWND hwnd);

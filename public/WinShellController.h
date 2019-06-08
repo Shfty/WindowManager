@@ -19,7 +19,7 @@ public:
 	void cleanup();
 
 public slots:
-	void showTrayIconWindow(QPointF position, QSizeF size);
+	void toggleTrayIconWindow(QPointF position);
 
 private:
 	TrayIcon* m_trayIcon;

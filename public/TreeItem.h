@@ -57,11 +57,13 @@ class TreeItem : public WMObject
 	// Misc
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
 	Q_PROPERTY(bool isVisible READ getIsVisible NOTIFY isVisibleChanged)
+	Q_PROPERTY(bool windowVisible READ getWindowVisible NOTIFY windowVisibleChanged)
 
 public:
 	explicit TreeItem(QObject* parent = nullptr);
 
 	void cleanup();
+	void cleanup_internal();
 	void cleanupWindow(WindowInfo* wi);
 	void setupWindow(WindowInfo* wi);
 
@@ -73,6 +75,7 @@ public:
 	int getIndex();
 	int getDepth();
 	bool getIsVisible();
+	bool getWindowVisible();
 
 	QScreen* getMonitor();
 	Q_INVOKABLE void setMonitor(QScreen* newMonitor);
@@ -110,6 +113,8 @@ public:
 	QJsonObject toJsonObject() const;
 	void loadFromJson(QJsonObject jsonObject);
 
+	void startup();
+
 signals:
 	void parentChanged();
 	void childrenChanged();
@@ -142,21 +147,20 @@ signals:
 
 	void isAnimatingChanged();
 	void isVisibleChanged();
+	void windowVisibleChanged();
 
 	void beginMoveWindows();
 	void moveWindow(HWND hwnd, QPoint position);
-	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer);
+	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer, quint32 extraFlags);
 	void endMoveWindows();
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 public slots:
-	void moveWindowOnscreen();
-	void moveWindowOffscreen();
+	void updateWindowPosition();
 	void launch();
 
 protected:
-	void moveWindowOnscreen_Internal();
-	void moveWindowOffscreen_Internal();
+	void updateWindowPosition_Internal();
 
 protected slots:
 	void tryAutoGrabWindow();

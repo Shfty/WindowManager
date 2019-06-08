@@ -12,6 +12,8 @@ class TaskBarWindow : public SystemWindow
 public:
 	explicit TaskBarWindow(QObject* parent = nullptr);
 
+	HWND getTrayButtonHwnd();
+
 };
 
 #endif // TASKBARWINDOW_H

@@ -68,7 +68,7 @@ Item {
     Loader {
         anchors.fill: parent
         sourceComponent: recursiveWrapper.delegate
-        asynchronous: true
+        asynchronous: false
 
         onLoaded: {
             item.model = recursiveWrapper.model
@@ -131,6 +131,8 @@ Item {
     }
 
     Component.onCompleted: {
+        console.log("RecursiveDelegate Completed", model);
+
         if(!model) return
 
         for(var i = 0; i < model.children.length; ++i)

@@ -8,7 +8,6 @@
 
 DWMThumbnail::DWMThumbnail(QQuickItem *parent) : QQuickItem(parent),
 												   m_hwnd(nullptr),
-												   m_clipTarget(nullptr),
 												   m_thumbnail(nullptr)
 {
 	setObjectName("Managed Window");
@@ -35,6 +34,12 @@ void DWMThumbnail::updateThumbnail()
 
 	QQuickWindow* parentWindow = window();
 	if(parentWindow == nullptr) return;
+	if(parentWindow->visibility() == QWindow::Hidden)
+	{
+		connect(parentWindow, SIGNAL(visibilityChanged(QWindow::Visibility)), this, SLOT(updateThumbnail()));
+		return;
+	}
+	disconnect(parentWindow, SIGNAL(visibilityChanged(QWindow::Visibility)), this, SLOT(updateThumbnail()));
 
 	HWND parentHwnd = reinterpret_cast<HWND>(parentWindow->winId());
 	if (parentHwnd == nullptr) return;
@@ -44,13 +49,27 @@ void DWMThumbnail::updateThumbnail()
 	DwmRegisterThumbnail(parentHwnd, m_hwnd, &m_thumbnail);
 	QObject::disconnect(this, SLOT(drawThumbnail()));
 	QObject::connect(parentWindow, SIGNAL(frameSwapped()), this, SLOT(drawThumbnail()));
-	parentWindow->update();
 }
 
 void DWMThumbnail::drawThumbnail()
 {
 	if(m_thumbnail == nullptr) return;
 	if(m_hwnd == nullptr) return;
+
+	bool visible = property("visible").toBool();
+	if(!visible)
+	{
+		// Set the thumbnail properties for use
+		DWM_THUMBNAIL_PROPERTIES dskThumbProps;
+		dskThumbProps.dwFlags = DWM_TNP_VISIBLE;
+
+		// Use the window frame and client area
+		dskThumbProps.fVisible = false;
+
+		// Display the thumbnail
+		DwmUpdateThumbnailProperties(m_thumbnail, &dskThumbProps);
+		return;
+	}
 
 	// Calculate source / dest rectangles
 	RECT winRect;
@@ -68,18 +87,28 @@ void DWMThumbnail::drawThumbnail()
 	QRectF sourceRect = QRectF(sourcePos, sourceSize);
 	QRectF destRect = QRectF(destPos, destSize);
 
-	if(m_clipTarget != nullptr)
+	qreal opacity = property("opacity").toReal();
+
+	QQuickItem* candidate = parentItem();
+	while(candidate != nullptr)
 	{
-		QPointF clipTargetPos = m_clipTarget->mapToScene(QPointF(0, 0));
-		QSizeF clipTargetSize = m_clipTarget->size();
-		QRectF clippingRect = QRectF(clipTargetPos, clipTargetSize);
+		if(candidate->clip())
+		{
+			QPointF clipTargetPos = candidate->mapToScene(QPointF(0, 0));
+			QSizeF clipTargetSize = candidate->size();
+			QRectF clippingRect = QRectF(clipTargetPos, clipTargetSize);
 
-		destRect = destRect.intersected(clippingRect);
+			destRect = destRect.intersected(clippingRect);
 
-		QPointF relativePos = clippingRect.topLeft() - destPos;
-		QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
+			QPointF relativePos = clippingRect.topLeft() - destPos;
+			QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
 
-		sourceRect = sourceRect.intersected(relativeClipRect);
+			sourceRect = sourceRect.intersected(relativeClipRect);
+		}
+
+		opacity *= candidate->opacity();
+
+		candidate = candidate->parentItem();
 	}
 
 	QQuickWindow* parentWindow = window();
@@ -110,7 +139,7 @@ void DWMThumbnail::drawThumbnail()
 		extendedFrame.right - winRect.right,
 		extendedFrame.bottom - winRect.bottom
 	);
-
+/*
 	if(m_clipTarget == nullptr)
 	{
 		sourceRect.adjust(extendedMargins.left(),
@@ -120,11 +149,12 @@ void DWMThumbnail::drawThumbnail()
 	}
 	else
 	{
+*/
 		sourceRect.adjust(extendedMargins.left(),
 						  extendedMargins.top(),
 						  extendedMargins.left(),
 						  extendedMargins.top());
-	}
+	//}
 
 	// Convert rectangles into winapi format
 	RECT source = {
@@ -147,10 +177,9 @@ void DWMThumbnail::drawThumbnail()
 
 	// Use the window frame and client area
 	dskThumbProps.fSourceClientAreaOnly = FALSE;
-	dskThumbProps.fVisible = property("visible").toBool();
+	dskThumbProps.fVisible = true;
 
-	// TODO: accumulated opacity
-	dskThumbProps.opacity = static_cast<unsigned char>(opacity() * 255.0);
+	dskThumbProps.opacity = static_cast<unsigned char>(opacity * 255.0);
 	dskThumbProps.rcSource = source;
 	dskThumbProps.rcDestination = dest;
 

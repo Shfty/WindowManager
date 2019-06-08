@@ -1,5 +1,5 @@
 QT += widgets quick quickcontrols2
-CONFIG += c++11
+CONFIG += c++17
 LIBS += -luser32 -ldwmapi -lAdvAPI32 -lpowrprof
 
 # The following define makes your compiler emit warnings if you use

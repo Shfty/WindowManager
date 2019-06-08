@@ -80,6 +80,12 @@ Rectangle {
                     appCore.sleep();
                 }
             }
+            ListElement {
+                name: "Log Out"
+                func: function() {
+                    appCore.logout();
+                }
+            }
         }
 
         delegate: ItemDelegate {

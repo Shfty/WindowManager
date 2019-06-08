@@ -28,8 +28,8 @@ public:
 	}
 
 protected:
-	void timerEvent(QTimerEvent *) override {
-		incubateFor(8);
+	void timerEvent(QTimerEvent* e) override {
+		incubateFor(5);
 	}
 
 private:
@@ -46,8 +46,7 @@ QmlController::QmlController(QObject* parent)
 	qmlRegisterType<DWMThumbnail>("DWMThumbnail", 1, 0, "DWMThumbnail");
 	qmlRegisterInterface<HWND>("HWND");
 
-	static PeriodicIncubationController inc;
-	m_qmlEngine->setIncubationController(&inc);
+	m_qmlEngine->setIncubationController(new PeriodicIncubationController());
 
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
 
