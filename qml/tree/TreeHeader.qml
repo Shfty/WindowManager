@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.5
+import QtQuick.Window 2.12
 import QtQuick.Controls.Universal 2.3
 import ".."
 
@@ -420,6 +421,17 @@ Item {
                     }
                 }
 
+                Timer {
+                    interval: 500
+                    running: true
+                    repeat: true
+                    onTriggered: {
+                        var now = new Date()
+                        dateWidget.text = now.toLocaleDateString(Qt.locale(), "dddd d MMMM yyyy")
+                        timeWidget.text = now.toLocaleTimeString()
+                    }
+                }
+
                 Button {
                     id: dateWidget
                     objectName: "dateWidget"
@@ -446,14 +458,16 @@ Item {
                     font.family: "Segoe MDL2 Assets"
                 }
 
-                Timer {
-                    interval: 500
-                    running: true
-                    repeat: true
-                    onTriggered: {
-                        var now = new Date()
-                        dateWidget.text = now.toLocaleDateString(Qt.locale(), "dddd d MMMM yyyy")
-                        timeWidget.text = now.toLocaleTimeString()
+                RowLayout {
+                    Layout.fillHeight: true
+
+                    Spinner {
+                        Layout.fillHeight: true
+                        size: appCore.settingsContainer.headerSize
+                    }
+
+                    FramerateCounter {
+                        Layout.fillHeight: true
                     }
                 }
 
