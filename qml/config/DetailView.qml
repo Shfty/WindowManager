@@ -16,6 +16,8 @@ Item {
         ScrollIndicator.vertical: ScrollIndicator { }
 
         model: {
+            if(!detailObject) return null
+
             var arr = []
 
             for (var prop in detailObject) {
