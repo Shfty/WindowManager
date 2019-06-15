@@ -17,6 +17,7 @@ RowLayout {
 
         model: treeTab.model
     }
+
     DetailView {
         id: detailView
 
