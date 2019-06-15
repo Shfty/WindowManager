@@ -82,6 +82,8 @@ private:
 	QQuickWindow* m_windowListOverlay;
 	QQuickWindow* m_powerMenuOverlay;
 	QQuickWindow* m_itemSettingsOverlay;
+
+	bool m_exitExpected;
 };
 
 #endif // APPCORE_H

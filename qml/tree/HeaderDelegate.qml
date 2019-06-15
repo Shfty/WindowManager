@@ -14,6 +14,10 @@ TreeHeader {
     property var animationEasing: Easing.OutCubic
     property int animationDuration: 300
 
+    Component.onCompleted: {
+        print("NodeDelegate Completed", model)
+    }
+
     Behavior on x {
         enabled: model ? true : false
         SequentialAnimation {

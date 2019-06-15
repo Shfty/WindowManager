@@ -33,6 +33,7 @@ AppCore::AppCore(QObject* parent)
 	, m_windowListOverlay(nullptr)
 	, m_powerMenuOverlay(nullptr)
 	, m_itemSettingsOverlay(nullptr)
+	, m_exitExpected(false)
 {
 	setObjectName("App Core");
 
@@ -47,9 +48,9 @@ AppCore::AppCore(QObject* parent)
 	qInfo() << "Initializing WM objects";
 	// Window Controller
 	m_windowController = new WindowController();
-	m_windowController->moveToThread(&m_windowControllerThread);
-	connect(&m_windowControllerThread, SIGNAL(finished()), m_windowController, SLOT(deleteLater()));
-	m_windowControllerThread.start();
+	//m_windowController->moveToThread(&m_windowControllerThread);
+	//connect(&m_windowControllerThread, SIGNAL(finished()), m_windowController, SLOT(deleteLater()));
+	//m_windowControllerThread.start();
 	windowControllerChanged();
 
 	// Window View
@@ -68,6 +69,11 @@ AppCore::AppCore(QObject* parent)
 	m_qmlController = new QmlController(this);
 	m_qmlController->getRootContext()->setContextProperty("appCore", this);
 	qmlControllerChanged();
+
+	// Tree model
+	qInfo() << "Loading Tree Model";
+	m_rootItem = loadModel(AUTOSAVE_JSON_PATH);
+	treeModelChanged();
 
 	qInfo() << "Creating Overlay Windows";
 	// Config Window
@@ -118,13 +124,35 @@ AppCore::AppCore(QObject* parent)
 	// Connections
 	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 
+	connect(m_qmlController, &QmlController::exitRequested, [=](){
+		m_exitExpected = true;
+
+		save();
+
+		m_settingsContainer->setProperty("headerSize", 0);
+		m_rootItem->playShutdownAnimation();
+		connect(m_rootItem, &TreeItem::animationFinished, [=](){
+			m_qmlController->cleanup();
+		});
+	});
+
 	QGuiApplication* app = static_cast<QGuiApplication*>(QGuiApplication::instance());
 	connect(app, &QGuiApplication::lastWindowClosed, [=](){
 		qInfo() << "All windows closed, shutting down";
 
-		save();
+		// Save if this is an unexpected force-quit
+		if(m_exitExpected == false)
+		{
+			qInfo() << "Unexpected exit";
+			save();
+			m_rootItem->playShutdownAnimation();
+			m_rootItem->updateWindowPosition();
+		}
+		else {
+			qInfo() << "Expected exit";
+		}
+
 		m_winShellController->cleanup();
-		m_rootItem->cleanup();
 
 		qInfo() << "Quitting";
 		QGuiApplication::quit();
@@ -141,12 +169,6 @@ void AppCore::windowManagerReady()
 	// Disconnect signal
 	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 
-	qInfo() << "Loading Tree Model";
-
-	// Create nested model and pass a reference to the QML app
-	m_rootItem = loadModel(AUTOSAVE_JSON_PATH);
-	treeModelChanged();
-
 	m_rootItem->startup();
 	m_rootItem->updateWindowPosition();
 
@@ -162,14 +184,12 @@ void AppCore::save()
 void AppCore::shutdown()
 {
 	qInfo() << "Triggering Shutdown";
-	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_SHUTDOWN, 0);
 }
 
 void AppCore::reboot()
 {
 	qInfo() << "Triggering Reboot";
-	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_REBOOT, 0);
 }
 
@@ -182,7 +202,6 @@ void AppCore::sleep()
 void AppCore::logout()
 {
 	qInfo() << "Logging out";
-	m_qmlController->cleanup();
 	ExitWindowsEx(EWX_LOGOFF, 0);
 }
 

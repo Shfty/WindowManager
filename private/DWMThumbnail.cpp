@@ -10,7 +10,9 @@ DWMThumbnail::DWMThumbnail(QQuickItem *parent) : QQuickItem(parent),
 												   m_hwnd(nullptr),
 												   m_thumbnail(nullptr)
 {
-	setObjectName("Managed Window");
+	setObjectName("DWM Thumbnail");
+
+	qInfo("Startup");
 
 	connect(this, SIGNAL(hwndChanged()), this, SLOT(updateThumbnail()));
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(updateThumbnail()));

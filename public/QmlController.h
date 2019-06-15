@@ -13,18 +13,21 @@ class QmlController : public WMObject
 {
 	Q_OBJECT
 
-	public:
-		explicit QmlController(QObject* parent = nullptr);
+public:
+	explicit QmlController(QObject* parent = nullptr);
 
-		QQmlContext* getRootContext() const;
-		QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);
+	QQmlContext* getRootContext() const;
+	QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);
 
-		void cleanup();
+	void cleanup();
 
-	private:
-		QQmlEngine* m_qmlEngine;
+signals:
+	void exitRequested();
 
-		QList<QQuickWindow*> m_windows;
+private:
+	QQmlEngine* m_qmlEngine;
+
+	QList<QQuickWindow*> m_windows;
 };
 
 #endif // QMLCONTROLLER_H

@@ -8,6 +8,8 @@ EnumWindowsThread::EnumWindowsThread(QObject* parent)
 	: QThread(parent)
 {
 	setObjectName("EnumWindowsThread");
+
+	qInfo("Startup");
 }
 
 void EnumWindowsThread::startProcess()

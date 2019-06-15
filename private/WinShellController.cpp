@@ -13,6 +13,8 @@ WinShellController::WinShellController(QObject* parent)
 	qRegisterMetaType<WinShellController*>();
 	setObjectName("Windows Shell Controller");
 
+	qInfo("Startup");
+
 	m_taskBarWindow->hide();
 }
 

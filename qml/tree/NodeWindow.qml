@@ -8,12 +8,32 @@ Item {
     objectName: treeItem.objectName + " Item"
     anchors.fill: parent
 
-    property real animationRate: Window.screen ? Window.screen.refreshRate / 60 : 1
+    Component.onCompleted: {
+        print("NodeWindow onCompleted")
+    }
+
+    property real animationRate: {
+        print("NodeWindow updating animationRate")
+        if(!Window) return 1
+        if(!Window.screen) return 1
+        if(!Window.screen.refreshRate) return 1
+        return Window.screen.refreshRate / 60
+    }
 
     // Visual delegate
     Component {
         id: visualDelegate
-        NodeDelegate {}
+        Item {
+            id: wrapper
+            anchors.fill: parent
+            property var model: null
+            NodeDelegate {
+                model: wrapper.model
+            }
+            HeaderDelegate {
+                model: wrapper.model
+            }
+        }
     }
 
     // Recursive tree delegate
@@ -30,5 +50,33 @@ Item {
         id: rootNode
         model: treeItem
         delegate: visualDelegate
+
+        opacity: 0
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300 * animationRate
+            }
+        }
+
+        onChildrenLoaded: {
+            spinner.opacity = 0
+            opacity = 1
+        }
+    }
+
+    Spinner {
+        id: spinner
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        size: 240
+        dotScale: 0.8
+        color: "#D0FFFFFF"
+
+        opacity: 1
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300 * animationRate
+            }
+        }
     }
 }

@@ -2,8 +2,12 @@
 
 TreeIconImageProvider::TreeIconImageProvider()
 	:QQuickImageProvider(QQuickImageProvider::Pixmap)
+	, m_emptyPixmap(QPixmap(1,1))
 {
+	qInfo("TreeIconImageProvider Startup");
 
+	qInfo("Creating empty pixmap");
+	m_emptyPixmap.fill(Qt::transparent);
 }
 
 #include <QDebug>
@@ -15,7 +19,9 @@ QPixmap TreeIconImageProvider::requestPixmap(const QString& id, QSize* size, con
 	QFileInfo fileInfo(url);
 	if(!fileInfo.isFile())
 	{
-		return QPixmap();
+		size->setWidth(1);
+		size->setHeight(1);
+		return m_emptyPixmap;
 	}
 
 	QIcon icon = m_fileIconProvider.icon(fileInfo);

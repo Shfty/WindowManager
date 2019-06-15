@@ -5,6 +5,7 @@ FpsItem 1.0 config/FpsItem.qml
 TreeTab 1.0 config/TreeTab.qml
 WindowList 1.0 config/WindowList.qml
 SettingsTab 1.0 config/SettingsTab.qml
+Spinner 1.0 config/Spinner.qml
 MonitorsTab 1.0 config/MonitorsTab.qml
 AppIcon 1.0 config/AppIcon.qml
 

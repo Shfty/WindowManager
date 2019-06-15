@@ -12,6 +12,9 @@ Item {
     property var animationEasing: Easing.OutCubic
     property int animationDuration: 300
 
+    property int loadedChildren: 0
+    signal childrenLoaded
+
     // Positioning and animation
     x: model ? model.bounds.x : 0
     y: model ? model.bounds.y : 0
@@ -66,9 +69,7 @@ Item {
 
     // Visual components
     Loader {
-        anchors.fill: parent
         sourceComponent: recursiveWrapper.delegate
-        asynchronous: false
 
         onLoaded: {
             item.model = recursiveWrapper.model
@@ -77,47 +78,35 @@ Item {
 
     // Child handling
     property var childItems: []
-    property var itemBuffer: []
-    property var incubator: null
-
-    function addChild(childModel) {
-        if(incubator == null)
-        {
-            incubateItem(childModel);
-        }
-        else
-        {
-            itemBuffer.push(childModel);
-        }
-    }
 
     function incubateItem(childModel) {
-        incubator = recursiveDelegate.incubateObject(
+        var incubator = recursiveDelegate.incubateObject(
             recursiveWrapper,
             {
                 model: childModel
             }
-        );
+        )
+
+        incubator.forceCompletion()
 
         if (incubator.status !== Component.Ready) {
             incubator.onStatusChanged = function(status) {
                 if (status === Component.Ready) {
-                    incubatorReady();
+                    incubatorReady(incubator.object)
                 }
             }
         } else {
-            incubatorReady();
+            incubatorReady(incubator.object)
         }
     }
 
-    function incubatorReady() {
-        childItems.push(incubator.object)
-        if(itemBuffer.length > 0) {
-            var item = itemBuffer.shift()
-            incubateItem(item)
-        }
-        else {
-            incubator = null
+    function incubatorReady(object)
+    {
+        childItems.push(object)
+        loadedChildren++
+        if(loadedChildren == childItems.length)
+        {
+            childrenLoaded()
         }
     }
 
@@ -137,14 +126,14 @@ Item {
 
         for(var i = 0; i < model.children.length; ++i)
         {
-            addChild(model.children[i])
+            incubateItem(model.children[i])
         }
     }
 
     Connections {
         target: model
         onChildAdded: function(index, child) {
-            addChild(child)
+            incubateItem(child)
         }
         onChildRemoved: function(index, child) {
             for(var i = 0; i < childItems.length; ++i)

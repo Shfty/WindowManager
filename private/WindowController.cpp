@@ -8,6 +8,8 @@ WindowController::WindowController(QObject* parent)
 {
 	qRegisterMetaType<WindowController*>();
 	setObjectName("Window Controller");
+
+	qInfo("Startup");
 }
 
 void WindowController::beginMoveWindows()

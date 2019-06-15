@@ -23,6 +23,10 @@ Item {
                 model.autoGrabClass !== ""
     }
 
+    Component.onCompleted: {
+        print("TreeHeader Completed", model)
+    }
+
     Rectangle {
         width: parent.width
         height: appCore.settingsContainer.headerSize
@@ -309,6 +313,30 @@ Item {
             }
         }
 
+        Button {
+            id: closeButton
+            objectName: "closeButton"
+
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            ToolTip.text: qsTr("Close")
+
+            Layout.maximumWidth: appCore.settingsContainer.headerSize
+            Layout.fillHeight: true
+
+            font.family: "Segoe MDL2 Assets"
+            text: "\uE8BB"
+
+            visible: !isRoot
+
+            onClicked: {
+                if(!model) return
+
+                model.remove()
+                model.treeParent.updateWindowPosition()
+            }
+        }
+
         /*
         Window {
             id: swapWindow
@@ -364,140 +392,108 @@ Item {
         }
         */
 
-        Button {
-            id: closeButton
-            objectName: "closeButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Close")
-
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
+        Loader {
+            active: isRoot
             Layout.fillHeight: true
 
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE8BB"
+            sourceComponent: RowLayout {
+                anchors.fill: parent
+                spacing: 0
 
-            visible: !isRoot
+                Button {
+                    id: trayIconWidget
+                    objectName: "trayIconWidget"
 
-            onClicked: {
-                if(!model) return
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: qsTr("Tray")
 
-                model.remove()
-            }
-        }
+                    Layout.maximumWidth: appCore.settingsContainer.headerSize
+                    Layout.fillHeight: true
 
-        Button {
-            id: trayIconWidget
-            objectName: "trayIconWidget"
+                    font.family: "Segoe MDL2 Assets"
+                    text: "\uE8A5"
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Tray")
-
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE8A5"
-
-            visible: isRoot
-
-            onClicked: {
-                var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
-                appCore.winShellController.toggleTrayIconWindow(Qt.point(pos.x, pos.y))
-            }
-        }
-
-        Button {
-            id: dateWidget
-            objectName: "dateWidget"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Date")
-
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-
-            visible: isRoot
-
-            Timer {
-                interval: 500
-                running: true
-                repeat: true
-                onTriggered: {
-                    var now = new Date()
-                    dateWidget.text = now.toLocaleDateString(Qt.locale(), "dddd d MMMM yyyy")
+                    onClicked: {
+                        var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
+                        appCore.winShellController.toggleTrayIconWindow(Qt.point(pos.x, pos.y))
+                    }
                 }
-            }
-        }
 
-        Button {
-            id: timeWidget
-            objectName: "timeWidget"
+                Button {
+                    id: dateWidget
+                    objectName: "dateWidget"
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Time")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: qsTr("Date")
 
-            Layout.fillHeight: true
+                    Layout.fillHeight: true
 
-            font.family: "Segoe MDL2 Assets"
-
-            visible: isRoot
-
-            Timer {
-                interval: 500
-                running: true
-                repeat: true
-                onTriggered: {
-                    var now = new Date()
-                    timeWidget.text = now.toLocaleTimeString()
+                    font.family: "Segoe MDL2 Assets"
                 }
-            }
-        }
 
-        Button {
-            id: monitorConfigButton
-            objectName: "monitorConfigButton"
+                Button {
+                    id: timeWidget
+                    objectName: "timeWidget"
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Configuration")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: qsTr("Time")
 
-            Layout.fillHeight: true
+                    Layout.fillHeight: true
 
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE713"
+                    font.family: "Segoe MDL2 Assets"
+                }
 
-            visible: isRoot
+                Timer {
+                    interval: 500
+                    running: true
+                    repeat: true
+                    onTriggered: {
+                        var now = new Date()
+                        dateWidget.text = now.toLocaleDateString(Qt.locale(), "dddd d MMMM yyyy")
+                        timeWidget.text = now.toLocaleTimeString()
+                    }
+                }
 
-            onClicked: {
-                var pos = nestedHeader.mapToGlobal(0, powerButton.height)
-                appCore.configOverlay.toggle(pos.x, pos.y, nestedHeader.width, model.contentBounds.height)
-            }
-        }
+                Button {
+                    id: monitorConfigButton
+                    objectName: "monitorConfigButton"
 
-        Button {
-            id: powerButton
-            objectName: "powerButton"
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: qsTr("Configuration")
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Quit")
+                    Layout.fillHeight: true
 
-            Layout.fillHeight: true
+                    font.family: "Segoe MDL2 Assets"
+                    text: "\uE713"
 
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE7E8"
+                    onClicked: {
+                        var pos = nestedHeader.mapToGlobal(0, powerButton.height)
+                        appCore.configOverlay.toggle(pos.x, pos.y, nestedHeader.width, model.contentBounds.height)
+                    }
+                }
 
-            visible: isRoot
+                Button {
+                    id: powerButton
+                    objectName: "powerButton"
 
-            onClicked: {
-                var pos = powerButton.mapToGlobal(powerButton.width - appCore.powerMenuOverlay.width, powerButton.height)
-                appCore.powerMenuOverlay.toggle(pos.x, pos.y)
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: qsTr("Quit")
+
+                    Layout.fillHeight: true
+
+                    font.family: "Segoe MDL2 Assets"
+                    text: "\uE7E8"
+
+                    onClicked: {
+                        var pos = powerButton.mapToGlobal(powerButton.width - appCore.powerMenuOverlay.width, powerButton.height + 1)
+                        appCore.powerMenuOverlay.toggle(pos.x, pos.y)
+                    }
+                }
             }
         }
     }

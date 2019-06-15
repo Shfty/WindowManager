@@ -8,6 +8,8 @@ TaskBarWindow::TaskBarWindow(QObject* parent)
 {
 	setObjectName("TaskBar Window");
 
+	qInfo("Startup");
+
 	m_windowClass = "Shell_TrayWnd";
 }
 

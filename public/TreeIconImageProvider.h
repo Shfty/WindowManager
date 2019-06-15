@@ -13,6 +13,7 @@ public:
 
 private:
 	QFileIconProvider m_fileIconProvider;
+	QPixmap m_emptyPixmap;
 };
 
 #endif // TREEICONIMAGEPROVIDER_H

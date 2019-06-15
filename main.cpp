@@ -14,9 +14,9 @@ void streamLog(QTextStream& ts, QString time, QString typePrefix, QString classN
 	ts << time;
 	ts << typePrefix;
 #ifdef QT_DEBUG
-	ts.setFieldWidth(14);
+	ts.setFieldWidth(24);
 	ts << className;
-	ts.setFieldWidth(22);
+	ts.setFieldWidth(24);
 	ts << funcName;
 #endif
 	ts.setFieldWidth(0);
@@ -26,8 +26,6 @@ void streamLog(QTextStream& ts, QString time, QString typePrefix, QString classN
 
 void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
 {
-	return;
-
 	static QTextStream stdOutStream(stdout);
 	static QTextStream stdErrStream(stderr);
 
@@ -55,10 +53,10 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QStri
 			os = &stdErrStream;
 			break;
 	}
-
+/*
 	QFile outFile("P:/Personal/C++/WindowManager/wm-log.txt");
 	outFile.open(QIODevice::WriteOnly | QIODevice::Append);
-
+*/
 	QString time = QTime::currentTime().toString("HH:mm:ss");
 
 	QRegExp funcRegex("([a-zA-Z]*)(?=::)::([a-zA-Z]*)");
@@ -68,9 +66,10 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QStri
 	QStringList funcComponents = funcString.split("::");
 
 	streamLog(*os, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
-
+/*
 	QTextStream ts(&outFile);
 	streamLog(ts, time, typePrefix, funcComponents.first(), funcComponents.last(), msg);
+*/
 }
 
 int main(int argc, char *argv[])
@@ -86,7 +85,7 @@ int main(int argc, char *argv[])
 
 	if(productType == "windows" && productVersion == "10")
 	{
-		QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Direct3D12);
+		//QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Direct3D12);
 	}
 
 	QQuickStyle::setStyle("Universal");
@@ -99,7 +98,7 @@ int main(int argc, char *argv[])
 	app.setOrganizationDomain("https://josh-palmer.com");
 	app.setQuitOnLastWindowClosed(false);
 
-	//qInstallMessageHandler(myMessageHandler);
+	qInstallMessageHandler(myMessageHandler);
 
 	AppCore appCore;
 

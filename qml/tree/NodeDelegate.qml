@@ -8,19 +8,24 @@ Item {
     id: itemWrapper
 
     property var model: null
+    property bool hasModel: model ? true : false
 
-    x: model ? model.contentBounds.x : 0
-    y: model ? model.contentBounds.y : 0
-    width: model ? model.contentBounds.width : 0
-    height: model ? model.contentBounds.height : 0
+    x: hasModel ? model.contentBounds.x : 0
+    y: hasModel ? model.contentBounds.y : 0
+    width: hasModel ? model.contentBounds.width : 0
+    height: hasModel ? model.contentBounds.height : 0
 
-    visible: model ? model.isVisible : false
+    visible: hasModel ? model.isVisible : false
 
     property var animationEasing: Easing.OutCubic
     property int animationDuration: 300
 
+    Component.onCompleted: {
+        print("NodeDelegate Completed", model)
+    }
+
     Behavior on x {
-        enabled: model ? true : false
+        enabled: hasModel ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -32,7 +37,7 @@ Item {
     }
 
     Behavior on y {
-        enabled: model ? true : false
+        enabled: hasModel ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -44,7 +49,7 @@ Item {
     }
 
     Behavior on width {
-        enabled: model ? true : false
+        enabled: hasModel ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -56,7 +61,7 @@ Item {
     }
 
     Behavior on height {
-        enabled: model ? true : false
+        enabled: hasModel ? true : false
         SequentialAnimation {
             ScriptAction { script: model.isAnimating = true }
             NumberAnimation {
@@ -92,23 +97,27 @@ Item {
             radius: appCore.settingsContainer.itemRadius
             anchors.topMargin: -radius
 
-            visible: model ? model.depth > 1 : false
+            visible: hasModel ? model.depth > 1 : false
 
             color: appCore.settingsContainer.colorContainerPlaceholder
 
             AppIcon {
-                id: icon
+                id: appIcon
 
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
 
-                model: itemWrapper.model
+                model: hasModel ? itemWrapper.model : null
             }
         }
 
         DWMThumbnail {
             anchors.fill: parent
-            hwnd: model.windowInfo ? model.windowInfo.hwnd : appCore.windowView.windowList[0].hwnd
+            hwnd: {
+                if(!hasModel) return appCore.windowView.windowList[0].hwnd
+                if(!model.windowInfo) return appCore.windowView.windowList[0].hwnd
+                return model.windowInfo.hwnd
+            }
         }
     }
 }

@@ -10,6 +10,8 @@ SystemWindow::SystemWindow(QObject* parent)
 {
 	setObjectName("System Window");
 
+	qInfo("Startup");
+
 	WindowController* wc = getWindowController();
 	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
 	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong)), wc, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong)));

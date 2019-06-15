@@ -114,6 +114,7 @@ public:
 	void loadFromJson(QJsonObject jsonObject);
 
 	void startup();
+	void playShutdownAnimation();
 
 signals:
 	void parentChanged();
@@ -146,6 +147,7 @@ signals:
 	void autoGrabClassChanged();
 
 	void isAnimatingChanged();
+	void animationFinished();
 	void isVisibleChanged();
 	void windowVisibleChanged();
 

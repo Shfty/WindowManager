@@ -19,6 +19,8 @@ WindowView::WindowView(QObject* parent)
 	qRegisterMetaType<WindowView*>();
 	setObjectName("Window Controller");
 
+	qInfo("Startup");
+
 	m_placeholder->setProperty("winTitle", "[Container]");
 
 	connect(m_thread, SIGNAL(windowAdded(HWND, QString, QString, QString, qint32)), this, SLOT(onWindowAdded(HWND, QString, QString, QString, qint32)));

@@ -9,5 +9,7 @@ WindowInfo::WindowInfo(QObject* parent)
 {
 	setObjectName("Window Info");
 
+	qInfo("Startup");
+
 	connect(this, &WindowInfo::windowClosed, this, &WindowInfo::deleteLater);
 }

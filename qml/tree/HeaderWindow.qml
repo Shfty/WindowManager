@@ -8,7 +8,12 @@ Item {
     objectName: treeItem.objectName + " Header"
     anchors.fill: parent
 
-    property real animationRate: Window.screen ? Window.screen.refreshRate / 60 : 1
+    property real animationRate: {
+        if(!Window) return 1
+        if(!Window.screen) return 1
+        if(!Window.screen.refreshRate) return 1
+        return Window.screen.refreshRate / 60
+    }
 
     // Visual delegate
     Component {
@@ -30,13 +35,16 @@ Item {
         id: rootNode
         model: treeItem
         delegate: visualDelegate
+
+        opacity: 0
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300 * animationRate
+            }
+        }
+
+        onChildrenLoaded: {
+            opacity = 1
+        }
     }
-/*
-    FpsItem {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        width: 80
-        height: 20
-    }
-*/
 }

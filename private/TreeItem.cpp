@@ -34,11 +34,14 @@ TreeItem::TreeItem(QObject* parent)
 {
 	setObjectName("Tree Item");
 
+	qInfo("Startup");
+
 	Q_ASSERT(parent != nullptr);
 
 	if(parent->inherits("TreeItem"))
 	{
 		connect(parent, SIGNAL(contentBoundsChanged()), this, SIGNAL(boundsChanged()));
+		connect(this, SIGNAL(animationFinished()), parent, SIGNAL(animationFinished()));
 	}
 
 	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(contentBoundsChanged()));
@@ -72,6 +75,7 @@ TreeItem::TreeItem(QObject* parent)
 		if(!m_isAnimating)
 		{
 			updateWindowPosition();
+			animationFinished();
 		}
 
 		isVisibleChanged();
@@ -726,7 +730,7 @@ void TreeItem::startup()
 
 	WindowView* wv = getWindowView();
 	connect(wv, &WindowView::windowListChanged, [=](){
-		if(m_windowInfo == nullptr)
+		if(m_windowInfo == nullptr && (!m_autoGrabTitle.isEmpty() || !m_autoGrabClass.isEmpty()))
 		{
 			tryAutoGrabWindow();
 		}
@@ -746,7 +750,7 @@ void TreeItem::startup()
 			QQmlContext* rootContext = qmlController->getRootContext();
 			QQmlContext* newContext = new QQmlContext(rootContext, this);
 			newContext->setContextProperty("treeItem", this);
-
+/*
 			m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
 			m_headerWindow->setColor(Qt::transparent);
 			m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
@@ -757,7 +761,7 @@ void TreeItem::startup()
 			));
 			m_headerWindow->setScreen(monitor);
 			m_headerWindow->show();
-
+*/
 			m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
 			m_itemWindow->setColor(Qt::transparent);
 			m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
@@ -769,11 +773,11 @@ void TreeItem::startup()
 			m_itemWindow->setScreen(monitor);
 			m_itemWindow->show();
 
-			m_headerWindow->lower();
+			//m_headerWindow->lower();
 			m_itemWindow->lower();
 
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
+			//connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
 
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
 			connect(monitor, SIGNAL(physicalDotsPerInchChanged(qreal)), this, SIGNAL(boundsChanged()));
@@ -799,6 +803,17 @@ void TreeItem::startup()
 	for(TreeItem* child : m_children)
 	{
 		child->startup();
+	}
+}
+
+void TreeItem::playShutdownAnimation()
+{
+	m_layout = "Split";
+	layoutChanged();
+
+	for(TreeItem* child : m_children)
+	{
+		child->playShutdownAnimation();
 	}
 }
 
