@@ -68,14 +68,14 @@ Item {
         id: spinner
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        size: 240
+        size: 640
         dotScale: 0.8
         color: "#D0FFFFFF"
 
         opacity: 1
         Behavior on opacity {
             NumberAnimation {
-                duration: 300 * animationRate
+                duration: 300
             }
         }
     }
