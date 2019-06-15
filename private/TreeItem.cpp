@@ -750,31 +750,16 @@ void TreeItem::startup()
 			QQmlContext* rootContext = qmlController->getRootContext();
 			QQmlContext* newContext = new QQmlContext(rootContext, this);
 			newContext->setContextProperty("treeItem", this);
-/*
-			m_headerWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/HeaderWindow.qml"), monitor->geometry(), newContext);
-			m_headerWindow->setColor(Qt::transparent);
-			m_headerWindow->setFlags(m_headerWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::WA_TranslucentBackground |
-			Qt::FramelessWindowHint |
-			Qt::WindowStaysOnBottomHint |
-			Qt::WindowDoesNotAcceptFocus
-			));
-			m_headerWindow->setScreen(monitor);
-			m_headerWindow->show();
-*/
+
 			m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
-			m_itemWindow->setColor(Qt::transparent);
 			m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::WA_TranslucentBackground |
 			Qt::FramelessWindowHint |
 			Qt::WindowStaysOnBottomHint |
 			Qt::WindowDoesNotAcceptFocus
 			));
+			m_itemWindow->setColor(Qt::transparent);
 			m_itemWindow->setScreen(monitor);
 			m_itemWindow->show();
-
-			//m_headerWindow->lower();
-			m_itemWindow->lower();
 
 			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
 			//connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
