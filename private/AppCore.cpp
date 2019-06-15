@@ -78,9 +78,7 @@ AppCore::AppCore(QObject* parent)
 	qInfo() << "Creating Overlay Windows";
 	// Config Window
 	m_configOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ConfigOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(1280, 720)));
-	m_configOverlay->setColor(Qt::transparent);
 	m_configOverlay->setFlags(m_configOverlay->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
 	));
@@ -89,9 +87,7 @@ AppCore::AppCore(QObject* parent)
 
 	// Window List Overlay
 	m_windowListOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/WindowListOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(640, 480)));
-	m_windowListOverlay->setColor(Qt::transparent);
 	m_windowListOverlay->setFlags(m_windowListOverlay->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
 	));
@@ -100,9 +96,7 @@ AppCore::AppCore(QObject* parent)
 
 	// Power Menu Overlay
 	m_powerMenuOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/PowerMenuOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(120, 150)));
-	m_powerMenuOverlay->setColor(Qt::transparent);
 	m_powerMenuOverlay->setFlags(m_powerMenuOverlay->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
 	));
@@ -111,9 +105,7 @@ AppCore::AppCore(QObject* parent)
 
 	// Item Settings Overlay
 	m_itemSettingsOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ItemSettingsOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(640, 480)));
-	m_itemSettingsOverlay->setColor(Qt::transparent);
 	m_itemSettingsOverlay->setFlags(m_itemSettingsOverlay->flags() | static_cast<Qt::WindowFlags>(
-		Qt::WA_TranslucentBackground |
 		Qt::FramelessWindowHint |
 		Qt::WindowStaysOnTopHint
 	));
