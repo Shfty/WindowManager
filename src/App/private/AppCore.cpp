@@ -7,6 +7,7 @@
 #include <QQuickItem>
 #include <QQmlContext>
 #include <QJsonDocument>
+#include <QLocalSocket>
 
 #include "WindowController.h"
 #include "WindowView.h"
@@ -15,11 +16,6 @@
 #include "QmlController.h"
 #include "SettingsContainer.h"
 #include "Win.h"
-
-#define WORKING_DIRECTORY "P:/Personal/C++/WindowManager"
-#define AUTOSAVE_FILE "autosave.dat"
-#define AUTOSAVE_JSON_FILE "autosave.json"
-#define AUTOSAVE_JSON_PATH QString(WORKING_DIRECTORY) + QString("/") + QString(AUTOSAVE_JSON_FILE)
 
 AppCore::AppCore(QObject* parent)
 	: QObject(parent)
@@ -34,10 +30,60 @@ AppCore::AppCore(QObject* parent)
 	, m_powerMenuOverlay(nullptr)
 	, m_itemSettingsOverlay(nullptr)
 	, m_exitExpected(false)
+	, m_autosavePath(QString(QCoreApplication::arguments().at(2)))
+	, m_socketName(QString(QCoreApplication::arguments().at(1)))
+	, m_localSocket(nullptr)
 {
 	setObjectName("App Core");
 
 	qInfo() << "Startup";
+
+	qInfo() << "Creating m_localSocket";
+	m_localSocket = new QLocalSocket(this);
+	connect(m_localSocket, &QLocalSocket::connected, [=](){
+		qInfo() << "m_localSocket connected";
+		connect(m_localSocket, &QLocalSocket::readyRead, [=](){
+			QDataStream stream(m_localSocket);
+			stream.setVersion(QDataStream::Qt_5_12);
+
+			while(true)
+			{
+				QByteArray message;
+
+				stream.startTransaction();
+				stream >> message;
+				QString mStr = QString::fromUtf8(message);
+
+				if(stream.commitTransaction())
+				{
+					if(mStr == "Identify")
+					{
+						qInfo() << "ID request from server";
+						stream << "Identify" << m_socketName.toUtf8();
+					}
+					else if(mStr == "Chatter")
+					{
+						qInfo() << "Chatter request from server";
+						stream << "Foo" << "Bar" << "Baz" << "DecafIsBad";
+					}
+					else
+					{
+						qInfo() << "Unknown message from server:" << mStr;
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+		});
+	});
+
+	connect(m_localSocket, &QLocalSocket::disconnected, [=](){
+		qInfo() << "m_localSocket disconnected";
+	});
+
+	m_localSocket->connectToServer("WindowManager");
 
 	elevatePrivileges();
 
@@ -71,8 +117,8 @@ AppCore::AppCore(QObject* parent)
 	qmlControllerChanged();
 
 	// Tree model
-	qInfo() << "Loading Tree Model";
-	m_rootItem = loadModel(AUTOSAVE_JSON_PATH);
+	qInfo() << "Loading Tree Model from " << m_autosavePath;
+	m_rootItem = loadModel(m_autosavePath);
 	treeModelChanged();
 
 	qInfo() << "Creating Overlay Windows";
@@ -124,7 +170,9 @@ AppCore::AppCore(QObject* parent)
 		m_settingsContainer->setProperty("headerSize", 0);
 		m_rootItem->playShutdownAnimation();
 		connect(m_rootItem, &TreeItem::animationFinished, [=](){
-			m_qmlController->cleanup();
+			QDataStream stream(m_localSocket);
+			stream.setVersion(QDataStream::Qt_5_12);
+			stream << "Quit";
 		});
 	});
 
@@ -170,7 +218,7 @@ void AppCore::windowManagerReady()
 void AppCore::save()
 {
 	qInfo() << "Saving Tree Model";
-	saveModel(AUTOSAVE_JSON_PATH, m_rootItem);
+	saveModel(m_autosavePath, m_rootItem);
 }
 
 void AppCore::shutdown()

@@ -1,0 +1,6 @@
+cd /d "P:\Personal\C++\WindowManager\test-wd\wd-0"
+start "" "..\..\deploy\release\App.exe"
+cd /d "P:\Personal\C++\WindowManager\test-wd\wd-1"
+start "" "..\..\deploy\release\App.exe"
+cd /d "P:\Personal\C++\WindowManager\test-wd\wd-2"
+start "" "..\..\deploy\release\App.exe"

@@ -13,6 +13,7 @@ class QmlController;
 class QQuickWindow;
 class QQuickItem;
 class QWindow;
+class QLocalSocket;
 
 class AppCore : public QObject
 {
@@ -84,6 +85,10 @@ private:
 	QQuickWindow* m_itemSettingsOverlay;
 
 	bool m_exitExpected;
+	QString m_autosavePath;
+	QString m_socketName;
+
+	QLocalSocket* m_localSocket;
 };
 
 #endif // APPCORE_H

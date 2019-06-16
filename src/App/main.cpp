@@ -74,10 +74,18 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QStri
 
 int main(int argc, char *argv[])
 {
-	Q_INIT_RESOURCE(graphics);
-
+	QGuiApplication app(argc, argv);
+	QGuiApplication::setOrganizationName("Josh Palmer");
+	QGuiApplication::setOrganizationDomain("https://josh-palmer.com");
+	QGuiApplication::setQuitOnLastWindowClosed(false);
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	QGuiApplication::setAttribute(Qt::AA_UseOpenGLES); // Force OpenGL ES to prevent crashes on windows
+
+	QStringList args = QCoreApplication::arguments();
+	if(args.length() <= 2)
+	{
+		qCritical("No ID / save file specified, quitting...");
+		return EXIT_FAILURE;
+	}
 
 	// Setup QML renderer
 	QString productType = QSysInfo::productType();
@@ -92,11 +100,6 @@ int main(int argc, char *argv[])
 
 	qRegisterMetaType<HWND>();
 	qRegisterMetaType<QScreen*>();
-
-	QGuiApplication app(argc, argv);
-	app.setOrganizationName("Josh Palmer");
-	app.setOrganizationDomain("https://josh-palmer.com");
-	app.setQuitOnLastWindowClosed(false);
 
 	qInstallMessageHandler(myMessageHandler);
 

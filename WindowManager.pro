@@ -1,66 +1,9 @@
-QT += widgets quick quickcontrols2
-CONFIG += c++17
-LIBS += -luser32 -ldwmapi -lAdvAPI32 -lpowrprof
+TEMPLATE = subdirs
+SUBDIRS = \
+	App \
+	Launcher
 
-# The following define makes your compiler emit warnings if you use
-# any feature of Qt which as been marked deprecated (the exact warnings
-# depend on your compiler). Please consult the documentation of the
-# deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
+Launcher.subdir = src/Launcher
+App.subdir = src/App
 
-# You can also make your code fail to compile if you use deprecated APIs.
-# In order to do so, uncomment the following line.
-# You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-
-INCLUDEPATH += public
-
-RESOURCES += qml.qrc \
-	graphics.qrc
-
-# Additional import path used to resolve QML modules in Qt Creator's code model
-QML_IMPORT_PATH =
-
-# Additional import path used to resolve QML modules just for Qt Quick Designer
-QML_DESIGNER_IMPORT_PATH =
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
-
-HEADERS += \
-	public/AppCore.h \
-	public/DWMThumbnail.h \
-	public/QmlController.h \
-	public/SettingsContainer.h \
-	public/SystemWindow.h \
-	public/TreeIconImageProvider.h \
-	public/TreeItem.h \
-	public/WMObject.h \
-	public/Win.h \
-	public/WinShellController.h \
-	public/WinShellController/TaskBarWindow.h \
-	public/WinShellController/TrayWindow.h \
-	public/WindowController.h \
-	public/WindowView.h \
-	public/WindowView/EnumWindowsThread.h \
-	public/WindowInfo.h
-
-SOURCES += \
-	main.cpp \
-	private/AppCore.cpp \
-	private/DWMThumbnail.cpp \
-	private/QmlController.cpp \
-	private/SettingsContainer.cpp \
-	private/SystemWindow.cpp \
-	private/TreeIconImageProvider.cpp \
-	private/TreeItem.cpp \
-	private/WMObject.cpp \
-	private/WinShellController.cpp \
-	private/WinShellController/TaskBarWindow.cpp \
-	private/WinShellController/TrayWindow.cpp \
-	private/WindowController.cpp \
-	private/WindowView.cpp \
-	private/WindowView/EnumWindowsThread.cpp \
-	private/WindowInfo.cpp
+Launcher.depends = App

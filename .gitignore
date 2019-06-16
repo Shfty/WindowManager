@@ -1,11 +1,10 @@
 .vscode
 .qmake.stash
-autosave.dat
-autosave.json
 build
-Makefile*
+deploy
 TODO
 wm-log.*
+*.json
+*.bak
 *.pdb
 *.pro.user
-*.bak
