@@ -16,7 +16,7 @@ Item {
     property var hwnd: windowInfo !== null ? windowInfo.hwnd : null
 
     property bool hwndValid: hwnd !== null
-    property bool isRoot: model ? model.depth <= 1 : false
+    property bool isRoot: model ? model.depth === 0 : false
     property bool hasLaunchProperties: {
         return  model.launchUri !== "" ||
                 model.launchParams !== "" ||
@@ -464,10 +464,16 @@ Item {
                     Spinner {
                         Layout.fillHeight: true
                         size: appCore.settingsContainer.headerSize
+                        visible: false
                     }
 
-                    FramerateCounter {
+                    Item {
+                        Layout.minimumWidth: 80
                         Layout.fillHeight: true
+
+                        FramerateCounter {
+                            anchors.centerIn: parent
+                        }
                     }
                 }
 
@@ -504,7 +510,7 @@ Item {
                     text: "\uE7E8"
 
                     onClicked: {
-                        var pos = powerButton.mapToGlobal(powerButton.width - appCore.powerMenuOverlay.width, powerButton.height + 1)
+                        var pos = powerButton.mapToGlobal(powerButton.width - appCore.powerMenuOverlay.width, powerButton.height)
                         appCore.powerMenuOverlay.toggle(pos.x, pos.y)
                     }
                 }

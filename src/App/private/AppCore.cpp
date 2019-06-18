@@ -8,6 +8,8 @@
 #include <QQmlContext>
 #include <QJsonDocument>
 #include <QLocalSocket>
+#include <QQmlApplicationEngine>
+#include <QQuickWindow>
 
 #include "WindowController.h"
 #include "WindowView.h"
@@ -15,6 +17,8 @@
 #include "TreeItem.h"
 #include "QmlController.h"
 #include "SettingsContainer.h"
+#include "DWMThumbnail.h"
+#include "TreeIconImageProvider.h"
 #include "Win.h"
 
 AppCore::AppCore(QObject* parent)
@@ -30,14 +34,44 @@ AppCore::AppCore(QObject* parent)
 	, m_powerMenuOverlay(nullptr)
 	, m_itemSettingsOverlay(nullptr)
 	, m_exitExpected(false)
-	, m_autosavePath(QString(QCoreApplication::arguments().at(2)))
 	, m_socketName(QString(QCoreApplication::arguments().at(1)))
+	, m_monitorIndex(QCoreApplication::arguments().at(2).toInt())
+	, m_autosavePath(QString(QCoreApplication::arguments().at(3)))
+	, m_qmlEngine(nullptr)
+	, m_qmlWindow(nullptr)
 	, m_localSocket(nullptr)
 {
 	setObjectName("App Core");
 
 	qInfo() << "Startup";
 
+	// Elevate Privileges
+	qInfo() << "Elevating Privileges";
+	elevatePrivileges();
+
+	// Register Metatypes
+	qInfo() << "Registering Metatypes";
+	qRegisterMetaType<WindowInfo*>();
+	qRegisterMetaType<TreeItem*>();
+
+	// Register QML types
+	qInfo() << "Registering QML Types";
+	qmlRegisterType<DWMThumbnail>("DWMThumbnail", 1, 0, "DWMThumbnail");
+	qmlRegisterInterface<HWND>("HWND");
+
+	// Load QML application
+	qInfo() << "Loading main.qml";
+
+	m_qmlEngine = new QQmlApplicationEngine("qrc:/qml/main.qml", this);
+	m_qmlEngine->rootContext()->setContextProperty("appCore", this);
+	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
+
+	m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects()[0]);
+	m_qmlWindow->setScreen(QGuiApplication::screens()[m_monitorIndex]);
+	m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
+	m_qmlWindow->setVisibility(QWindow::Maximized);
+
+	// Connect to launcher via local socket
 	qInfo() << "Creating m_localSocket";
 	m_localSocket = new QLocalSocket(this);
 	connect(m_localSocket, &QLocalSocket::connected, [=](){
@@ -66,6 +100,11 @@ AppCore::AppCore(QObject* parent)
 						qInfo() << "Chatter request from server";
 						stream << "Foo" << "Bar" << "Baz" << "DecafIsBad";
 					}
+					else if(mStr == "Quit")
+					{
+						qInfo() << "Quit request from server";
+						exitRequested();
+					}
 					else
 					{
 						qInfo() << "Unknown message from server:" << mStr;
@@ -81,16 +120,12 @@ AppCore::AppCore(QObject* parent)
 
 	connect(m_localSocket, &QLocalSocket::disconnected, [=](){
 		qInfo() << "m_localSocket disconnected";
+		m_qmlController->cleanup();
 	});
 
 	m_localSocket->connectToServer("WindowManager");
 
-	elevatePrivileges();
-
-	qInfo() << "Registering Metatypes";
-	qRegisterMetaType<WindowInfo*>();
-	qRegisterMetaType<TreeItem*>();
-
+	// Normal Startup
 	qInfo() << "Initializing WM objects";
 	// Window Controller
 	m_windowController = new WindowController();
@@ -103,24 +138,15 @@ AppCore::AppCore(QObject* parent)
 	m_windowView = new WindowView(this);
 	windowViewChanged();
 
-	// Windows Shell Controller
-	m_winShellController = new WinShellController(this);
-	winShellControllerChanged();
-
 	// Settings Container
 	m_settingsContainer = new SettingsContainer(this);
 	settingsContainerChanged();
 
-	// QML Controller
-	m_qmlController = new QmlController(this);
-	m_qmlController->getRootContext()->setContextProperty("appCore", this);
-	qmlControllerChanged();
+	// Windows Shell Controller
+	m_winShellController = new WinShellController(this);
+	winShellControllerChanged();
 
-	// Tree model
-	qInfo() << "Loading Tree Model from " << m_autosavePath;
-	m_rootItem = loadModel(m_autosavePath);
-	treeModelChanged();
-
+	/*
 	qInfo() << "Creating Overlay Windows";
 	// Config Window
 	m_configOverlay = m_qmlController->createWindow(QUrl("qrc:/qml/overlays/ConfigOverlay.qml"), QRect(m_windowView->getOffscreenArea(), QSize(1280, 720)));
@@ -157,25 +183,17 @@ AppCore::AppCore(QObject* parent)
 	));
 	m_itemSettingsOverlay->show();
 	itemSettingsOverlayChanged();
-
+*/
 	qInfo() << "Setup Connections";
 	// Connections
 	connect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
-
+/*
 	connect(m_qmlController, &QmlController::exitRequested, [=](){
-		m_exitExpected = true;
-
-		save();
-
-		m_settingsContainer->setProperty("headerSize", 0);
-		m_rootItem->playShutdownAnimation();
-		connect(m_rootItem, &TreeItem::animationFinished, [=](){
-			QDataStream stream(m_localSocket);
-			stream.setVersion(QDataStream::Qt_5_12);
-			stream << "Quit";
-		});
+		QDataStream stream(m_localSocket);
+		stream.setVersion(QDataStream::Qt_5_12);
+		stream << "Quit";
 	});
-
+*/
 	QGuiApplication* app = static_cast<QGuiApplication*>(QGuiApplication::instance());
 	connect(app, &QGuiApplication::lastWindowClosed, [=](){
 		qInfo() << "All windows closed, shutting down";
@@ -185,8 +203,7 @@ AppCore::AppCore(QObject* parent)
 		{
 			qInfo() << "Unexpected exit";
 			save();
-			m_rootItem->playShutdownAnimation();
-			m_rootItem->updateWindowPosition();
+			m_rootItem->cleanup();
 		}
 		else {
 			qInfo() << "Expected exit";
@@ -209,10 +226,27 @@ void AppCore::windowManagerReady()
 	// Disconnect signal
 	QObject::disconnect(m_windowView, SIGNAL(windowScanFinished()), this, SLOT(windowManagerReady()));
 
+	// Tree model
+	qInfo() << "Loading Tree Model from " << m_autosavePath;
+	m_rootItem = loadModel(m_autosavePath);
+	treeModelChanged();
 	m_rootItem->startup();
 	m_rootItem->updateWindowPosition();
 
 	qInfo() << "Startup Complete";
+}
+
+void AppCore::exitRequested()
+{
+	m_exitExpected = true;
+
+	save();
+
+	m_settingsContainer->setProperty("headerSize", 0);
+	m_rootItem->playShutdownAnimation();
+	connect(m_rootItem, &TreeItem::animationFinished, [=](){
+		m_qmlController->cleanup();
+	});
 }
 
 void AppCore::save()
@@ -316,7 +350,6 @@ void AppCore::saveModel(QString filename, const TreeItem* model)
 	QJsonDocument jsonDoc(model->toJsonObject());
 	QFile jsonFile(filename);
 	jsonFile.open(QIODevice::WriteOnly);
-
 	jsonFile.write(jsonDoc.toJson());
 	jsonFile.close();
 }
@@ -324,14 +357,11 @@ void AppCore::saveModel(QString filename, const TreeItem* model)
 void AppCore::saveDefaultModel(QString filename)
 {
 	TreeItem* model = new TreeItem(this);
-	model->setObjectName("Root");
+	model->setObjectName("Monitor");
+	model->setProperty("flow", "Horizontal");
+	model->setProperty("layout", "Split");
 
-	QList<QScreen*> screens = qApp->screens();
-	for(int i = 0; i < screens.length(); ++i)
-	{
-		TreeItem* monitorItem = qvariant_cast<TreeItem*>(model->addChild("Monitor", "Horizontal", "Tabbed", screens[i]));
-		monitorItem->addChild("Desktop", "Horizontal", "Split");
-	}
+	model->addChild("Desktop", "Horizontal", "Split");
 
 	saveModel(filename, model);
 }

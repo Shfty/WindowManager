@@ -6,10 +6,12 @@ import ".."
 TreeHeader {
     id: treeHeader
 
-    x: model ? model.headerBounds.x : 0
-    y: model ? model.headerBounds.y : 0
-    width: model ? model.headerBounds.width : 0
-    height: model ? model.headerBounds.height : 0
+    property bool hasModel: model ? true : false
+
+    x: hasModel ? model.headerBounds.x : 0
+    y: hasModel ? model.headerBounds.y : 0
+    width: hasModel ? model.headerBounds.width : 0
+    height: hasModel ? model.headerBounds.height : 0
 
     property var animationEasing: Easing.OutCubic
     property int animationDuration: 300
@@ -19,53 +21,38 @@ TreeHeader {
     }
 
     Behavior on x {
-        enabled: model ? true : false
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
+        enabled: hasModel ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
         }
     }
 
     Behavior on y {
-        enabled: model ? true : false
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
+        enabled: hasModel ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
         }
     }
 
     Behavior on width {
-        enabled: model ? true : false
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
+        enabled: hasModel ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
         }
     }
 
     Behavior on height {
-        enabled: model ? true : false
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
+        enabled: hasModel ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
         }
     }
 
+    /*
     Drag.active: dragHandler.active
     Drag.source: treeHeader
     Drag.hotSpot.x: treeHeader.width / 2
@@ -76,4 +63,5 @@ TreeHeader {
         xAxis.enabled: model.treeParent.flow === "Horizontal"
         yAxis.enabled: model.treeParent.flow === "Vertical"
     }
+    */
 }

@@ -7,7 +7,6 @@
 
 class QProcess;
 class QSystemTrayIcon;
-class QMenu;
 class QLocalServer;
 class QLocalSocket;
 
@@ -18,11 +17,10 @@ class LauncherCore : public QObject
 public:
 	explicit LauncherCore(QObject* parent = nullptr);
 
-	void launchAppInstance(QString name, QString saveFile);
+	void launchAppInstance(QString name, int monitorIndex, QString saveFile);
 
 private:
 	QSystemTrayIcon* m_trayIcon;
-	QMenu* m_trayMenu;
 	QMap<QString, QProcess*> m_appInstances;
 
 	QLocalServer* m_localServer;

@@ -37,8 +37,10 @@ class TreeItem : public WMObject
 	Q_PROPERTY(QScreen* monitor READ getMonitor() WRITE setMonitor NOTIFY monitorChanged)
 
 	Q_PROPERTY(QRectF bounds READ getBoundsLocal() NOTIFY boundsChanged)
-	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
 	Q_PROPERTY(QRectF contentBounds READ getContentBoundsLocal() NOTIFY contentBoundsChanged)
+
+	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
+	Q_PROPERTY(QRectF nodeBounds READ getNodeBoundsLocal() NOTIFY nodeBoundsChanged)
 
 	Q_PROPERTY(WindowInfo* windowInfo READ getWindowInfo WRITE setWindowInfo NOTIFY windowInfoChanged)
 
@@ -83,10 +85,12 @@ public:
 	QRectF getBounds();
 	QRectF getHeaderBounds();
 	QRectF getContentBounds();
+	QRectF getNodeBounds();
 
 	QRectF getBoundsLocal();
 	QRectF getHeaderBoundsLocal();
 	QRectF getContentBoundsLocal();
+	QRectF getNodeBoundsLocal();
 
 	Q_INVOKABLE void toggleFlow();
 	Q_INVOKABLE void toggleLayout();
@@ -131,8 +135,10 @@ signals:
 	void depthChanged();
 
 	void boundsChanged();
-	void headerBoundsChanged();
 	void contentBoundsChanged();
+
+	void headerBoundsChanged();
+	void nodeBoundsChanged();
 
 	void monitorChanged();
 	void windowInfoChanged();

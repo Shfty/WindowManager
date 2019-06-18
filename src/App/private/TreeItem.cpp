@@ -47,6 +47,8 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(contentBoundsChanged()));
 	connect(this, SIGNAL(boundsChanged()), this, SIGNAL(headerBoundsChanged()));
 
+	connect(this, SIGNAL(contentBoundsChanged()), this, SIGNAL(nodeBoundsChanged()));
+
 	connect(this, SIGNAL(activeIndexChanged()), this, SIGNAL(contentBoundsChanged()));
 	connect(this, SIGNAL(flowChanged()), this, SIGNAL(contentBoundsChanged()));
 	connect(this, SIGNAL(layoutChanged()), this, SIGNAL(contentBoundsChanged()));
@@ -175,16 +177,13 @@ void TreeItem::setMonitor(QScreen* newMonitor)
 
 QRectF TreeItem::getBounds()
 {
-	if(m_monitorIndex != -1)
-	{
-		QScreen* monitor = getMonitor();
-		return QRectF(QPoint(), monitor->size());
-	}
-
+	// If this is the root item, return the window size
 	TreeItem* treeParent = getTreeParent();
 	if(treeParent == nullptr)
 	{
-		return QRectF(0, 0, -1, -1);
+		AppCore* appCore = getAppCore();
+		QQuickWindow* appWindow = appCore->getQmlWindow();
+		return QRectF(QPoint(), appWindow->size());
 	}
 
 	QRectF bounds = treeParent->getContentBounds();
@@ -226,75 +225,16 @@ QRectF TreeItem::getBounds()
 	}
 }
 
-QRectF TreeItem::getHeaderBounds()
-{
-	QRectF bounds = getBounds();
-
-	qreal headerSize = getHeaderSize();
-
-	if(m_monitorIndex != -1)
-	{
-		QRectF headerBounds;
-		headerBounds.setWidth(bounds.width());
-		headerBounds.setHeight(headerSize);
-		return headerBounds;
-	}
-
-	TreeItem* parent = getTreeParent();
-	if(parent == nullptr)
-	{
-		return QRectF(0, 0, -1, -1);
-	}
-
-	QObjectList parentChildren = parent->getTreeChildren();
-	int index = parentChildren.indexOf(this);
-	int parentChildCount = parentChildren.length();
-	QString parentFlow = parent->property("flow").toString();
-	QString parentLayout = parent->property("layout").toString();
-
-
-	QRectF headerBounds = QRectF(bounds);
-	if(parentLayout == "Tabbed")
-	{
-		if(parentFlow == "Horizontal")
-		{
-			qreal newWidth = bounds.width() / parentChildCount;
-
-			headerBounds.setWidth(newWidth);
-
-			qreal dx = index * newWidth;
-			headerBounds.adjust(dx, 0, dx, 0);
-		}
-		else if(parentFlow == "Vertical")
-		{
-			qreal dy = index * headerSize;
-			headerBounds.adjust(0, dy, 0, dy);
-		}
-	}
-	headerBounds.setHeight(headerSize);
-
-	return headerBounds;
-}
-
 QRectF TreeItem::getContentBounds()
 {
 	QRectF bounds = getBounds();
 
-	if(m_monitorIndex != -1)
-	{
-		qreal headerSize = getHeaderSize();
-
-		QRectF newBounds;
-		newBounds.setWidth(bounds.width());
-		newBounds.setHeight(bounds.height());
-		newBounds.setY(headerSize);
-		return newBounds;
-	}
-
 	TreeItem* parent = getTreeParent();
 	if(parent == nullptr)
 	{
-		return QRectF(0, 0, -1, -1);
+		qreal headerSize = getHeaderSize();
+		bounds.adjust(0, headerSize, 0, 0);
+		return bounds;
 	}
 
 	QObjectList parentChildren = parent->getTreeChildren();
@@ -331,6 +271,77 @@ QRectF TreeItem::getContentBounds()
 	return newBounds;
 }
 
+QRectF TreeItem::getHeaderBounds()
+{
+	QRectF bounds = getBounds();
+	qreal headerSize = getHeaderSize();
+
+	TreeItem* parent = getTreeParent();
+	if(parent == nullptr)
+	{
+		QRectF headerBounds;
+		headerBounds.setWidth(bounds.width());
+		headerBounds.setHeight(headerSize);
+		return headerBounds;
+	}
+
+	QObjectList parentChildren = parent->getTreeChildren();
+	int index = parentChildren.indexOf(this);
+	int parentChildCount = parentChildren.length();
+	QString parentFlow = parent->property("flow").toString();
+	QString parentLayout = parent->property("layout").toString();
+
+
+	QRectF headerBounds = QRectF(bounds);
+	if(parentLayout == "Tabbed")
+	{
+		if(parentFlow == "Horizontal")
+		{
+			qreal newWidth = bounds.width() / parentChildCount;
+
+			headerBounds.setWidth(newWidth);
+
+			qreal dx = index * newWidth;
+			headerBounds.adjust(dx, 0, dx, 0);
+		}
+		else if(parentFlow == "Vertical")
+		{
+			qreal dy = index * headerSize;
+			headerBounds.adjust(0, dy, 0, dy);
+		}
+	}
+	headerBounds.setHeight(headerSize);
+
+	return headerBounds;
+}
+
+QRectF TreeItem::getNodeBounds()
+{
+	QRectF bounds = getContentBounds();
+
+	TreeItem* parent = getTreeParent();
+	if(parent == nullptr)
+	{
+		return bounds;
+	}
+
+	if(m_layout == "Tabbed")
+	{
+		if(m_flow == "Vertical")
+		{
+			bounds.adjust(0, m_children.length() * getHeaderSize(), 0, 0);
+		}
+		else if(m_flow == "Horizontal")
+		{
+			bounds.adjust(0, getHeaderSize(), 0, 0);
+		}
+
+		bounds.adjust(0, getItemMargin(), 0, 0);
+	}
+
+	return bounds;
+}
+
 QRectF TreeItem::getBoundsLocal()
 {
 	QRectF bounds = getBounds();
@@ -355,13 +366,25 @@ QRectF TreeItem::getHeaderBoundsLocal()
 	return headerBounds;
 }
 
+QRectF TreeItem::getNodeBoundsLocal()
+{
+	QRectF contentBounds = getContentBounds();
+	QRectF nodeBounds = getNodeBounds();
+	nodeBounds.adjust(-contentBounds.x(), -contentBounds.y(), -contentBounds.x(), -contentBounds.y());
+
+	return nodeBounds;
+}
+
 QRectF TreeItem::getContentBoundsLocal()
 {
 	QRectF contentBounds = getContentBounds();
 
-	QRectF bounds = getBounds();
-	contentBounds.adjust(-bounds.x(), -bounds.y(), -bounds.x(), -bounds.y());
-
+	TreeItem* treeParent = getTreeParent();
+	if(treeParent != nullptr)
+	{
+		QRectF parentBounds = treeParent->getContentBounds();
+		contentBounds.adjust(-parentBounds.x(), -parentBounds.y(), -parentBounds.x(), -parentBounds.y());
+	}
 	return contentBounds;
 }
 
@@ -735,45 +758,6 @@ void TreeItem::startup()
 			tryAutoGrabWindow();
 		}
 	});
-
-	if(m_monitorIndex != -1)
-	{
-		qInfo() << objectName() << "setting up monitor" << m_monitorIndex;
-
-		QScreen* monitor = QGuiApplication::screens()[m_monitorIndex];
-
-		if(monitor != nullptr)
-		{
-			AppCore* appCore = getAppCore();
-			QmlController* qmlController = appCore->property("qmlController").value<QmlController*>();
-
-			QQmlContext* rootContext = qmlController->getRootContext();
-			QQmlContext* newContext = new QQmlContext(rootContext, this);
-			newContext->setContextProperty("treeItem", this);
-
-			m_itemWindow = qmlController->createWindow(QUrl("qrc:/qml/tree/NodeWindow.qml"), monitor->geometry(), newContext);
-			m_itemWindow->setFlags(m_itemWindow->flags() | static_cast<Qt::WindowFlags>(
-			Qt::FramelessWindowHint |
-			Qt::WindowStaysOnBottomHint |
-			Qt::WindowDoesNotAcceptFocus
-			));
-			m_itemWindow->setColor(Qt::transparent);
-			m_itemWindow->setScreen(monitor);
-			m_itemWindow->show();
-
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_itemWindow, SLOT(setGeometry(const QRect&)));
-			//connect(monitor, SIGNAL(geometryChanged(const QRect&)), m_headerWindow, SLOT(setGeometry(const QRect&)));
-
-			connect(monitor, SIGNAL(geometryChanged(const QRect&)), this, SIGNAL(boundsChanged()));
-			connect(monitor, SIGNAL(physicalDotsPerInchChanged(qreal)), this, SIGNAL(boundsChanged()));
-
-			qInfo() << objectName() << "monitor setup complete";
-		}
-		else
-		{
-			qCritical() << "Monitor invalid for" << objectName();
-		}
-	}
 
 	if(m_windowInfo == nullptr)
 	{

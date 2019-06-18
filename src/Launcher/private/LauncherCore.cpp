@@ -4,18 +4,19 @@
 #include <QProcess>
 #include <QDebug>
 #include <QIcon>
-#include <QMenu>
 #include <QSystemTrayIcon>
-#include <QAction>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 #define APP_EXE "App.exe"
 
 LauncherCore::LauncherCore(QObject* parent)
 	: QObject(parent)
 	, m_trayIcon(nullptr)
-	, m_trayMenu(nullptr)
 	, m_localServer(new QLocalServer(this))
 {
 	setObjectName("Launcher Core");
@@ -23,16 +24,10 @@ LauncherCore::LauncherCore(QObject* parent)
 	qInfo("Startup");
 
 	// Setup tray icon
-	QAction* exitAction = new QAction("Exit", this);
-	connect(exitAction, &QAction::triggered, this, [=](){
+	m_trayIcon = new QSystemTrayIcon(QIcon(":/graphics/logo.png"), this);
+	connect(m_trayIcon, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason){
 		QApplication::quit();
 	});
-
-	m_trayMenu = new QMenu(nullptr);
-	m_trayMenu->addAction(exitAction);
-
-	m_trayIcon = new QSystemTrayIcon(QIcon(":/graphics/logo.png"), this);
-	m_trayIcon->setContextMenu(m_trayMenu);
 
 	m_trayIcon->show();
 
@@ -76,7 +71,12 @@ LauncherCore::LauncherCore(QObject* parent)
 					}
 					else if(mStr == "Quit")
 					{
-						QApplication::quit();
+						for(QLocalSocket* quitSocket : m_localSockets)
+						{
+							QDataStream quitStream(quitSocket);
+							quitStream.setVersion(QDataStream::Qt_5_12);
+							quitStream << "Quit";
+						}
 					}
 					else
 					{
@@ -91,10 +91,27 @@ LauncherCore::LauncherCore(QObject* parent)
 		});
 	});
 
-	// Launch app instances
-	launchAppInstance("Main", "../../main.json");
-	launchAppInstance("Video", "../../video.json");
-	launchAppInstance("Chat", "../../chat.json");
+
+	QFile file("../../launcher.json");
+	file.open(QIODevice::ReadOnly);
+	{
+		QByteArray loadData = file.readAll();
+		QJsonDocument loadDocument = QJsonDocument::fromJson(loadData);
+
+		QJsonArray monitorArray = loadDocument.array();
+		for(QJsonValue v : monitorArray)
+		{
+			QJsonObject monitorObject = v.toObject();
+
+			QString monitorName = monitorObject["monitorName"].toString();
+			int monitorIndex = monitorObject["monitorIndex"].toInt();
+			QString monitorFile = monitorObject["monitorFile"].toString();
+
+			qInfo() << "Launching app instance for monitor" << monitorName << " with index " << monitorIndex << " using save file " << monitorFile;
+			launchAppInstance(monitorName, monitorIndex, "../../" + monitorFile);
+		}
+	}
+	file.close();
 
 	// Connect cleanup code
 	connect(QApplication::instance(), &QApplication::aboutToQuit, [=](){
@@ -106,16 +123,28 @@ LauncherCore::LauncherCore(QObject* parent)
 	});
 }
 
-void LauncherCore::launchAppInstance(QString name, QString saveFile)
+void LauncherCore::launchAppInstance(QString name, int monitorIndex, QString saveFile)
 {
 	qInfo() << "Launching process for " << name;
 
 	QProcess* process = new QProcess(this);
 	QStringList mainArgs;
-	mainArgs << name << saveFile;
+	mainArgs << name << QString::number(monitorIndex) << saveFile;
 	process->start(APP_EXE, mainArgs);
 	connect(process, &QProcess::readyReadStandardOutput, [=](){
 		qInfo() << process->readAllStandardOutput();
+	});
+	connect(process, &QProcess::readyReadStandardError, [=](){
+		qWarning() << process->readAllStandardError();
+	});
+	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){
+		qInfo() << "Process finished" << process;
+		m_appInstances.remove(m_appInstances.key(process));
+		if(m_appInstances.empty())
+		{
+			qInfo() << "All subprocesses finished, quitting";
+			QApplication::quit();
+		}
 	});
 	m_appInstances.insert(name, process);
 }

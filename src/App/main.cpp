@@ -75,9 +75,10 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QStri
 int main(int argc, char *argv[])
 {
 	QGuiApplication app(argc, argv);
+	QGuiApplication::setApplicationName("Window Manager");
 	QGuiApplication::setOrganizationName("Josh Palmer");
 	QGuiApplication::setOrganizationDomain("https://josh-palmer.com");
-	QGuiApplication::setQuitOnLastWindowClosed(false);
+	//QGuiApplication::setQuitOnLastWindowClosed(false);
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
 	QStringList args = QCoreApplication::arguments();

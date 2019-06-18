@@ -12,8 +12,6 @@ DWMThumbnail::DWMThumbnail(QQuickItem *parent) : QQuickItem(parent),
 {
 	setObjectName("DWM Thumbnail");
 
-	qInfo("Startup");
-
 	connect(this, SIGNAL(hwndChanged()), this, SLOT(updateThumbnail()));
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(updateThumbnail()));
 }
@@ -35,13 +33,16 @@ void DWMThumbnail::updateThumbnail()
 	}
 
 	QQuickWindow* parentWindow = window();
+
 	if(parentWindow == nullptr) return;
 	if(parentWindow->visibility() == QWindow::Hidden)
 	{
-		connect(parentWindow, SIGNAL(visibilityChanged(QWindow::Visibility)), this, SLOT(updateThumbnail()));
+		connect(parentWindow, &QQuickWindow::visibilityChanged, [=](){
+			updateThumbnail();
+		});
 		return;
 	}
-	disconnect(parentWindow, SIGNAL(visibilityChanged(QWindow::Visibility)), this, SLOT(updateThumbnail()));
+	disconnect(parentWindow, &QQuickWindow::visibilityChanged, nullptr, nullptr);
 
 	HWND parentHwnd = reinterpret_cast<HWND>(parentWindow->winId());
 	if (parentHwnd == nullptr) return;
@@ -90,7 +91,7 @@ void DWMThumbnail::drawThumbnail()
 	QRectF destRect = QRectF(destPos, destSize);
 
 	qreal opacity = property("opacity").toReal();
-
+	qreal scale = property("scale").toReal();
 	QQuickItem* candidate = parentItem();
 	while(candidate != nullptr)
 	{
@@ -100,18 +101,25 @@ void DWMThumbnail::drawThumbnail()
 			QSizeF clipTargetSize = candidate->size();
 			QRectF clippingRect = QRectF(clipTargetPos, clipTargetSize);
 
-			destRect = destRect.intersected(clippingRect);
+			if(!clippingRect.contains(destRect.topLeft()) || !clippingRect.contains(destRect.bottomRight()))
+			{
+				destRect = destRect.intersected(clippingRect);
 
-			QPointF relativePos = clippingRect.topLeft() - destPos;
-			QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
+				QPointF relativePos = clippingRect.topLeft() - destPos;
+				QRectF relativeClipRect = QRectF(relativePos, clippingRect.size());
 
-			sourceRect = sourceRect.intersected(relativeClipRect);
+				sourceRect = sourceRect.intersected(relativeClipRect);
+			}
 		}
 
 		opacity *= candidate->opacity();
+		scale *= candidate->scale();
 
 		candidate = candidate->parentItem();
 	}
+
+	destRect.setWidth(destRect.width() * scale);
+	destRect.setHeight(destRect.height() * scale);
 
 	QQuickWindow* parentWindow = window();
 	QScreen* parentScreen = parentWindow->screen();
@@ -132,31 +140,21 @@ void DWMThumbnail::drawThumbnail()
 	);
 
 	// Account for extended margins
-	RECT extendedFrame;
-	DwmGetWindowAttribute(m_hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
-
-	QMargins extendedMargins = QMargins(
-		extendedFrame.left - winRect.left,
-		extendedFrame.top - winRect.top,
-		extendedFrame.right - winRect.right,
-		extendedFrame.bottom - winRect.bottom
-	);
-/*
-	if(m_clipTarget == nullptr)
+	if(sourceRect.isValid())
 	{
+		RECT extendedFrame;
+		DwmGetWindowAttribute(m_hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
+
+		QMargins extendedMargins = QMargins(extendedFrame.left - winRect.left,
+											extendedFrame.top - winRect.top,
+											extendedFrame.right - winRect.right,
+											extendedFrame.bottom - winRect.bottom);
+
 		sourceRect.adjust(extendedMargins.left(),
 						  extendedMargins.top(),
 						  extendedMargins.right(),
 						  extendedMargins.bottom());
 	}
-	else
-	{
-*/
-		sourceRect.adjust(extendedMargins.left(),
-						  extendedMargins.top(),
-						  extendedMargins.left(),
-						  extendedMargins.top());
-	//}
 
 	// Convert rectangles into winapi format
 	RECT source = {
@@ -179,7 +177,7 @@ void DWMThumbnail::drawThumbnail()
 
 	// Use the window frame and client area
 	dskThumbProps.fSourceClientAreaOnly = FALSE;
-	dskThumbProps.fVisible = true;
+	dskThumbProps.fVisible = sourceRect.isValid();
 
 	dskThumbProps.opacity = static_cast<unsigned char>(opacity * 255.0);
 	dskThumbProps.rcSource = source;

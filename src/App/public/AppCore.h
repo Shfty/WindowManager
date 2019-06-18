@@ -13,6 +13,8 @@ class QmlController;
 class QQuickWindow;
 class QQuickItem;
 class QWindow;
+class QQmlApplicationEngine;
+class QQuickWindow;
 class QLocalSocket;
 
 class AppCore : public QObject
@@ -39,6 +41,8 @@ public:
 	QQuickItem* getPowerMenuOverlay();
 	QQuickItem* getItemSettingsOverlay();
 
+	QQuickWindow* getQmlWindow() const { return m_qmlWindow; }
+
 signals:
 
 	void winShellControllerChanged();
@@ -55,6 +59,7 @@ signals:
 
 public slots:
 	void windowManagerReady();
+	void exitRequested();
 
 	void save();
 
@@ -85,9 +90,12 @@ private:
 	QQuickWindow* m_itemSettingsOverlay;
 
 	bool m_exitExpected;
-	QString m_autosavePath;
 	QString m_socketName;
+	int m_monitorIndex;
+	QString m_autosavePath;
 
+	QQmlApplicationEngine* m_qmlEngine;
+	QQuickWindow* m_qmlWindow;
 	QLocalSocket* m_localSocket;
 };
 

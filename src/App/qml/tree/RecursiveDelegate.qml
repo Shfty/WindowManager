@@ -6,8 +6,10 @@ import ".."
 Item {
     id: recursiveWrapper
 
+    objectName: model ? model.objectName : "Recursive Wrapper"
+
     property var model: null
-    property var delegate: null
+    property var visualDelegate: null
 
     property var animationEasing: Easing.OutCubic
     property int animationDuration: 300
@@ -15,136 +17,152 @@ Item {
     property int loadedChildren: 0
     signal childrenLoaded
 
+    property string boundsProperty: null
+    property rect delegateBounds: {
+        if (!boundsProperty)
+            return Qt.rect(0, 0, 0, 0)
+        if (!model)
+            return Qt.rect(0, 0, 0, 0)
+        return model[boundsProperty]
+    }
+
+    property string childBoundsProperty: null
+    property rect childBounds: {
+        if (!childBoundsProperty)
+            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
+        if (!model)
+            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
+        return model[childBoundsProperty]
+    }
+
+    property bool clipChildren: false
+
     // Positioning and animation
-    x: model ? model.bounds.x : 0
-    y: model ? model.bounds.y : 0
-    width: model ? model.bounds.width : 0
-    height: model ? model.bounds.height : 0
+    x: delegateBounds.x
+    y: delegateBounds.y - parent.y
+    width: delegateBounds.width
+    height: delegateBounds.height
 
-    clip: true
-
-    Behavior on x {
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
+    // Business logic
+    property var ready: model && loadedChildren === 0
+    onReadyChanged: {
+        if (ready) {
+            for (var i = 0; i < recursiveWrapper.model.children.length; ++i) {
+                incubateItem(recursiveWrapper.model.children[i])
             }
-            ScriptAction { script: model.isAnimating = false }
         }
     }
 
-    Behavior on y {
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
+    Connections {
+        target: model
+        onChildAdded: function (index, child) {
+            incubateItem(child)
+        }
+        onChildRemoved: function (index, child) {
+            for (; i < childItems.length; ++i) {
+                var candidate = childItems[i]
+                if (candidate.model === child) {
+                    childItems.splice(i, 1)
+                    candidate.remove()
+                }
             }
-            ScriptAction { script: model.isAnimating = false }
         }
     }
 
-    Behavior on width {
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
-        }
-    }
-
-    Behavior on height {
-        SequentialAnimation {
-            ScriptAction { script: model.isAnimating = true }
-            NumberAnimation {
-                duration: animationDuration
-                easing.type: animationEasing
-            }
-            ScriptAction { script: model.isAnimating = false }
-        }
-    }
-
-    // Visual components
+    // Child elements
     Loader {
-        sourceComponent: recursiveWrapper.delegate
-
+        anchors.fill: parent
+        sourceComponent: recursiveWrapper.visualDelegate
         onLoaded: {
-            item.model = recursiveWrapper.model
+            if (item.model !== undefined) {
+                item.model = recursiveWrapper.model
+            }
         }
+    }
+
+    Item {
+        id: childWrapper
+        objectName: recursiveWrapper.objectName + " Child Wrapper"
+        x: childBounds.x
+        y: childBounds.y
+        width: childBounds.width
+        height: childBounds.height
+        clip: true
     }
 
     // Child handling
     property var childItems: []
 
     function incubateItem(childModel) {
-        var incubator = recursiveDelegate.incubateObject(
-            recursiveWrapper,
-            {
-                model: childModel
-            }
-        )
-
-        incubator.forceCompletion()
+        var incubator = recursiveDelegate.incubateObject(childWrapper, {
+                                                             "model": childModel,
+                                                             "visualDelegate": recursiveWrapper.visualDelegate,
+                                                             "boundsProperty": recursiveWrapper.boundsProperty,
+                                                             "childBoundsProperty": recursiveWrapper.childBoundsProperty,
+                                                             "clipChildren": recursiveWrapper.clipChildren
+                                                         })
 
         if (incubator.status !== Component.Ready) {
-            incubator.onStatusChanged = function(status) {
+            incubator.onStatusChanged = function (status) {
                 if (status === Component.Ready) {
-                    incubatorReady(incubator.object)
+                    incubatorReady(incubator.object, childModel)
                 }
             }
         } else {
-            incubatorReady(incubator.object)
+            incubatorReady(incubator.object, childModel)
         }
     }
 
-    function incubatorReady(object)
-    {
+    function incubatorReady(object, model) {
         childItems.push(object)
         loadedChildren++
-        if(loadedChildren == childItems.length)
-        {
+        if (loadedChildren == childItems.length) {
             childrenLoaded()
         }
     }
 
     function remove() {
-        for(var i = 0; i < childItems.length; ++i)
-        {
+        for (; i < childItems.length; ++i) {
             childItems[i].remove()
         }
 
         destroy()
     }
 
-    Component.onCompleted: {
-        console.log("RecursiveDelegate Completed", model);
-
-        if(!model) return
-
-        for(var i = 0; i < model.children.length; ++i)
-        {
-            incubateItem(model.children[i])
+    // Animation
+    Behavior on x {
+        enabled: model ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
+            onRunningChanged: model.isAnimating = running
         }
     }
 
-    Connections {
-        target: model
-        onChildAdded: function(index, child) {
-            incubateItem(child)
+    Behavior on y {
+        enabled: model ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
+            onRunningChanged: model.isAnimating = running
         }
-        onChildRemoved: function(index, child) {
-            for(var i = 0; i < childItems.length; ++i)
-            {
-                var candidate = childItems[i]
-                if(candidate.model === child)
-                {
-                    childItems.splice(i, 1)
-                    candidate.remove()
-                }
-            }
+    }
+
+    Behavior on width {
+        enabled: model ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
+            onRunningChanged: model.isAnimating = running
+        }
+    }
+
+    Behavior on height {
+        enabled: model ? true : false
+        NumberAnimation {
+            duration: animationDuration
+            easing.type: animationEasing
+            onRunningChanged: model.isAnimating = running
         }
     }
 }
