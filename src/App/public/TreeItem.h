@@ -1,14 +1,18 @@
 #ifndef TREEITEM_H
 #define TREEITEM_H
 
-#include "WMObject.h"
+#include <QObject>
 
-#include "Win.h"
 #include <QRect>
 #include <QPoint>
 #include <QString>
 #include <QVariant>
 #include <QJsonObject>
+
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(treeItem);
+
+#include <Win.h>
 
 class AppCore;
 class SettingsContainer;
@@ -19,7 +23,7 @@ class QQuickWindow;
 class QQuickView;
 class WindowInfo;
 
-class TreeItem : public WMObject
+class TreeItem : public QObject
 {
 	Q_OBJECT
 
@@ -33,8 +37,6 @@ class TreeItem : public WMObject
 
 	Q_PROPERTY(int index READ getIndex() NOTIFY indexChanged)
 	Q_PROPERTY(int depth READ getDepth() NOTIFY depthChanged)
-
-	Q_PROPERTY(QScreen* monitor READ getMonitor() WRITE setMonitor NOTIFY monitorChanged)
 
 	Q_PROPERTY(QRectF bounds READ getBoundsLocal() NOTIFY boundsChanged)
 	Q_PROPERTY(QRectF contentBounds READ getContentBoundsLocal() NOTIFY contentBoundsChanged)
@@ -57,6 +59,7 @@ class TreeItem : public WMObject
 	Q_PROPERTY(QString autoGrabClass MEMBER m_autoGrabClass NOTIFY autoGrabClassChanged)
 
 	// Misc
+	Q_PROPERTY(bool startupComplete MEMBER m_startupComplete NOTIFY startupCompleteChanged)
 	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
 	Q_PROPERTY(bool isVisible READ getIsVisible NOTIFY isVisibleChanged)
 	Q_PROPERTY(bool windowVisible READ getWindowVisible NOTIFY windowVisibleChanged)
@@ -80,7 +83,6 @@ public:
 	bool getWindowVisible();
 
 	QScreen* getMonitor();
-	Q_INVOKABLE void setMonitor(QScreen* newMonitor);
 
 	QRectF getBounds();
 	QRectF getHeaderBounds();
@@ -117,9 +119,6 @@ public:
 	QJsonObject toJsonObject() const;
 	void loadFromJson(QJsonObject jsonObject);
 
-	void startup();
-	void playShutdownAnimation();
-
 signals:
 	void parentChanged();
 	void childrenChanged();
@@ -152,20 +151,22 @@ signals:
 	void autoGrabTitleChanged();
 	void autoGrabClassChanged();
 
+	void startupCompleteChanged();
 	void isAnimatingChanged();
 	void animationFinished();
 	void isVisibleChanged();
 	void windowVisibleChanged();
 
 	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position);
 	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer, quint32 extraFlags);
 	void endMoveWindows();
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 public slots:
+	void startup();
 	void updateWindowPosition();
 	void launch();
+	void playShutdownAnimation();
 
 protected:
 	void updateWindowPosition_Internal();
@@ -175,7 +176,6 @@ protected slots:
 
 private:
 	SettingsContainer* getSettingsContainer();
-	WindowController* getWindowController();
 	WindowView* getWindowView();
 
 	qreal getItemMargin();
@@ -184,7 +184,7 @@ private:
 	// Serialized properties
 	QString m_flow;
 	QString m_layout;
-	int m_monitorIndex;
+	HWND m_savedHwnd;
 	WindowInfo* m_windowInfo;
 
 	bool m_borderless;
@@ -199,6 +199,7 @@ private:
 	QList<TreeItem*> m_children;
 
 	// Trasient properties
+	bool m_startupComplete;
 	TreeItem* m_activeChild;
 	bool m_isAnimating;
 	bool m_wantsAutoLaunch;

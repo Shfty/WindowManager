@@ -1,12 +1,5 @@
 #include "TreeItem.h"
 
-#include "AppCore.h"
-#include "SettingsContainer.h"
-#include "QmlController.h"
-#include "WindowController.h"
-#include "WindowView.h"
-#include "Win.h"
-
 #include <QApplication>
 #include <QDesktopServices>
 #include <QDir>
@@ -14,27 +7,39 @@
 #include <QProcess>
 #include <QScreen>
 #include <QUrl>
-#include <QQuickView>
+#include <QQuickWindow>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QJsonArray>
 
+#include <QDebug>
+Q_LOGGING_CATEGORY(treeItem, "app.treeItem")
+
+#include <SettingsContainer.h>
+#include <WindowInfo.h>
+#include <WindowView.h>
+
+#include "TreeModel.h"
+#include "AppCore.h"
+#include "QMLController.h"
+#include "Win.h"
+
 TreeItem::TreeItem(QObject* parent)
-: WMObject(parent)
-, m_monitorIndex(-1)
-, m_windowInfo(nullptr)
-, m_borderless(false)
-, m_autoLaunch(false)
-, m_activeChild(nullptr)
-, m_isAnimating(false)
-, m_wantsAutoLaunch(false)
-, m_itemWindow(nullptr)
-, m_headerWindow(nullptr)
+	: QObject(parent)
+	, m_windowInfo(nullptr)
+	, m_borderless(false)
+	, m_autoLaunch(false)
+	, m_startupComplete(false)
+	, m_activeChild(nullptr)
+	, m_isAnimating(false)
+	, m_wantsAutoLaunch(false)
+	, m_itemWindow(nullptr)
+	, m_headerWindow(nullptr)
 {
 	setObjectName("Tree Item");
 
-	qInfo("Startup");
+	qCInfo(treeItem) << "Startup";
 
 	Q_ASSERT(parent != nullptr);
 
@@ -57,16 +62,17 @@ TreeItem::TreeItem(QObject* parent)
 	connect(this, &TreeItem::borderlessChanged, [=]() {
 		if(m_windowInfo != nullptr)
 		{
-			WindowController* wc = getWindowController();
 			if(m_borderless)
 			{
 				qint32 winStyle = m_windowInfo->getWinStyle();
 				winStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-				wc->setWindowStyle(m_windowInfo->getHwnd(), winStyle);
+				qInfo() << "Emitting SetWindowStyle for " << m_windowInfo->getWinTitle() << " with style " << winStyle;
+				emit setWindowStyle(m_windowInfo->getHwnd(), winStyle);
 			}
 			else
 			{
-				wc->setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
+				qInfo() << "Emitting SetWindowStyle for " << m_windowInfo->getWinTitle() << " with style " << m_windowInfo->getWinStyle();
+				emit setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
 			}
 
 			updateWindowPosition();
@@ -85,17 +91,17 @@ TreeItem::TreeItem(QObject* parent)
 	});
 
 	// Window management signals
-	WindowController* wc = getWindowController();
-	connect(this, SIGNAL(beginMoveWindows()), wc, SLOT(beginMoveWindows()));
-	connect(this, SIGNAL(moveWindow(HWND, QPoint)), wc, SLOT(moveWindow(HWND, QPoint)));
-	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)), wc, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)));
-	connect(this, SIGNAL(endMoveWindows()), wc, SLOT(endMoveWindows()));
-	connect(this, SIGNAL(setWindowStyle(HWND, qint32)), wc, SLOT(setWindowStyle(HWND, qint32)));
+	TreeModel* tm = TreeModel::getInstance(this);
+	connect(this, SIGNAL(beginMoveWindows()), tm, SLOT(beginMoveWindows()));
+	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)), tm, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)));
+	connect(this, SIGNAL(endMoveWindows()), tm, SLOT(endMoveWindows()));
+
+	connect(this, SIGNAL(setWindowStyle(HWND, qint32)), tm, SIGNAL(setWindowStyle(HWND, qint32)));
 }
 
 void TreeItem::cleanup()
 {
-	qInfo() << objectName() << "cleaning up";
+	qCInfo(treeItem) << objectName() << "cleaning up";
 
 	emit beginMoveWindows();
 	cleanup_internal();
@@ -114,7 +120,7 @@ void TreeItem::cleanup_internal()
 
 void TreeItem::cleanupWindow(WindowInfo* wi)
 {
-	qInfo() << objectName() << "cleaning up window";
+	qCInfo(treeItem) << objectName() << "cleaning up window";
 
 	if(wi != nullptr)
 	{
@@ -154,25 +160,10 @@ void TreeItem::setupWindow(WindowInfo* wi)
 
 QScreen* TreeItem::getMonitor()
 {
-	if(m_monitorIndex != -1)
-	{
-		return QGuiApplication::screens()[m_monitorIndex];
-	}
-
-	TreeItem* parent = getTreeParent();
-	if(parent == nullptr)
-	{
-		return nullptr;
-	}
-
-	return parent->getMonitor();
-}
-
-void TreeItem::setMonitor(QScreen* newMonitor)
-{
-	QList<QScreen*> screens = qApp->screens();
-	m_monitorIndex = screens.indexOf(newMonitor);
-	monitorChanged();
+	AppCore* appCore = AppCore::getInstance(this);
+	QMLController* qmlController = appCore->getQmlController();
+	QQuickWindow* qmlWindow = qmlController->getQmlWindow();
+	return qmlWindow->screen();
 }
 
 QRectF TreeItem::getBounds()
@@ -181,8 +172,9 @@ QRectF TreeItem::getBounds()
 	TreeItem* treeParent = getTreeParent();
 	if(treeParent == nullptr)
 	{
-		AppCore* appCore = getAppCore();
-		QQuickWindow* appWindow = appCore->getQmlWindow();
+		AppCore* appCore = AppCore::getInstance(this);
+		QMLController* qmlController = appCore->getQmlController();
+		QQuickWindow* appWindow = qmlController->getQmlWindow();
 		return QRectF(QPoint(), appWindow->size());
 	}
 
@@ -660,7 +652,7 @@ void TreeItem::moveChild(int fromIndex, int toIndex)
 
 void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 {
-	if(m_windowInfo != nullptr)
+	if(m_windowInfo != nullptr && m_windowInfo->getHwnd() != nullptr)
 	{
 		emit beginMoveWindows();
 		cleanupWindow(m_windowInfo);
@@ -688,7 +680,6 @@ QJsonObject TreeItem::toJsonObject() const
 		{"objectName", objectName()},
 		{"flow", m_flow},
 		{"layout", m_layout},
-		{"monitorIndex", m_monitorIndex},
 		{"hwnd", reinterpret_cast<qlonglong>(hwnd)},
 		{"borderless", m_borderless},
 		{"launchUri", m_launchUri},
@@ -714,17 +705,12 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 {
 	setObjectName(jsonObject.value("objectName").toString());
 
-	qInfo() << "Loading" << objectName() << "from JSON";
+	qCInfo(treeItem) << "Loading" << objectName() << "from JSON";
 
 	m_flow = jsonObject.value("flow").toString();
 	m_layout = jsonObject.value("layout").toString();
 
-	m_monitorIndex = jsonObject.value("monitorIndex").toInt();
-
-	qInfo() << objectName() << "checking for existing HWND";
-	WindowView* wv = getWindowView();
-	HWND loadedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
-	setWindowInfo(wv->getWindowInfo(loadedHwnd));
+	m_savedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
 
 	m_borderless = jsonObject.value("borderless").toBool();
 
@@ -746,7 +732,7 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 
 void TreeItem::startup()
 {
-	qInfo() << objectName() << "startup";
+	qCInfo(treeItem) << objectName() << "startup";
 
 	connect(this, SIGNAL(autoGrabTitleChanged()), this, SLOT(tryAutoGrabWindow()));
 	connect(this, SIGNAL(autoGrabClassChanged()), this, SLOT(tryAutoGrabWindow()));
@@ -758,6 +744,8 @@ void TreeItem::startup()
 			tryAutoGrabWindow();
 		}
 	});
+
+	setWindowInfo(wv->getWindowInfo(m_savedHwnd));
 
 	if(m_windowInfo == nullptr)
 	{
@@ -773,6 +761,9 @@ void TreeItem::startup()
 	{
 		child->startup();
 	}
+
+	m_startupComplete = true;
+	startupCompleteChanged();
 }
 
 void TreeItem::playShutdownAnimation()
@@ -788,7 +779,7 @@ void TreeItem::playShutdownAnimation()
 
 void TreeItem::updateWindowPosition()
 {
-	//qInfo() << objectName() << "updating window position";
+	//qCInfo(treeItem) << objectName() << "updating window position";
 
 	emit beginMoveWindows();
 	updateWindowPosition_Internal();
@@ -799,7 +790,7 @@ void TreeItem::launch()
 {
 	if(!m_launchUri.isEmpty())
 	{
-		qInfo() << objectName() << "launching";
+		qCInfo(treeItem) << objectName() << "launching";
 
 		QUrl uri = QUrl(m_launchUri + m_launchParams, QUrl::StrictMode);
 		if(uri.isValid())
@@ -820,7 +811,7 @@ void TreeItem::launch()
 
 void TreeItem::updateWindowPosition_Internal()
 {
-	if(m_windowInfo != nullptr)
+	if(m_windowInfo != nullptr && m_windowInfo->getHwnd() != nullptr)
 	{
 		HWND hwnd = m_windowInfo->getHwnd();
 
@@ -833,19 +824,16 @@ void TreeItem::updateWindowPosition_Internal()
 
 		// Calculate position
 		QPointF globalPosition;
-
-		if(visible)
-		{
-			QPointF desktopPosition = getMonitor()->geometry().topLeft();
+		if(visible) {
+			QPointF desktopPosition = monitor->geometry().topLeft();
 			QPointF screenPosition = contentBounds.topLeft();
 			globalPosition = desktopPosition + screenPosition;
-			globalPosition *= dpr;
 		}
-		else
-		{
-			WindowView* wv = getWindowView();
-			globalPosition = wv->getOffscreenArea();
+		else {
+			globalPosition = monitor->virtualGeometry().bottomRight();
 		}
+
+		globalPosition *= dpr;
 
 		// Calculate size
 		QSizeF globalSize = contentBounds.size();
@@ -872,7 +860,7 @@ void TreeItem::updateWindowPosition_Internal()
 		QPoint position = globalPosition.toPoint();
 		QSize size = globalSize.toSize();
 
-		emit moveWindow(m_windowInfo->getHwnd(), position, size, -2LL, visible ? 0 : SWP_NOSIZE);
+		emit moveWindow(m_windowInfo->getHwnd(), position, size, -2LL, 0);
 	}
 
 	for(TreeItem* child : m_children)
@@ -886,20 +874,21 @@ void TreeItem::tryAutoGrabWindow()
 	if(m_children.length() > 0) return;
 	if(m_autoGrabTitle.isEmpty() && m_autoGrabClass.isEmpty()) return;
 
-	//qInfo() << objectName() << "trying auto grab";
+	//qCInfo(treeItem) << objectName() << "trying auto grab";
 
-	WindowView* wv = getAppCore()->property("windowView").value<WindowView*>();
+	AppCore* appCore = AppCore::getInstance(this);
+	WindowView* wv = appCore->property("windowView").value<WindowView*>();
 	WindowInfo* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
 
 	if(foundWindow != nullptr)
 	{
-		//qInfo() << objectName() << "auto grab successful";
+		//qCInfo(treeItem) << objectName() << "auto grab successful";
 		setWindowInfo(foundWindow);
 		updateWindowPosition();
 	}
 	else
 	{
-		//qInfo() << objectName() << "auto grab failed";
+		//qCInfo(treeItem) << objectName() << "auto grab failed";
 	}
 	/*
 	else if(false && m_windowInfo != nullptr)
@@ -911,26 +900,18 @@ void TreeItem::tryAutoGrabWindow()
 
 SettingsContainer* TreeItem::getSettingsContainer()
 {
-	AppCore* appCore = getAppCore();
+	AppCore* appCore = AppCore::getInstance(this);
 	Q_ASSERT(appCore != nullptr);
 
 	return appCore->property("settingsContainer").value<SettingsContainer*>();
 }
 
-WindowController* TreeItem::getWindowController()
-{
-	AppCore* appCore = getAppCore();
-	Q_ASSERT(appCore != nullptr);
-
-	return appCore->property("windowController").value<WindowController*>();
-}
-
 WindowView* TreeItem::getWindowView()
 {
-	AppCore* appCore = getAppCore();
+	AppCore* appCore = AppCore::getInstance(this);
 	Q_ASSERT(appCore != nullptr);
 
-	return appCore->property("windowView").value<WindowView*>();
+	return appCore->getWindowView();
 }
 
 qreal TreeItem::getItemMargin()

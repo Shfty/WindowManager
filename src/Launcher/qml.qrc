@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/overlays/ConfigOverlay.qml</file>
+        <file>qml/overlays/ItemSettingsOverlay.qml</file>
+        <file>qml/overlays/PowerMenuOverlay.qml</file>
+        <file>qml/overlays/WindowListOverlay.qml</file>
+        <file>qml/qmldir</file>
+        <file>qml/overlays/ConfigOverlay/ConfigDelegate.qml</file>
+        <file>qml/overlays/ConfigOverlay/ConfigView.qml</file>
+        <file>qml/overlays/ConfigOverlay/DetailView.qml</file>
+        <file>qml/overlays/ConfigOverlay/MonitorsTab.qml</file>
+        <file>qml/overlays/ConfigOverlay/SettingsTab.qml</file>
+        <file>qml/overlays/ConfigOverlay/TreeTab.qml</file>
+        <file>qml/overlays/ConfigOverlay/WindowList.qml</file>
+    </qresource>
+</RCC>

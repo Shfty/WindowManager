@@ -1,9 +1,12 @@
-QT += network widgets quick quickcontrols2
+QT += widgets quick quickcontrols2 network
 CONFIG += c++17
-LIBS += -luser32 -ldwmapi -lAdvAPI32 -lpowrprof
+LIBS += -luser32 -ldwmapi
+
+CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_INFO_OUTPUT QT_NO_WARNING_OUTPUT
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
+# Tidy output folders
 Release:DESTDIR = release
 Release:OBJECTS_DIR = release/.obj
 Release:MOC_DIR = release/.moc
@@ -21,37 +24,30 @@ INCLUDEPATH += public
 HEADERS += \
 	public/AppCore.h \
 	public/DWMThumbnail.h \
-	public/QmlController.h \
-	public/SettingsContainer.h \
-	public/SystemWindow.h \
-	public/TreeIconImageProvider.h \
+	public/IPCClient.h \
+	public/QMLController.h \
 	public/TreeItem.h \
-	public/WMObject.h \
-	public/Win.h \
-	public/WinShellController.h \
-	public/WinShellController/TaskBarWindow.h \
-	public/WinShellController/TrayWindow.h \
-	public/WindowController.h \
-	public/WindowView.h \
-	public/WindowView/EnumWindowsThread.h \
-	public/WindowInfo.h
+	public/TreeModel.h
 
 SOURCES += \
 	main.cpp \
 	private/AppCore.cpp \
 	private/DWMThumbnail.cpp \
-	private/QmlController.cpp \
-	private/SettingsContainer.cpp \
-	private/SystemWindow.cpp \
-	private/TreeIconImageProvider.cpp \
+	private/IPCClient.cpp \
+	private/QMLController.cpp \
 	private/TreeItem.cpp \
-	private/WMObject.cpp \
-	private/WinShellController.cpp \
-	private/WinShellController/TaskBarWindow.cpp \
-	private/WinShellController/TrayWindow.cpp \
-	private/WindowController.cpp \
-	private/WindowView.cpp \
-	private/WindowView/EnumWindowsThread.cpp \
-	private/WindowInfo.cpp
+	private/TreeModel.cpp
 
 RESOURCES += qml.qrc
+
+# Shared library
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../Shared/release/ -lShared
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../Shared/debug/ -lShared
+
+INCLUDEPATH += $$PWD/../Shared/public
+DEPENDPATH += $$PWD/../Shared/public
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../Shared/release/libShared.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../Shared/debug/libShared.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../Shared/release/Shared.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../Shared/debug/Shared.lib

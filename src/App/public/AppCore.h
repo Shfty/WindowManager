@@ -4,99 +4,84 @@
 #include <QObject>
 #include <QThread>
 
-class WinShellController;
-class WindowController;
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(appCore);
+
 class WindowView;
-class TreeItem;
+class TreeModel;
 class SettingsContainer;
-class QmlController;
 class QQuickWindow;
 class QQuickItem;
 class QWindow;
-class QQmlApplicationEngine;
-class QQuickWindow;
+class QMLController;
 class QLocalSocket;
+class IPCClient;
+class TreeItem;
 
 class AppCore : public QObject
 {
 	Q_OBJECT
 
-	Q_PROPERTY(WinShellController* winShellController MEMBER m_winShellController NOTIFY winShellControllerChanged)
-	Q_PROPERTY(WindowController* windowController MEMBER m_windowController NOTIFY windowControllerChanged)
 	Q_PROPERTY(WindowView* windowView MEMBER m_windowView NOTIFY windowViewChanged)
 	Q_PROPERTY(SettingsContainer* settingsContainer MEMBER m_settingsContainer NOTIFY settingsContainerChanged)
-	Q_PROPERTY(QmlController* qmlController MEMBER m_qmlController NOTIFY qmlControllerChanged)
-	Q_PROPERTY(TreeItem* treeModel MEMBER m_rootItem NOTIFY treeModelChanged)
-
-	Q_PROPERTY(QQuickItem* configOverlay READ getConfigOverlay() NOTIFY configOverlayChanged)
-	Q_PROPERTY(QQuickItem* windowListOverlay READ getWindowListOverlay() NOTIFY windowListOverlayChanged)
-	Q_PROPERTY(QQuickItem* powerMenuOverlay READ getPowerMenuOverlay() NOTIFY powerMenuOverlayChanged)
-	Q_PROPERTY(QQuickItem* itemSettingsOverlay READ getItemSettingsOverlay() NOTIFY itemSettingsOverlayChanged)
+	Q_PROPERTY(TreeModel* treeModel MEMBER m_treeModel NOTIFY treeModelChanged)
+	Q_PROPERTY(IPCClient* ipcClient MEMBER m_ipcClient NOTIFY ipcClientChanged)
 
 public:
 	explicit AppCore(QObject* parent = nullptr);
 
-	QQuickItem* getConfigOverlay();
-	QQuickItem* getWindowListOverlay();
-	QQuickItem* getPowerMenuOverlay();
-	QQuickItem* getItemSettingsOverlay();
+	static AppCore* getInstance(const QObject* child) {
+		QObject* candidate = child->parent();
+		while(candidate != nullptr)
+		{
+			AppCore* launcherCore = qobject_cast<AppCore*>(candidate);
+			if(launcherCore != nullptr)
+			{
+				return launcherCore;
+			}
 
-	QQuickWindow* getQmlWindow() const { return m_qmlWindow; }
+			candidate = candidate->parent();
+		}
+
+		return nullptr;
+	}
+
+	void logHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg);
+
+	WindowView* getWindowView() const { return m_windowView; }
+	QMLController* getQmlController() const { return m_qmlController; }
 
 signals:
-
-	void winShellControllerChanged();
-	void windowControllerChanged();
 	void windowViewChanged();
 	void settingsContainerChanged();
-	void qmlControllerChanged();
 	void treeModelChanged();
+	void ipcClientChanged();
 
-	void configOverlayChanged();
-	void windowListOverlayChanged();
-	void powerMenuOverlayChanged();
-	void itemSettingsOverlayChanged();
+	void startup();
 
 public slots:
-	void windowManagerReady();
+	void syncObjectPropertyChanged(QString object, QString property, QVariant value);
+
+	void setPendingWindowRecipient(TreeItem* treeItem) { m_pendingWindowRecipient = treeItem; }
+
 	void exitRequested();
-
-	void save();
-
-	void shutdown();
-	void reboot();
-	void sleep();
-	void logout();
+	void logReceived(QtMsgType type, const QMessageLogContext& ctx, const QString& msg);
 
 private:
-	void elevatePrivileges();
+	void registerMetatypes();
+	void makeConnections();
 
-	TreeItem* loadModel(QString filename);
-	void saveModel(QString filename, const TreeItem* nestedModel);
-	void saveDefaultModel(QString filename);
-
-	QThread m_windowControllerThread;
-
-	WindowController* m_windowController;
+	QMLController* m_qmlController;
 	WindowView* m_windowView;
-	WinShellController* m_winShellController;
 	SettingsContainer* m_settingsContainer;
-	QmlController* m_qmlController;
-	TreeItem* m_rootItem;
-
-	QQuickWindow* m_configOverlay;
-	QQuickWindow* m_windowListOverlay;
-	QQuickWindow* m_powerMenuOverlay;
-	QQuickWindow* m_itemSettingsOverlay;
+	TreeModel* m_treeModel;
 
 	bool m_exitExpected;
-	QString m_socketName;
-	int m_monitorIndex;
-	QString m_autosavePath;
 
-	QQmlApplicationEngine* m_qmlEngine;
-	QQuickWindow* m_qmlWindow;
-	QLocalSocket* m_localSocket;
+	QThread m_ipcClientThread;
+	IPCClient* m_ipcClient;
+
+	TreeItem* m_pendingWindowRecipient;
 };
 
 #endif // APPCORE_H

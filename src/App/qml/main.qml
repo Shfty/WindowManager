@@ -1,108 +1,265 @@
 import QtQuick 2.0
 import QtQuick.Window 2.12
-import QtQuick.Controls 2.5
+import QtQuick.Controls 2.12
 
 import "."
 
-ApplicationWindow {
+AppWindow {
     id: appWindow
 
-    title: "Window Manager"
+    // Animation
+    property real animationDuration: 600
+    property int animationCurve: Easing.OutQuad
 
-    flags: Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus | Qt.WindowStaysOnBottomHint
+    // Tree Root
+    property bool showTree: false
 
-    x: Screen.virtualX
-    y: Screen.virtualY
-    width: Screen.width
-    height: Screen.height
+    property var treeModel: appCore ? appCore.treeModel : null
+    property var treeRoot: treeModel ? treeModel.rootItem : null
+    property bool treeRootReady: treeRoot ? true : false
 
-    readonly property int minSize: Math.min(width, height)
-    readonly property int maxSize: Math.max(width, height)
+    // Wallpaper
+    ShaderEffectSource {
+        id: wallpaper
 
-    color: "transparent"
-
-    readonly property bool hasAppCore: appCore ? true : false
-
-    // Spinner
-    Loader {
-        id: spinnerLoader
         anchors.fill: parent
-        active: true
-        z: 1
 
-        sourceComponent: Spinner {
-            id: spinner
+        property rect virtualGeometry: appCore.windowView.screenList[0].virtualGeometry
 
-            anchors.centerIn: parent
-            size: appWindow.minSize * 0.5
-            dotScale: 0.9
+        sourceRect: Qt.rect(
+            Screen.virtualX - virtualGeometry.x,
+            Screen.virtualY - virtualGeometry.y,
+            Screen.width,
+            Screen.height
+        )
 
-            Component.onCompleted: {
-                state = "here"
-            }
+        sourceItem: Image {
+            id: wallpaperImage
+            asynchronous: true
+            source: appCore.settingsContainer.wallpaperUrl
+            width: wallpaper.virtualGeometry.width
+            height: wallpaper.virtualGeometry.height
+            fillMode: Image.PreserveAspectCrop
+        }
 
-            state: "below"
-            states: [
-                State {
-                    name: "below"
-                    PropertyChanges {
-                        target: spinner
-                        opacity: 0
-                        scale: 0.9
-                    }
-                },
-                State {
-                    name: "here"
-                    PropertyChanges {
-                        target: spinner
-                        opacity: 0.8
-                        scale: 1
-                    }
-                },
-                State {
-                    name: "above"
-                    PropertyChanges {
-                        target: spinner
-                        opacity: 0
-                        scale: 1.1
-                    }
-                }
-            ]
-
-            transitions: [
-                Transition {
-                    id: spinnerTransition
-
-                    NumberAnimation {
-                        target: spinner
-                        properties: "opacity, scale"
-                        duration: 600
-                        easing.type: Easing.OutQuad
-                    }
-
-                    onRunningChanged: {
-                        if (!running) {
-                            switch (spinner.state) {
-                            case "above":
-                                spinnerLoader.active = false
-                                break
-                            case "here":
-                                //if(headerLoader.status === Loader.Ready && nodeLoader.status === Loader.Ready) {
-                                spinner.state = "above"
-                                //treeWrapper.state = "here"
-                                //}
-                                break
-                            default:
-                                break
-                            }
-                        }
-                    }
-                }
-            ]
+        opacity: wallpaperImage.status === Image.Ready ? 1.0 : 0.0
+        Behavior on opacity {
+            NumberAnimation {}
         }
     }
 
-    // Tree Root
+    // Tree
+    Item {
+        id: treeWrapper
+        anchors.fill: parent
+
+        // Loading Wrappers
+        Item {
+            id: nodeWrapper
+            anchors.fill: parent
+
+            readonly property bool ready: appWindow.treeRootReady
+            property var incubator: null
+            property bool loaded: false
+            onReadyChanged: {
+                if(ready) {
+                    incubator = recursiveDelegate.incubateObject(
+                        this,
+                        {
+                            model: appWindow.treeRoot,
+                            visualDelegate: nodeDelegate,
+                            boundsProperty: "contentBounds",
+                            childBoundsProperty: "nodeBounds",
+                            clipChildren: true
+                        }
+                    )
+
+                    incubator.onStatusChanged = function(status) {
+                        nodeWrapper.loaded = true
+                    }
+                }
+            }
+        }
+
+        Item {
+            id: headerWrapper
+            anchors.fill: parent
+
+            readonly property bool ready: appWindow.treeRootReady
+            property var incubator: null
+            property bool loaded: false
+            onReadyChanged: {
+                if (ready) {
+                    incubator = recursiveDelegate.incubateObject(
+                        this,
+                        {
+                            model: appWindow.treeRoot,
+                            visualDelegate: headerDelegate,
+                            boundsProperty: "bounds",
+                            clipChildren: true
+                        }
+                    )
+
+                    incubator.onStatusChanged = function(status) {
+                        headerWrapper.loaded = true
+                    }
+                }
+            }
+        }
+
+        // Animation
+        state: appWindow.showTree ? "here" : "below"
+
+        states: [
+            State {
+                name: "below"
+                PropertyChanges {
+                    target: treeWrapper
+                    opacity: 0
+                    scale: 0.9
+                }
+            },
+            State {
+                name: "here"
+                PropertyChanges {
+                    target: treeWrapper
+                    opacity: 1
+                    scale: 1
+                }
+            },
+            State {
+                name: "above"
+                PropertyChanges {
+                    target: treeWrapper
+                    opacity: 0
+                    scale: 1.1
+                }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                NumberAnimation {
+                    target: treeWrapper
+                    properties: "opacity, scale"
+                    duration: animationDuration
+                    easing.type: animationCurve
+                }
+
+                onRunningChanged: {
+                    if(!running) {
+                        if(treeWrapper.state == "here")
+                        {
+                            console.log("Transition in complete")
+                            appWindow.treeRoot.updateWindowPosition()
+                        }
+                    }
+                }
+            }
+        ]
+    }
+
+    // Spinner
+    readonly property bool incubatorsLoaded: nodeWrapper.loaded && headerWrapper.loaded
+    onIncubatorsLoadedChanged: {
+        if(incubatorsLoaded)
+        {
+            var startupBinding = Qt.binding(function() {
+                return appWindow.treeRoot.startupComplete ? "above" : "here"
+            })
+
+            spinnerWrapper.setState(startupBinding)
+        }
+    }
+
+    Item {
+        id: spinnerWrapper
+
+        anchors.centerIn: parent
+        width: appWindow.minSize * 0.5
+        height: appWindow.minSize * 0.5
+
+        Component.onCompleted: {
+            print("Easing Type:", Easing.OutCubic)
+            setState("here")
+        }
+
+        BusyIndicator {
+            anchors.fill: parent
+            running: spinnerWrapper.opacity > 0
+        }
+
+        state: "below"
+        property var stateQueue: []
+        function setState(newState) {
+            if(spinnerTransition.running)
+            {
+                stateQueue.unshift(newState)
+            }
+            else
+            {
+                state = newState
+            }
+        }
+
+        onStateChanged: {
+            if(state === "above")
+            {
+                showTree = true
+            }
+        }
+
+        states: [
+            State {
+                name: "below"
+                PropertyChanges {
+                    target: spinnerWrapper
+                    opacity: 0
+                    scale: 0.9
+                }
+            },
+            State {
+                name: "here"
+                PropertyChanges {
+                    target: spinnerWrapper
+                    opacity: 1
+                    scale: 1
+                }
+            },
+            State {
+                name: "above"
+                PropertyChanges {
+                    target: spinnerWrapper
+                    opacity: 0
+                    scale: 1.1
+                }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                id: spinnerTransition
+
+                NumberAnimation {
+                    target: spinnerWrapper
+                    properties: "opacity, scale"
+                    duration: animationDuration
+                    easing.type: animationCurve
+                }
+
+                onRunningChanged: {
+                    if(!running) {
+                        if(spinnerWrapper.stateQueue.length > 0)
+                        {
+                            spinnerWrapper.state = spinnerWrapper.stateQueue.pop()
+                        }
+                    }
+                }
+            }
+        ]
+    }
+
+    // Components
     Component {
         id: recursiveDelegate
         RecursiveDelegate {
@@ -144,51 +301,12 @@ ApplicationWindow {
 
     Component {
         id: nodeDelegate
-
-        NodeDelegate {
-            anchors.fill: parent
-        }
+        NodeDelegate {}
     }
 
     Component {
         id: headerDelegate
-
         HeaderDelegate {}
-    }
-
-    Item {
-        id: nodeWrapper
-        anchors.fill: parent
-
-        property var ready: appCore && appCore.treeModel !== null
-        onReadyChanged: {
-            if (ready) {
-                var incubator = recursiveDelegate.incubateObject(nodeWrapper, {
-                                                                     model: appCore.treeModel,
-                                                                     visualDelegate: nodeDelegate,
-                                                                     boundsProperty: "contentBounds",
-                                                                     childBoundsProperty: "nodeBounds",
-                                                                     clipChildren: true
-                                                                 })
-            }
-        }
-    }
-
-    Item {
-        id: headerWrapper
-        anchors.fill: parent
-
-        property var ready: appCore && appCore.treeModel !== null
-        onReadyChanged: {
-            if (ready) {
-                var incubator = recursiveDelegate.incubateObject(headerWrapper,
-                                                                 {
-                                                                     "model": appCore.treeModel,
-                                                                     "visualDelegate": headerDelegate,
-                                                                     "boundsProperty": "bounds"
-                                                                 })
-            }
-        }
     }
 
     // Debug
@@ -203,15 +321,17 @@ ApplicationWindow {
                     id: boundsWrapper
                     anchors.fill: parent
 
-                    property var ready: appCore && appCore.treeModel !== null
+                    readonly property bool ready: appWindow.treeRootReady
                     onReadyChanged: {
                         if (ready) {
                             var incubator = recursiveDelegate.incubateObject(
-                                        this, {
-                                            "model": appCore.treeModel,
-                                            "visualDelegate": boundsRectDelegate,
-                                            "boundsProperty": "bounds"
-                                        })
+                                this,
+                                {
+                                    "model": appWindow.treeRoot,
+                                    "visualDelegate": boundsRectDelegate,
+                                    "boundsProperty": "bounds"
+                                }
+                            )
                         }
                     }
                 }
@@ -220,101 +340,21 @@ ApplicationWindow {
                     id: contentBoundsWrapper
                     anchors.fill: parent
 
-                    property var ready: appCore && appCore.treeModel !== null
+                    readonly property bool ready: appWindow.treeRootReady
                     onReadyChanged: {
                         if (ready) {
                             var incubator = recursiveDelegate.incubateObject(
-                                        this, {
-                                            "model": appCore.treeModel,
-                                            "visualDelegate": contentBoundsRectDelegate,
-                                            "boundsProperty": "contentBounds"
-                                        })
-                        }
-                    }
-                }
-
-                Item {
-                    id: clippedBoundsWrapper
-                    anchors.fill: parent
-
-                    property var ready: appCore && appCore.treeModel !== null
-                    onReadyChanged: {
-                        if (ready) {
-                            var incubator = recursiveDelegate.incubateObject(
-                                        this, {
-                                            "model": appCore.treeModel,
-                                            "visualDelegate": headerBoundsRectDelegate,
-                                            "boundsProperty": "clippedBounds"
-                                        })
+                                this,
+                                {
+                                    "model": appWindow.treeRoot,
+                                    "visualDelegate": contentBoundsRectDelegate,
+                                    "boundsProperty": "contentBounds"
+                                }
+                            )
                         }
                     }
                 }
             }
         }
     }
-
-
-    /*
-        Component {
-            id: headerDelegate
-            RecursiveDelegate {
-                animationDuration: 300
-                visualDelegate: HeaderDelegate {}
-                recursiveDelegate: headerDelegate
-            }
-        }
-
-        Loader {
-            id: headerLoader
-            active: hasAppCore && appCore.treeModel !== null
-
-            anchors.fill: parent
-
-            sourceComponent: headerDelegate
-
-            onLoaded: {
-                item.model = appCore.treeModel
-            }
-        }
-
-        state: "below"
-        states: [
-            State {
-                name: "below"
-                PropertyChanges {
-                    target: treeWrapper
-                    opacity: 0
-                    scale: 0.9
-                }
-            },
-            State {
-                name: "here"
-                PropertyChanges {
-                    target: treeWrapper
-                    opacity: 1
-                    scale: 1
-                }
-            },
-            State {
-                name: "above"
-                PropertyChanges {
-                    target: treeWrapper
-                    opacity: 0
-                    scale: 1.1
-                }
-            }
-        ]
-
-        transitions: [
-            Transition {
-                NumberAnimation {
-                    target: treeWrapper
-                    properties: "opacity, scale"
-                    duration: 600
-                    easing.type: Easing.OutQuad
-                }
-            }
-        ]
-    }
-*/
 }

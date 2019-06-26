@@ -3,7 +3,10 @@
 
 #include <QtQuick/QQuickItem>
 
-#include "Win.h"
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(dwmThumbnail);
+
+#include <Win.h>
 
 class DWMThumbnail : public QQuickItem
 {

@@ -1,33 +1,31 @@
 #ifndef QMLCONTROLLER_H
 #define QMLCONTROLLER_H
 
-#include "WMObject.h"
+#include <QObject>
 
-class QQuickWindow;
-class QQmlContext;
-class QQmlEngine;
-class QQuickItem;
-class QQuickWindow;
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(qmlController);
 
-class QmlController : public WMObject
+class QQmlApplicationEngine;
+class QQuickWindow;
+class QQmlComponent;
+class QQmlItem;
+class TreeItem;
+
+class QMLController : public QObject
 {
 	Q_OBJECT
-
 public:
-	explicit QmlController(QObject* parent = nullptr);
+	explicit QMLController(QObject *parent = nullptr);
 
-	QQmlContext* getRootContext() const;
-	QQuickWindow* createWindow(QUrl url, QRect geometry, QQmlContext* newContext = nullptr);
+	QQuickWindow* getQmlWindow() const { return m_qmlWindow; }
 
-	void cleanup();
-
-signals:
-	void exitRequested();
+public slots:
+	void closeWindow();
 
 private:
-	QQmlEngine* m_qmlEngine;
-
-	QList<QQuickWindow*> m_windows;
+	QQmlApplicationEngine* m_qmlEngine;
+	QQuickWindow* m_qmlWindow;
 };
 
 #endif // QMLCONTROLLER_H

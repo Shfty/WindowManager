@@ -1,5 +1,7 @@
 #include <QApplication>
-#include <QDebug>
+#include <QQuickStyle>
+
+#include <Logging.h>
 
 #include "LauncherCore.h"
 
@@ -9,7 +11,9 @@ int main(int argc, char *argv[])
 	QApplication::setOrganizationName("Josh Palmer");
 	QApplication::setOrganizationDomain("https://josh-palmer.com");
 
-	Q_INIT_RESOURCE(graphics);
+	QQuickStyle::setStyle("Universal");
+
+	qInstallMessageHandler(Logging::logHandler);
 
 	LauncherCore launcherCore;
 

@@ -11,12 +11,7 @@ Item {
     property var model: null
     property var visualDelegate: null
 
-    property var animationEasing: Easing.OutCubic
-    property int animationDuration: 300
-
-    property int loadedChildren: 0
-    signal childrenLoaded
-
+    // Positioning
     property string boundsProperty: null
     property rect delegateBounds: {
         if (!boundsProperty)
@@ -26,27 +21,35 @@ Item {
         return model[boundsProperty]
     }
 
-    property string childBoundsProperty: null
-    property rect childBounds: {
-        if (!childBoundsProperty)
-            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
-        if (!model)
-            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
-        return model[childBoundsProperty]
+    Behavior on delegateBounds {
+        enabled: model ? true : false
+        PropertyAnimation {
+            duration: appCore.settingsContainer.itemAnimationDuration
+            easing.type: appCore.settingsContainer.itemAnimationCurve
+            onRunningChanged: model.isAnimating = running
+        }
     }
 
-    property bool clipChildren: false
-
-    // Positioning and animation
     x: delegateBounds.x
     y: delegateBounds.y - parent.y
     width: delegateBounds.width
     height: delegateBounds.height
 
-    // Business logic
-    property var ready: model && loadedChildren === 0
-    onReadyChanged: {
-        if (ready) {
+    // Visual delegate
+    Loader {
+        anchors.fill: parent
+        sourceComponent: recursiveWrapper.visualDelegate
+        onLoaded: {
+            if (item.model !== undefined) {
+                item.model = recursiveWrapper.model
+            }
+        }
+    }
+
+    // Child elements
+    property var incubateReady: model && childWrapper.children.length === 0
+    onIncubateReadyChanged: {
+        if (incubateReady) {
             for (var i = 0; i < recursiveWrapper.model.children.length; ++i) {
                 incubateItem(recursiveWrapper.model.children[i])
             }
@@ -59,24 +62,42 @@ Item {
             incubateItem(child)
         }
         onChildRemoved: function (index, child) {
-            for (; i < childItems.length; ++i) {
-                var candidate = childItems[i]
+            for(var i = 0; i < childWrapper.children.length; ++i) {
+                var candidate = childWrapper.children[i]
                 if (candidate.model === child) {
-                    childItems.splice(i, 1)
-                    candidate.remove()
+                    candidate.destroy()
                 }
             }
         }
     }
 
-    // Child elements
-    Loader {
-        anchors.fill: parent
-        sourceComponent: recursiveWrapper.visualDelegate
-        onLoaded: {
-            if (item.model !== undefined) {
-                item.model = recursiveWrapper.model
+    function incubateItem(childModel) {
+        recursiveDelegate.incubateObject(
+            childWrapper, {
+                model: childModel,
+                visualDelegate: recursiveWrapper.visualDelegate,
+                boundsProperty: recursiveWrapper.boundsProperty,
+                childBoundsProperty: recursiveWrapper.childBoundsProperty,
+                clipChildren: recursiveWrapper.clipChildren
             }
+        )
+    }
+
+    property bool clipChildren: false
+    property string childBoundsProperty: null
+    property rect childBounds: {
+        if (!childBoundsProperty)
+            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
+        if (!model)
+            return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
+        return model[childBoundsProperty]
+    }
+
+    Behavior on childBounds {
+        enabled: model ? true : false
+        PropertyAnimation {
+            easing.type: appCore.settingsContainer.itemAnimationCurve
+            duration: appCore.settingsContainer.itemAnimationDuration
         }
     }
 
@@ -87,82 +108,6 @@ Item {
         y: childBounds.y
         width: childBounds.width
         height: childBounds.height
-        clip: true
-    }
-
-    // Child handling
-    property var childItems: []
-
-    function incubateItem(childModel) {
-        var incubator = recursiveDelegate.incubateObject(childWrapper, {
-                                                             "model": childModel,
-                                                             "visualDelegate": recursiveWrapper.visualDelegate,
-                                                             "boundsProperty": recursiveWrapper.boundsProperty,
-                                                             "childBoundsProperty": recursiveWrapper.childBoundsProperty,
-                                                             "clipChildren": recursiveWrapper.clipChildren
-                                                         })
-
-        if (incubator.status !== Component.Ready) {
-            incubator.onStatusChanged = function (status) {
-                if (status === Component.Ready) {
-                    incubatorReady(incubator.object, childModel)
-                }
-            }
-        } else {
-            incubatorReady(incubator.object, childModel)
-        }
-    }
-
-    function incubatorReady(object, model) {
-        childItems.push(object)
-        loadedChildren++
-        if (loadedChildren == childItems.length) {
-            childrenLoaded()
-        }
-    }
-
-    function remove() {
-        for (; i < childItems.length; ++i) {
-            childItems[i].remove()
-        }
-
-        destroy()
-    }
-
-    // Animation
-    Behavior on x {
-        enabled: model ? true : false
-        NumberAnimation {
-            duration: animationDuration
-            easing.type: animationEasing
-            onRunningChanged: model.isAnimating = running
-        }
-    }
-
-    Behavior on y {
-        enabled: model ? true : false
-        NumberAnimation {
-            duration: animationDuration
-            easing.type: animationEasing
-            onRunningChanged: model.isAnimating = running
-        }
-    }
-
-    Behavior on width {
-        enabled: model ? true : false
-        NumberAnimation {
-            duration: animationDuration
-            easing.type: animationEasing
-            onRunningChanged: model.isAnimating = running
-        }
-    }
-
-    Behavior on height {
-        enabled: model ? true : false
-        NumberAnimation {
-            duration: animationDuration
-            easing.type: animationEasing
-            onRunningChanged: model.isAnimating = running
-        }
+        clip: clipChildren
     }
 }

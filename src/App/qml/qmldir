@@ -1,25 +1,7 @@
-ConfigView 1.0 config/ConfigView.qml
-ConfigDelegate 1.0 config/ConfigDelegate.qml
-DetailView 1.0 config/DetailView.qml
-FpsItem 1.0 config/FpsItem.qml
-TreeTab 1.0 config/TreeTab.qml
-WindowList 1.0 config/WindowList.qml
-SettingsTab 1.0 config/SettingsTab.qml
-Spinner 1.0 config/Spinner.qml
-FramerateCounter 1.0 config/FramerateCounter.qml
-MonitorsTab 1.0 config/MonitorsTab.qml
 AppIcon 1.0 config/AppIcon.qml
+FramerateCounter 1.0 config/FramerateCounter.qml
+Spinner 1.0 config/Spinner.qml
 
-ConfigOverlay 1.0 overlays/ConfigOverlay.qml
-WindowListOverlay 1.0 overlays/WindowListOverlay.qml
-PowerMenuOverlay 1.0 overlays/PowerMenuOverlay.qml
-ItemSettingsOverlay 1.0 overlays/ItemSettingsOverlay.qml
-
-RecursiveDelegate 1.0 tree/RecursiveDelegate.qml
-
-NodeWindow 1.0 tree/NodeWindow.qml
-NodeDelegate 1.0 tree/NodeDelegate.qml
-
-HeaderWindow 1.0 tree/HeaderWindow.qml
 HeaderDelegate 1.0 tree/HeaderDelegate.qml
-TreeHeader 1.0 tree/TreeHeader.qml
+NodeDelegate 1.0 tree/NodeDelegate.qml
+RecursiveDelegate 1.0 tree/RecursiveDelegate.qml

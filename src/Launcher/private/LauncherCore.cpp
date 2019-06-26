@@ -1,150 +1,201 @@
 #include "LauncherCore.h"
 
 #include <QApplication>
-#include <QProcess>
-#include <QDebug>
-#include <QIcon>
-#include <QSystemTrayIcon>
-#include <QLocalServer>
-#include <QLocalSocket>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
+#include <QMetaMethod>
 
-#define APP_EXE "App.exe"
+#include <QDebug>
+Q_LOGGING_CATEGORY(launcherCore, "launcher.core")
+
+#include <SettingsContainer.h>
+#include <WindowView.h>
+#include <WindowInfo.h>
+
+#include "WindowModel.h"
+#include "WindowController.h"
+#include "WinShellController.h"
+#include "SubprocessController.h"
+#include "IPCServer.h"
+#include "OverlayController.h"
+#include "TrayIcon.h"
 
 LauncherCore::LauncherCore(QObject* parent)
 	: QObject(parent)
 	, m_trayIcon(nullptr)
-	, m_localServer(new QLocalServer(this))
+	, m_subprocessController(nullptr)
+	, m_winShellController(nullptr)
+	, m_settingsContainer(nullptr)
+	, m_windowModel(nullptr)
+	, m_windowView(nullptr)
+	, m_windowController(nullptr)
+	, m_overlayController(nullptr)
+	, m_ipcServer(nullptr)
 {
-	setObjectName("Launcher Core");
+	setObjectName("Construction");
 
-	qInfo("Startup");
+	qCInfo(launcherCore) << "Startup";
 
-	// Setup tray icon
-	m_trayIcon = new QSystemTrayIcon(QIcon(":/graphics/logo.png"), this);
-	connect(m_trayIcon, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason){
-		QApplication::quit();
+	registerMetatypes();
+
+	m_subprocessController = new SubprocessController(this);
+
+	m_winShellController = new WinShellController(this);
+	m_trayIcon = new TrayIcon(this);
+
+	m_windowModel = new WindowModel(this);
+	m_windowView = new WindowView(this);
+	m_windowController = new WindowController(this);
+
+	m_ipcServerThread.setObjectName("IPC Server Thread");
+	m_ipcServer = new IPCServer("WindowManager");
+	m_ipcServer->moveToThread(&m_ipcServerThread);
+	connect(&m_ipcServerThread, &QThread::started, m_ipcServer, &IPCServer::listen);
+	connect(&m_ipcServerThread, &QThread::finished, m_ipcServer, &QObject::deleteLater);
+
+	m_settingsContainer = new SettingsContainer(this);
+	registerSynchronizedObject(m_settingsContainer);
+
+	m_overlayController = new OverlayController(this);
+
+	winShellControllerChanged();
+	windowViewChanged();
+	settingsContainerChanged();
+	ipcServerChanged();
+
+	qCInfo(launcherCore) << "Construction Complete";
+
+	makeConnections();
+
+	emit startup();
+}
+
+void LauncherCore::registerMetatypes()
+{
+	qCInfo(launcherCore) << "Registering Metatypes";
+
+	qRegisterMetaType<HWND>();
+	qRegisterMetaTypeStreamOperators<HWND>();
+	QMetaType::registerDebugStreamOperator<HWND>();
+	qRegisterMetaType<IPCServer*>();
+	qRegisterMetaType<WindowInfo*>();
+}
+
+void LauncherCore::makeConnections()
+{
+	qCInfo(launcherCore) << "Making Connections";
+
+	// Window Model -> Window View
+	connect(m_windowModel, &WindowModel::windowAdded, m_windowView, &WindowView::windowAdded);
+	connect(m_windowModel, &WindowModel::windowTitleChanged, m_windowView, &WindowView::windowTitleChanged);
+	connect(m_windowModel, &WindowModel::windowRemoved, m_windowView, &WindowView::windowRemoved);
+
+	// Window Model -> IPC Server
+	connect(m_windowModel, &WindowModel::windowAdded, m_ipcServer, &IPCServer::windowAdded);
+	connect(m_windowModel, &WindowModel::windowTitleChanged, m_ipcServer, &IPCServer::windowTitleChanged);
+	connect(m_windowModel, &WindowModel::windowRemoved, m_ipcServer, &IPCServer::windowRemoved);
+
+	// IPC Server -> QML Controller
+	connect(m_ipcServer, &IPCServer::moveOverlayRequested, m_overlayController, &OverlayController::moveWindow);
+	connect(m_ipcServer, &IPCServer::showOverlayRequested, m_overlayController, &OverlayController::showWindow);
+
+	// IPC Server -> Win Shell Controller
+	connect(m_ipcServer, &IPCServer::toggleTrayRequested, m_winShellController, &WinShellController::toggleTray);
+
+	// IPC Server -> Window Controller
+	connect(m_ipcServer, &IPCServer::beginMoveWindows, m_windowController, &WindowController::beginMoveWindows);
+	connect(m_ipcServer, &IPCServer::moveWindow, m_windowController, &WindowController::moveWindow);
+	connect(m_ipcServer, &IPCServer::endMoveWindows, m_windowController, &WindowController::endMoveWindows);
+	connect(m_ipcServer, &IPCServer::setWindowStyle, m_windowController, &WindowController::setWindowStyle);
+
+	// Overlay Controller -> App Core -> IPC Server
+	connect(m_overlayController, &OverlayController::quitRequested, [=]() {
+		QVariantList message = {"Quit"};
+		QMetaObject::invokeMethod(m_ipcServer, "broadcastMessage", Q_ARG(QVariantList, message));
 	});
 
-	m_trayIcon->show();
+	// Overlay Controller -> App Core -> IPC Server
+	connect(m_overlayController, &OverlayController::windowSelected, [=](QVariant wiVar) {
+		WindowInfo* wi = wiVar.value<WindowInfo*>();
 
-	// Setup local socket server
-	qInfo() << "Creating m_localServer";
-	m_localServer = new QLocalServer(this);
-	m_localServer->listen("WindowManager");
-	connect(m_localServer, &QLocalServer::newConnection, [=](){
-		QLocalSocket* localSocket = m_localServer->nextPendingConnection();
-		qInfo() << "m_localServer newConnection" << localSocket;
+		qCInfo(launcherCore) << "Window Selected " << wi;
 
-		QDataStream stream(localSocket);
-		stream << "Identify";
-
-		connect(localSocket, &QLocalSocket::readyRead, [=](){
-			QString key = m_localSockets.key(localSocket);
-
-			QDataStream stream(localSocket);
-			stream.setVersion(QDataStream::Qt_5_12);
-
-			while(true)
-			{
-				QByteArray message;
-
-				stream.startTransaction();
-				stream >> message;
-				QString mStr = QString::fromUtf8(message);
-
-				if(stream.commitTransaction())
-				{
-					if(mStr == "Identify")
-					{
-						QByteArray id;
-						stream >> id;
-						QString idStr = QString::fromUtf8(id);
-
-						qInfo() << "ID from" << idStr;
-						m_localSockets.insert(id, localSocket);
-
-						stream << "Chatter";
-					}
-					else if(mStr == "Quit")
-					{
-						for(QLocalSocket* quitSocket : m_localSockets)
-						{
-							QDataStream quitStream(quitSocket);
-							quitStream.setVersion(QDataStream::Qt_5_12);
-							quitStream << "Quit";
-						}
-					}
-					else
-					{
-						qInfo() << "Unknown message from" << key << ":" << mStr;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-		});
-	});
-
-
-	QFile file("../../launcher.json");
-	file.open(QIODevice::ReadOnly);
-	{
-		QByteArray loadData = file.readAll();
-		QJsonDocument loadDocument = QJsonDocument::fromJson(loadData);
-
-		QJsonArray monitorArray = loadDocument.array();
-		for(QJsonValue v : monitorArray)
+		QVariant hwndVar;
+		if(wi != nullptr)
 		{
-			QJsonObject monitorObject = v.toObject();
-
-			QString monitorName = monitorObject["monitorName"].toString();
-			int monitorIndex = monitorObject["monitorIndex"].toInt();
-			QString monitorFile = monitorObject["monitorFile"].toString();
-
-			qInfo() << "Launching app instance for monitor" << monitorName << " with index " << monitorIndex << " using save file " << monitorFile;
-			launchAppInstance(monitorName, monitorIndex, "../../" + monitorFile);
+			HWND hwnd = wi->getHwnd();
+			hwndVar = QVariant::fromValue<HWND>(hwnd);
 		}
-	}
-	file.close();
+		else
+		{
+			hwndVar = QVariant::fromValue<HWND>(nullptr);
+		}
 
-	// Connect cleanup code
+		QVariantList message = {
+			"WindowSelected",
+			hwndVar
+		};
+
+		QMetaObject::invokeMethod(m_ipcServer, "sendMessage", Q_ARG(QString, m_pendingWindowInfoRecipient), Q_ARG(QVariantList, message));
+
+		m_pendingWindowInfoRecipient = QString();
+	});
+
+	// App Core -> IPC Server
+	connect(this, SIGNAL(sendMessage(QString, QVariantList)), m_ipcServer, SLOT(sendMessage(QString, QVariantList)));
+
+	// IPC Server -> App Core
+	connect(m_ipcServer, &IPCServer::windowListRequested, [=](QString socket) {
+		QObjectList windowList = m_windowView->getWindowList();
+		QVariantList winListMessage = {"WindowList", windowList.length()};
+		for(QObject* object : windowList)
+		{
+			WindowInfo* windowInfo = qobject_cast<WindowInfo*>(object);
+			winListMessage.append(QVariant::fromValue<HWND>(windowInfo->getHwnd()));
+			winListMessage.append(windowInfo->getWinTitle());
+			winListMessage.append(windowInfo->getWinClass());
+			winListMessage.append(windowInfo->getWinProcess());
+			winListMessage.append(windowInfo->getWinStyle());
+		}
+		emit sendMessage(socket, winListMessage);
+	});
+
+	connect(m_ipcServer, &IPCServer::setPendingWindowInfoSocket, [=](QString socketName) {
+		m_pendingWindowInfoRecipient = socketName;
+	});
+
+	// Startup
+	connect(this, SIGNAL(startup()), &m_ipcServerThread, SLOT(start()));
+	connect(this, &LauncherCore::startup, m_windowModel, &WindowModel::startProcess);
+
+	// Cleanup on quit
+	connect(QApplication::instance(), &QApplication::aboutToQuit, m_subprocessController, &SubprocessController::cleanup);
+	connect(QApplication::instance(), &QApplication::aboutToQuit, m_winShellController, &WinShellController::cleanup);
+	connect(QApplication::instance(), &QApplication::aboutToQuit, m_overlayController, &OverlayController::cleanup);
 	connect(QApplication::instance(), &QApplication::aboutToQuit, [=](){
-		qInfo() << "Launcher Quitting";
-		for(QProcess* inst : m_appInstances)
-		{
-			inst->terminate();
-		}
+		qCInfo(launcherCore) << "Launcher Quitting";
+
+		m_windowModel->stopProcess();
+		m_windowModel->wait();
+
+		m_ipcServerThread.quit();
+		m_ipcServerThread.wait();
 	});
 }
 
-void LauncherCore::launchAppInstance(QString name, int monitorIndex, QString saveFile)
+void LauncherCore::registerSynchronizedObject(QObject* object)
 {
-	qInfo() << "Launching process for " << name;
-
-	QProcess* process = new QProcess(this);
-	QStringList mainArgs;
-	mainArgs << name << QString::number(monitorIndex) << saveFile;
-	process->start(APP_EXE, mainArgs);
-	connect(process, &QProcess::readyReadStandardOutput, [=](){
-		qInfo() << process->readAllStandardOutput();
-	});
-	connect(process, &QProcess::readyReadStandardError, [=](){
-		qWarning() << process->readAllStandardError();
-	});
-	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){
-		qInfo() << "Process finished" << process;
-		m_appInstances.remove(m_appInstances.key(process));
-		if(m_appInstances.empty())
+	qCInfo(launcherCore) << "Registering synchronized object" << object;
+	const QMetaObject* meta = object->metaObject();
+	for(int i = meta->propertyOffset(); i < meta->propertyCount(); ++i)
+	{
+		QMetaProperty prop = meta->property(i);
+		if(prop.hasNotifySignal())
 		{
-			qInfo() << "All subprocesses finished, quitting";
-			QApplication::quit();
+			QMetaMethod signal = prop.notifySignal();
+
+			const QMetaObject* ipcServerMeta = m_ipcServer->metaObject();
+			int slotIndex = ipcServerMeta->indexOfSlot("syncObjectPropertyChanged()");
+			QMetaMethod slot = ipcServerMeta->method(slotIndex);
+			connect(object, signal, m_ipcServer, slot);
 		}
-	});
-	m_appInstances.insert(name, process);
+	}
 }

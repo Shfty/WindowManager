@@ -1,95 +1,48 @@
-#include "QmlController.h"
-#include "Win.h"
+#include "public/QMLController.h"
+
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQmlComponent>
+#include <QQuickWindow>
+#include <QQuickItem>
+
+#include <QDebug>
+Q_LOGGING_CATEGORY(qmlController, "app.qmlController")
+
+#include <TreeIconImageProvider.h>
 
 #include "AppCore.h"
-#include "DWMThumbnail.h"
-#include "SettingsContainer.h"
 #include "TreeItem.h"
-#include "WindowController.h"
-#include "TreeIconImageProvider.h"
 
-#include <QQmlEngine>
-#include <QQmlContext>
-#include <QQuickWindow>
-#include <QQuickStyle>
-#include <QQmlIncubationController>
-#include <QGuiApplication>
-
-class PeriodicIncubationController : public QObject,
-									 public QQmlIncubationController
+QMLController::QMLController(QObject *parent)
+	: QObject(parent)
+	, m_qmlEngine(nullptr)
+	, m_qmlWindow(nullptr)
 {
-public:
-	PeriodicIncubationController() {
-		m_timerId = startTimer(16);
-	}
+	qCInfo(qmlController) << "Startup";
 
-	~PeriodicIncubationController() override {
-		killTimer(m_timerId);
-	}
+	m_qmlEngine = new QQmlApplicationEngine(this);
 
-protected:
-	void timerEvent(QTimerEvent*) override {
-		incubateFor(1);
-	}
-
-private:
-	int m_timerId;
-};
-
-QmlController::QmlController(QObject* parent)
-	: WMObject(parent),
-	m_qmlEngine(new QQmlEngine(this))
-{
-	qRegisterMetaType<QmlController*>();
-	setObjectName("QML Controller");
-
-	qInfo("Startup");
-
-	m_qmlEngine->setIncubationController(new PeriodicIncubationController());
-
+	m_qmlEngine->rootContext()->setContextProperty("appCore", AppCore::getInstance(this));
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
+	m_qmlEngine->load("qrc:/qml/main.qml");
 
-	connect(m_qmlEngine, &QQmlEngine::quit, this, &QmlController::exitRequested);
+	m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects()[0]);
+
+	int monitorIndex = QGuiApplication::arguments().at(2).toInt();
+	m_qmlWindow->setScreen(QGuiApplication::screens()[monitorIndex]);
+
+	m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
+	m_qmlWindow->setVisibility(QWindow::Windowed);
 }
 
-void QmlController::cleanup()
+void QMLController::closeWindow()
 {
-	while(m_windows.length() > 0)
+	qCInfo(qmlController) << "Closing window";
+
+	if(m_qmlWindow)
 	{
-		QQuickWindow* window = m_windows.takeLast();
-		window->close();
+		m_qmlWindow->close();
 	}
-}
-
-QQmlContext* QmlController::getRootContext() const
-{
-	if(m_qmlEngine != nullptr)
-	{
-		return m_qmlEngine->rootContext();
-	}
-
-	return nullptr;
-}
-
-QQuickWindow* QmlController::createWindow(QUrl url, QRect geometry, QQmlContext* newContext)
-{
-	qInfo() << "Creating window for" << url.url() << "with geometry" << geometry << "under context" << newContext;
-
-	QQuickWindow* newWindow = new QQuickWindow();
-	newWindow->setGeometry(geometry);
-
-	QQmlComponent component(m_qmlEngine, url);
-	if(component.errors().length() > 0)
-	{
-		qCritical() << component.errors();
-	}
-
-	QQmlContext* parentContext = newContext ? newContext : getRootContext();
-	QQuickItem* newItem = qobject_cast<QQuickItem*>(component.create(parentContext));
-	newItem->setParent(newWindow);
-	newItem->setParentItem(newWindow->contentItem());
-
-	m_windows.append(newWindow);
-
-	return newWindow;
 }

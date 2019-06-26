@@ -7,6 +7,8 @@ import ".."
 Item {
     id: itemWrapper
 
+    anchors.fill: parent
+
     property var model: null
     property bool hasModel: model ? true : false
 

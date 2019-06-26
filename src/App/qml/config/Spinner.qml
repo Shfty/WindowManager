@@ -19,6 +19,7 @@ Item {
         from: 0
         to: 360
         duration: spinner.duration
+        running: visible
     }
 
     Repeater {

@@ -4,7 +4,8 @@
 #include <QQuickWindow>
 #include <QScreen>
 
-#include "WindowController.h"
+#include <QDebug>
+Q_LOGGING_CATEGORY(dwmThumbnail, "app.dwmThumbnail")
 
 DWMThumbnail::DWMThumbnail(QQuickItem *parent) : QQuickItem(parent),
 												   m_hwnd(nullptr),
