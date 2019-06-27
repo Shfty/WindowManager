@@ -19,6 +19,16 @@ class WindowController : public QObject
 public:
 	explicit WindowController(QObject* parent = nullptr);
 
+	enum Layer {
+		Hidden,
+		Underlay,
+		Visible,
+		Overlay,
+		Unmanaged
+	};
+
+	Q_ENUM(Layer)
+
 public slots:
 	void startup();
 
@@ -38,10 +48,7 @@ private:
 
 	HDWP m_dwp;
 
-	QMap<HWND, QRect> m_hiddenWindows;
-	QMap<HWND, QRect> m_underlayWindows;
-	QMap<HWND, QRect> m_visibleWindows;
-	QMap<HWND, QRect> m_overlayWindows;
+	QMap<Layer, QMap<HWND, QRect>> m_layers;
 };
 
 #endif // WINDOWCONTROLLER_H

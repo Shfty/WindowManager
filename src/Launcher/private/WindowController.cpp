@@ -2,6 +2,7 @@
 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QMetaEnum>
 
 #include <QDebug>
 Q_LOGGING_CATEGORY(windowController, "launcher.windowController")
@@ -18,16 +19,23 @@ WindowController::WindowController(QObject* parent)
 
 void WindowController::startup()
 {
+	QMetaEnum metaLayers = QMetaEnum::fromType<Layer>();
+	for(int i = 0; i < metaLayers.keyCount(); ++i)
+	{
+		m_layers.insert(Layer(i), QMap<HWND, QRect>());
+	}
 }
 
 void WindowController::registerUnderlayWindow(HWND hwnd)
 {
-	m_underlayWindows.insert(hwnd, QRect());
+	windowRemoved(hwnd);
+	m_layers[Underlay].insert(hwnd, QRect());
 }
 
 void WindowController::registerOverlayWindow(HWND hwnd)
 {
-	m_overlayWindows.insert(hwnd, QRect());
+	windowRemoved(hwnd);
+	m_layers[Overlay].insert(hwnd, QRect());
 }
 
 void WindowController::windowAdded(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle)
@@ -37,20 +45,16 @@ void WindowController::windowAdded(HWND window, QString winTitle, QString winCla
 	Q_UNUSED(winProcess);
 	Q_UNUSED(winStyle);
 
-	m_hiddenWindows.remove(window);
-	m_underlayWindows.remove(window);
-	m_visibleWindows.remove(window);
-	m_overlayWindows.remove(window);
-
-	m_overlayWindows.insert(window, QRect());
+	windowRemoved(window);
+	m_layers[Unmanaged].insert(window, QRect());
 }
 
 void WindowController::windowRemoved(HWND window)
 {
-	m_hiddenWindows.remove(window);
-	m_underlayWindows.remove(window);
-	m_visibleWindows.remove(window);
-	m_overlayWindows.remove(window);
+	for(auto& layer : m_layers)
+	{
+		layer.remove(window);
+	}
 }
 
 void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
@@ -58,19 +62,13 @@ void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 	qCInfo(windowController) << "moveWindow" << hwnd << geometry << visible;
 	if(visible)
 	{
-		m_underlayWindows.remove(hwnd);
-		m_hiddenWindows.remove(hwnd);
-		m_overlayWindows.remove(hwnd);
-
-		m_visibleWindows.insert(hwnd, geometry);
+		windowRemoved(hwnd);
+		m_layers[Visible].insert(hwnd, geometry);
 	}
 	else
 	{
-		m_underlayWindows.remove(hwnd);
-		m_visibleWindows.remove(hwnd);
-		m_overlayWindows.remove(hwnd);
-
-		m_hiddenWindows.insert(hwnd, geometry);
+		windowRemoved(hwnd);
+		m_layers[Hidden].insert(hwnd, geometry);
 	}
 }
 
@@ -82,34 +80,18 @@ void WindowController::endMoveWindows()
 	{
 		insertAfter = HWND_TOP;
 
-		qCInfo(windowController) << "Deferring overlay windows";
-		for(HWND hwnd : m_overlayWindows.keys())
+		auto layerIt = m_layers.constEnd();
+		while(layerIt != m_layers.constBegin())
 		{
-			moveWindow_internal(hwnd, insertAfter, m_overlayWindows[hwnd]);
-			insertAfter = hwnd;
-		}
+			--layerIt;
 
-		qCInfo(windowController) << "Deferring visible windows";
-		for(HWND hwnd : m_visibleWindows.keys())
-		{
-			moveWindow_internal(hwnd, insertAfter, m_visibleWindows[hwnd]);
-			insertAfter = hwnd;
+			const QMap<HWND, QRect>& layer = layerIt.value();
+			for(HWND hwnd : layer.keys())
+			{
+				moveWindow_internal(hwnd, insertAfter, layer.value(hwnd));
+				insertAfter = hwnd;
+			}
 		}
-
-		qCInfo(windowController) << "Deferring underlay windows";
-		for(HWND hwnd : m_underlayWindows.keys())
-		{
-			moveWindow_internal(hwnd, insertAfter, m_underlayWindows[hwnd]);
-			insertAfter = hwnd;
-		}
-
-		qCInfo(windowController) << "Deferring hidden windows";
-		for(HWND hwnd : m_hiddenWindows.keys())
-		{
-			moveWindow_internal(hwnd, insertAfter, m_hiddenWindows[hwnd]);
-			insertAfter = hwnd;
-		}
-
 	}
 	EndDeferWindowPos(m_dwp);
 
@@ -147,6 +129,4 @@ void WindowController::moveWindow_internal(HWND hwnd, HWND insertAfter, QRect ge
 	);
 
 	Q_ASSERT_X(m_dwp != nullptr, "moveWindow_internal", "m_dwp nullptr after call to DeferWindowPos");
-
-	qCInfo(windowController) << "Deferring window pos for" << hwnd << "above" << insertAfter << "with geometry" << geometry;
 }
