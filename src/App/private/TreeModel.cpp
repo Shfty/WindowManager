@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QRect>
 
 #include <QDebug>
 Q_LOGGING_CATEGORY(treeModel, "app.treeModel")
@@ -81,13 +82,11 @@ void TreeModel::beginMoveWindows()
 	m_windowMoveCount = 0;
 }
 
-void TreeModel::moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer, quint32 extraFlags)
+void TreeModel::moveWindow(HWND hwnd, QRect geometry, bool visible)
 {
 	m_windowMoveMessage.append(QVariant::fromValue<HWND>(hwnd));
-	m_windowMoveMessage.append(position);
-	m_windowMoveMessage.append(size);
-	m_windowMoveMessage.append(layer);
-	m_windowMoveMessage.append(extraFlags);
+	m_windowMoveMessage.append(geometry);
+	m_windowMoveMessage.append(visible);
 	m_windowMoveCount++;
 }
 

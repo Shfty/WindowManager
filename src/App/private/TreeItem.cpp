@@ -92,9 +92,9 @@ TreeItem::TreeItem(QObject* parent)
 
 	// Window management signals
 	TreeModel* tm = TreeModel::getInstance(this);
-	connect(this, SIGNAL(beginMoveWindows()), tm, SLOT(beginMoveWindows()));
-	connect(this, SIGNAL(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)), tm, SLOT(moveWindow(HWND, QPoint, QSize, qlonglong, quint32)));
-	connect(this, SIGNAL(endMoveWindows()), tm, SLOT(endMoveWindows()));
+	connect(this, &TreeItem::beginMoveWindows, tm, &TreeModel::beginMoveWindows);
+	connect(this, &TreeItem::moveWindow, tm, &TreeModel::moveWindow);
+	connect(this, &TreeItem::endMoveWindows, tm, &TreeModel::endMoveWindows);
 
 	connect(this, SIGNAL(setWindowStyle(HWND, qint32)), tm, SIGNAL(setWindowStyle(HWND, qint32)));
 }
@@ -137,7 +137,7 @@ void TreeItem::cleanupWindow(WindowInfo* wi)
 		int qHeight = geo.height() / 4;
 		geo.adjust(qWidth, qHeight, -qWidth, -qHeight);
 
-		emit moveWindow(wi->getHwnd(), geo.topLeft(), geo.size(), -2LL, 0);
+		emit moveWindow(wi->getHwnd(), geo, true);
 	}
 }
 
@@ -146,7 +146,8 @@ void TreeItem::setupWindow(WindowInfo* wi)
 	if(m_windowInfo)
 	{
 		connect(wi, &WindowInfo::windowClosed, [=](){
-			setWindowInfo(nullptr);
+			m_windowInfo = nullptr;
+			windowInfoChanged();
 		});
 
 		if(m_borderless)
@@ -823,16 +824,9 @@ void TreeItem::updateWindowPosition_Internal()
 		bool visible = getWindowVisible();
 
 		// Calculate position
-		QPointF globalPosition;
-		if(visible) {
-			QPointF desktopPosition = monitor->geometry().topLeft();
-			QPointF screenPosition = contentBounds.topLeft();
-			globalPosition = desktopPosition + screenPosition;
-		}
-		else {
-			globalPosition = monitor->virtualGeometry().bottomRight();
-		}
-
+		QPointF desktopPosition = monitor->geometry().topLeft();
+		QPointF screenPosition = contentBounds.topLeft();
+		QPointF globalPosition = desktopPosition + screenPosition;
 		globalPosition *= dpr;
 
 		// Calculate size
@@ -860,7 +854,7 @@ void TreeItem::updateWindowPosition_Internal()
 		QPoint position = globalPosition.toPoint();
 		QSize size = globalSize.toSize();
 
-		emit moveWindow(m_windowInfo->getHwnd(), position, size, -2LL, 0);
+		emit moveWindow(m_windowInfo->getHwnd(), visible ? QRect(position, size) : QRect(), visible);
 	}
 
 	for(TreeItem* child : m_children)

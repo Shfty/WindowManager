@@ -60,13 +60,15 @@ signals:
 	void treeModelChanged();
 	void ipcClientChanged();
 
+public slots:
+	void setPendingWindowRecipient(TreeItem* treeItem);
+
 private:
 	void registerMetatypes();
 	void makeConnections();
 
 private slots:
 	void syncObjectPropertyChanged(QString object, QString property, QVariant value);
-	void setPendingWindowRecipient(TreeItem* treeItem);
 	void windowSelected(HWND hwnd);
 	void windowSelectionCanceled();
 	void exitRequested();

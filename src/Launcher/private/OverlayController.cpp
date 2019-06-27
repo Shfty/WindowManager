@@ -16,6 +16,11 @@ OverlayController::OverlayController(QObject* parent)
 	, m_qmlEngine(nullptr)
 	, m_qmlWindow(nullptr)
 {
+
+}
+
+void OverlayController::startup()
+{
 	qCInfo(qmlController) << "Startup";
 
 	// Register QML types
@@ -31,6 +36,8 @@ OverlayController::OverlayController(QObject* parent)
 
 	connect(m_qmlWindow, SIGNAL(windowSelected(QVariant)), this, SIGNAL(windowSelected(QVariant)));
 	connect(m_qmlWindow, SIGNAL(quitRequested()), this, SIGNAL(quitRequested()));
+
+	emit windowReady(m_qmlWindow);
 }
 
 void OverlayController::moveWindow(QPoint pos, QSize size)

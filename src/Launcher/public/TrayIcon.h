@@ -15,6 +15,9 @@ class TrayIcon : public QObject
 public:
 	explicit TrayIcon(QObject* parent = nullptr);
 
+public slots:
+	void startup();
+
 private:
 	QSystemTrayIcon* m_trayIcon;
 };

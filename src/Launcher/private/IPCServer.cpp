@@ -247,16 +247,14 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 
 		for(int i = 0; i < count; i++)
 		{
-			QVariant hwndVar, positionVar, sizeVar, layerVar, extraFlagsVar;
-			stream >> hwndVar >> positionVar >> sizeVar >> layerVar >> extraFlagsVar;
+			QVariant hwndVar, geometryVar, visibleVar;
+			stream >> hwndVar >> geometryVar >> visibleVar;
 
 			HWND hwnd = hwndVar.value<HWND>();
-			QPoint position = positionVar.toPoint();
-			QSize size = sizeVar.toSize();
-			qlonglong layer = layerVar.toLongLong();
-			quint32 extraFlags = extraFlagsVar.value<quint32>();
+			QRect geometry = geometryVar.toRect();
+			bool visible = visibleVar.toBool();
 
-			emit moveWindow(hwnd, position, size, layer, extraFlags);
+			emit moveWindow(hwnd, geometry, visible);
 		}
 
 		emit endMoveWindows();

@@ -7,6 +7,8 @@ import "."
 AppWindow {
     id: appWindow
 
+    extraFlags: Qt.WindowStaysOnTopHint
+
     // Animation
     property real animationDuration: 600
     property int animationCurve: Easing.OutQuad
@@ -191,8 +193,21 @@ AppWindow {
         }
 
         BusyIndicator {
+            layer.enabled: true
             anchors.fill: parent
             running: spinnerWrapper.opacity > 0
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 100
+            height: 50
+            color: "black"
+
+            FramerateCounter {
+                id: framerateCounter
+                anchors.centerIn: parent
+            }
         }
 
         state: "below"

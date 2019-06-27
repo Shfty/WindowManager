@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QVariant>
-#include <QSize>
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(ipcClient);

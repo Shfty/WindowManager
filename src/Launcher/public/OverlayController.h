@@ -20,10 +20,12 @@ public:
 	explicit OverlayController(QObject* parent = nullptr);
 
 signals:
+	void windowReady(QQuickWindow* window);
 	void windowSelected(QVariant windowInfo);
 	void quitRequested();
 
 public slots:
+	void startup();
 	void moveWindow(QPoint pos, QSize size);
 	void showWindow(QString item);
 	void cleanup();

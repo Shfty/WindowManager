@@ -19,8 +19,6 @@ WindowView::WindowView(QObject* parent)
 {
 	qRegisterMetaType<WindowView*>();
 	setObjectName("Window View");
-
-	qCInfo(windowView) << "Startup";
 }
 
 WindowInfo* WindowView::getWindowByRegex(const QString& titlePattern, const QString& classPattern)

@@ -19,6 +19,8 @@ public:
 	explicit WinShellController(QObject* parent = nullptr);
 
 public slots:
+	void startup();
+
 	void toggleTray(QPointF position);
 
 	void shutdown();

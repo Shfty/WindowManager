@@ -158,7 +158,7 @@ signals:
 	void windowVisibleChanged();
 
 	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position, QSize size, qlonglong layer, quint32 extraFlags);
+	void moveWindow(HWND hwnd, QRect geometry, bool visible);
 	void endMoveWindows();
 	void setWindowStyle(HWND hwnd, qint32 style);
 

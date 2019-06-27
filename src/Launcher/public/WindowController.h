@@ -20,14 +20,28 @@ public:
 	explicit WindowController(QObject* parent = nullptr);
 
 public slots:
-	void beginMoveWindows();
-	void moveWindow(HWND hwnd, QPoint position, QSize size = QSize(), qlonglong layer = -2LL, quint32 extraFlags = 0);
+	void startup();
+
+	void registerUnderlayWindow(HWND hwnd);
+	void registerOverlayWindow(HWND hwnd);
+
+	void windowAdded(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
+	void windowRemoved(HWND window);
+
+	void moveWindow(HWND hwnd, QRect geometry, bool visible);
 	void endMoveWindows();
 
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 private:
+	void moveWindow_internal(HWND hwnd, HWND insertAfter, QRect geometry);
+
 	HDWP m_dwp;
+
+	QMap<HWND, QRect> m_hiddenWindows;
+	QMap<HWND, QRect> m_underlayWindows;
+	QMap<HWND, QRect> m_visibleWindows;
+	QMap<HWND, QRect> m_overlayWindows;
 };
 
 #endif // WINDOWCONTROLLER_H

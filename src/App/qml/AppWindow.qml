@@ -6,7 +6,9 @@ import QtQuick.Controls.Universal 2.3
 Window {
     title: "Window Manager"
 
-    flags: Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus | Qt.WindowStaysOnBottomHint
+    property int baseFlags: Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus
+    property int extraFlags: 0
+    flags: baseFlags | extraFlags
 
     x: Screen.virtualX
     y: Screen.virtualY

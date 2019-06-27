@@ -19,6 +19,4 @@ SettingsContainer::SettingsContainer(QObject* parent)
 {
 	qRegisterMetaType<SettingsContainer*>();
 	setObjectName("Settings Container");
-
-	qCInfo(settingsContainer, "Startup");
 }

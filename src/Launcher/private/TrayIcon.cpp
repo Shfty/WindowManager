@@ -11,6 +11,11 @@ TrayIcon::TrayIcon(QObject* parent)
 	: QObject(parent)
 	, m_trayIcon(nullptr)
 {
+
+}
+
+void TrayIcon::startup()
+{
 	// Setup tray icon
 	m_trayIcon = new QSystemTrayIcon(QIcon(":/graphics/logo.png"), this);
 	connect(m_trayIcon, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason){

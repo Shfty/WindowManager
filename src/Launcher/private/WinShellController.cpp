@@ -14,7 +14,10 @@ WinShellController::WinShellController(QObject* parent)
 {
 	qRegisterMetaType<WinShellController*>();
 	setObjectName("Windows Shell Controller");
+}
 
+void WinShellController::startup()
+{
 	qCInfo(winShellController) << "Startup";
 
 	elevatePrivileges();

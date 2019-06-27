@@ -152,9 +152,12 @@ void AppCore::exitRequested()
 	m_settingsContainer->setProperty("headerSize", 0);
 	m_treeModel->getRootItem()->playShutdownAnimation();
 
+	m_qmlController->closeWindow();
+	/*
 	connect(m_treeModel->getRootItem(), &TreeItem::animationFinished, [=](){
 		m_qmlController->closeWindow();
 	});
+	*/
 
 }
 

@@ -10,15 +10,17 @@
 Q_DECLARE_LOGGING_CATEGORY(launcherCore)
 Q_DECLARE_LOGGING_CATEGORY(subprocess)
 
+#include "IPCServer.h"
+
 class TrayIcon;
-class SubprocessController;
 class WinShellController;
-class WindowModel;
+class WindowModelThread;
 class SettingsContainer;
 class WindowController;
 class WindowView;
 class OverlayController;
-class IPCServer;
+class QQuickWindow;
+class SubprocessController;
 
 class LauncherCore : public QObject
 {
@@ -67,6 +69,9 @@ private:
 	void registerSynchronizedObject(QObject* object);
 
 private slots:
+	void windowReady(QQuickWindow* window);
+	void socketReady(AppClient client);
+
 	void windowScanFinished();
 	void windowListRequested(QString socketName);
 	void setPendingWindowInfoSocket(QString socketName);
@@ -79,13 +84,14 @@ private:
 	SubprocessController* m_subprocessController;
 	WinShellController* m_winShellController;
 	SettingsContainer* m_settingsContainer;
-	WindowModel* m_windowModel;
+	WindowModelThread* m_windowModelThread;
 	WindowView* m_windowView;
 	WindowController* m_windowController;
 	OverlayController* m_overlayController;
 
 	QThread m_subprocessControllerThread;
 	QThread m_ipcServerThread;
+	QThread m_windowControllerThread;
 	IPCServer* m_ipcServer;
 
 	QString m_pendingWindowInfoSocket;
