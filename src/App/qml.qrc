@@ -4,10 +4,11 @@
         <file>qml/tree/HeaderDelegate.qml</file>
         <file>qml/tree/NodeDelegate.qml</file>
         <file>qml/tree/RecursiveDelegate.qml</file>
-        <file>qml/config/AppIcon.qml</file>
-        <file>qml/config/Spinner.qml</file>
-        <file>qml/config/FramerateCounter.qml</file>
         <file>qml/main.qml</file>
         <file>qml/AppWindow.qml</file>
+        <file>qml/items/AppIcon.qml</file>
+        <file>qml/items/FramerateCounter.qml</file>
+        <file>qml/items/Spinner.qml</file>
+        <file>qml/items/Incubator.qml</file>
     </qresource>
 </RCC>

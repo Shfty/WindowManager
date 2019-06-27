@@ -10,8 +10,8 @@ AppWindow {
     extraFlags: Qt.WindowStaysOnTopHint
 
     // Animation
-    property real animationDuration: 600
-    property int animationCurve: Easing.OutQuad
+    property real animationDuration: 1000
+    property int animationCurve: Easing.OutQuint
 
     // Tree Root
     property bool showTree: false
@@ -61,58 +61,46 @@ AppWindow {
         id: treeWrapper
         anchors.fill: parent
 
-        // Loading Wrappers
-        Item {
-            id: nodeWrapper
-            anchors.fill: parent
-
-            readonly property bool ready: appWindow.treeRootReady
-            property var incubator: null
-            property bool loaded: false
-            onReadyChanged: {
-                if(ready) {
-                    incubator = recursiveDelegate.incubateObject(
-                        this,
-                        {
-                            model: appWindow.treeRoot,
-                            visualDelegate: nodeDelegate,
-                            boundsProperty: "contentBounds",
-                            childBoundsProperty: "nodeBounds",
-                            clipChildren: true
-                        }
-                    )
-
-                    incubator.onStatusChanged = function(status) {
-                        nodeWrapper.loaded = true
-                    }
-                }
+        Component {
+            id: recursiveDelegate
+            RecursiveDelegate {
             }
         }
 
-        Item {
+        Component {
+            id: nodeDelegate
+            NodeDelegate {}
+        }
+
+        Component {
+            id: headerDelegate
+            HeaderDelegate {}
+        }
+
+        // Loading Wrappers
+        Incubator {
+            id: nodeWrapper
+            anchors.fill: parent
+            sourceComponent: recursiveDelegate
+            properties: ({
+                model: Qt.binding(function() { return appWindow.treeRoot }),
+                visualDelegate: nodeDelegate,
+                boundsProperty: "contentBounds",
+                childBoundsProperty: "nodeBounds",
+                clipChildren: true
+            })
+        }
+
+        Incubator {
             id: headerWrapper
             anchors.fill: parent
-
-            readonly property bool ready: appWindow.treeRootReady
-            property var incubator: null
-            property bool loaded: false
-            onReadyChanged: {
-                if (ready) {
-                    incubator = recursiveDelegate.incubateObject(
-                        this,
-                        {
-                            model: appWindow.treeRoot,
-                            visualDelegate: headerDelegate,
-                            boundsProperty: "bounds",
-                            clipChildren: true
-                        }
-                    )
-
-                    incubator.onStatusChanged = function(status) {
-                        headerWrapper.loaded = true
-                    }
-                }
-            }
+            sourceComponent: recursiveDelegate
+            properties: ({
+                model: Qt.binding(function() { return appWindow.treeRoot }),
+                visualDelegate: headerDelegate,
+                boundsProperty: "bounds",
+                clipChildren: true
+            })
         }
 
         // Animation
@@ -158,7 +146,6 @@ AppWindow {
                     if(!running) {
                         if(treeWrapper.state == "here")
                         {
-                            console.log("Transition in complete")
                             appWindow.treeRoot.updateWindowPosition()
                         }
                     }
@@ -168,7 +155,7 @@ AppWindow {
     }
 
     // Spinner
-    readonly property bool incubatorsLoaded: nodeWrapper.loaded && headerWrapper.loaded
+    readonly property bool incubatorsLoaded: nodeWrapper.status === Component.Ready && headerWrapper.status === Component.Ready
     onIncubatorsLoadedChanged: {
         if(incubatorsLoaded)
         {
@@ -188,7 +175,6 @@ AppWindow {
         height: appWindow.minSize * 0.5
 
         Component.onCompleted: {
-            print("Easing Type:", Easing.OutCubic)
             setState("here")
         }
 
@@ -280,56 +266,6 @@ AppWindow {
         ]
     }
 
-    // Components
-    Component {
-        id: recursiveDelegate
-        RecursiveDelegate {
-        }
-    }
-
-    Component {
-        id: boundsRectDelegate
-
-        Rectangle {
-            anchors.fill: parent
-            color: "transparent"
-            border.color: "red"
-            border.width: 2
-        }
-    }
-
-    Component {
-        id: headerBoundsRectDelegate
-
-        Rectangle {
-            anchors.fill: parent
-            color: "transparent"
-            border.color: "green"
-            border.width: 2
-        }
-    }
-
-    Component {
-        id: contentBoundsRectDelegate
-
-        Rectangle {
-            anchors.fill: parent
-            color: "transparent"
-            border.color: "blue"
-            border.width: 2
-        }
-    }
-
-    Component {
-        id: nodeDelegate
-        NodeDelegate {}
-    }
-
-    Component {
-        id: headerDelegate
-        HeaderDelegate {}
-    }
-
     // Debug
     Loader {
         id: debugLoader
@@ -337,6 +273,39 @@ AppWindow {
         sourceComponent: Component {
             Item {
                 anchors.fill: parent
+
+                Component {
+                    id: boundsRectDelegate
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: "red"
+                        border.width: 2
+                    }
+                }
+
+                Component {
+                    id: headerBoundsRectDelegate
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: "green"
+                        border.width: 2
+                    }
+                }
+
+                Component {
+                    id: contentBoundsRectDelegate
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: "blue"
+                        border.width: 2
+                    }
+                }
 
                 Item {
                     id: boundsWrapper

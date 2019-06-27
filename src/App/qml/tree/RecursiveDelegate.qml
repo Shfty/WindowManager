@@ -36,14 +36,14 @@ Item {
     height: delegateBounds.height
 
     // Visual delegate
-    Loader {
+    Incubator {
+        id: visualWrapper
         anchors.fill: parent
-        sourceComponent: recursiveWrapper.visualDelegate
-        onLoaded: {
-            if (item.model !== undefined) {
-                item.model = recursiveWrapper.model
-            }
-        }
+
+        sourceComponent: visualDelegate
+        properties: ({
+            model: recursiveWrapper.model
+        })
     }
 
     // Child elements

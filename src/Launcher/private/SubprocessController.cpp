@@ -53,6 +53,7 @@ void SubprocessController::cleanup()
 	for(QProcess* inst : m_appProcesses.keys())
 	{
 		inst->terminate();
+		inst->waitForFinished(-1);
 	}
 }
 
@@ -64,11 +65,8 @@ void SubprocessController::launchAppProcess(QString name, int monitorIndex, QStr
 	process->setProcessChannelMode(QProcess::ForwardedChannels);
 	process->closeWriteChannel();
 
-	QStringList mainArgs;
-	mainArgs << name << QString::number(monitorIndex) << saveFile;
-	process->start(APP_EXE, mainArgs);
-
 	connect(process, &QProcess::started, [=](){
+		qCInfo(subprocessController) << "Process started" << process;
 		AppSubprocess* newAppSubprocess = new AppSubprocess(name, monitorIndex, saveFile);
 		m_appProcesses.insert(process, newAppSubprocess);
 		emit processStarted(*newAppSubprocess);
@@ -76,6 +74,7 @@ void SubprocessController::launchAppProcess(QString name, int monitorIndex, QStr
 
 	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){
 		qCInfo(subprocessController) << "Process finished" << process;
+		process->deleteLater();
 		m_appProcesses.remove(process);
 		if(m_appProcesses.isEmpty())
 		{
@@ -83,4 +82,8 @@ void SubprocessController::launchAppProcess(QString name, int monitorIndex, QStr
 			QApplication::quit();
 		}
 	});
+
+	QStringList mainArgs;
+	mainArgs << name << QString::number(monitorIndex) << saveFile;
+	process->start(APP_EXE, mainArgs);
 }

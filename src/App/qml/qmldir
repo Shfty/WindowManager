@@ -1,6 +1,7 @@
-AppIcon 1.0 config/AppIcon.qml
-FramerateCounter 1.0 config/FramerateCounter.qml
-Spinner 1.0 config/Spinner.qml
+AppIcon 1.0 items/AppIcon.qml
+FramerateCounter 1.0 items/FramerateCounter.qml
+Spinner 1.0 items/Spinner.qml
+Incubator 1.0 items/Incubator.qml
 
 HeaderDelegate 1.0 tree/HeaderDelegate.qml
 NodeDelegate 1.0 tree/NodeDelegate.qml

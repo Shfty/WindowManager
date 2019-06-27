@@ -62,6 +62,9 @@ Item {
     Button {
         id: titleButton
 
+        anchors.top: parent.top
+        anchors.left: parent.left
+
         width: 100
         height: appCore.settingsContainer.headerSize
 
@@ -124,7 +127,7 @@ Item {
     RowLayout {
         id: buttonLayout
 
-        anchors.right: parent.right
+        anchors.right: rootItemIncubator.left
         height: appCore.settingsContainer.headerSize
 
         spacing: 0
@@ -450,13 +453,20 @@ Item {
             }
         }
         */
+    }
 
-        Loader {
-            active: isRoot
-            Layout.fillHeight: true
+    Incubator {
+        id: rootItemIncubator
 
-            sourceComponent: RowLayout {
-                anchors.fill: parent
+        active: isRoot
+        anchors.top: parent.top
+        anchors.right: parent.right
+        width: itemInstance !== null ? itemInstance.width : 0
+        height: hasSettingsContainer ? settingsContainer.headerSize : 0
+
+        sourceComponent: Component {
+            RowLayout {
+                id: rootLayout
                 spacing: 0
 
                 Button {
@@ -612,33 +622,35 @@ Item {
         height: appCore.settingsContainer.headerSize
 
         onWheel: function(event) {
-            var delta = -Math.sign(event.angleDelta.y)
-
-            if(model.treeParent.layout === "Tabbed")
+            if(model.treeParent)
             {
-                if(delta < 0 && model.treeParent.activeIndex > 0)
+                var delta = -Math.sign(event.angleDelta.y)
+                if(model.treeParent.layout === "Tabbed")
                 {
-                    model.treeParent.scrollActiveIndex(delta)
+                    if(delta < 0 && model.treeParent.activeIndex > 0)
+                    {
+                        model.treeParent.scrollActiveIndex(delta)
+                    }
+
+                    if(delta > 0 && model.treeParent.activeIndex < model.treeParent.children.length - 1)
+                    {
+                        model.treeParent.scrollActiveIndex(delta)
+                    }
+                }
+                else
+                {
+                    if(delta > 0)
+                    {
+                        model.moveDown()
+                    }
+                    else if(delta < 0)
+                    {
+                        model.moveUp()
+                    }
                 }
 
-                if(delta > 0 && model.treeParent.activeIndex < model.treeParent.children.length - 1)
-                {
-                    model.treeParent.scrollActiveIndex(delta)
-                }
+                model.treeParent.updateWindowPosition()
             }
-            else
-            {
-                if(delta > 0)
-                {
-                    model.moveDown()
-                }
-                else if(delta < 0)
-                {
-                    model.moveUp()
-                }
-            }
-
-            model.treeParent.updateWindowPosition()
         }
         onPressed: mouse.accepted = false
     }

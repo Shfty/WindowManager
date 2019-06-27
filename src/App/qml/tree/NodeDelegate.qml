@@ -12,32 +12,35 @@ Item {
     property var model: null
     property bool hasModel: model ? true : false
 
-    Loader {
+    Incubator {
         anchors.fill: parent
         active: hasModel ? model.depth > 0 : false
 
-        sourceComponent: Item {
-            clip: true
-
-            Rectangle {
-                id: itemBackground
+        sourceComponent: Component {
+            Item {
                 anchors.fill: parent
+                clip: true
 
-                border.color: appCore.settingsContainer.colorContainerBorder
-                border.width: appCore.settingsContainer.itemBorder
+                Rectangle {
+                    id: itemBackground
+                    anchors.fill: parent
 
-                radius: appCore.settingsContainer.itemRadius
-                anchors.topMargin: -radius
+                    border.color: appCore.settingsContainer.colorContainerBorder
+                    border.width: appCore.settingsContainer.itemBorder
 
-                color: appCore.settingsContainer.colorContainerPlaceholder
+                    radius: appCore.settingsContainer.itemRadius
+                    anchors.topMargin: -radius
 
-                AppIcon {
-                    id: appIcon
+                    color: appCore.settingsContainer.colorContainerPlaceholder
 
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.verticalCenter: parent.verticalCenter
+                    AppIcon {
+                        id: appIcon
 
-                    model: hasModel ? itemWrapper.model : null
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        model: hasModel ? itemWrapper.model : null
+                    }
                 }
             }
         }
