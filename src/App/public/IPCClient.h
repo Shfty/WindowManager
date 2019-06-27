@@ -17,7 +17,7 @@ class IPCClient : public QObject
 {
 	Q_OBJECT
 public:
-	explicit IPCClient(QObject *parent = nullptr);
+	explicit IPCClient(QString socketName, HWND hwnd, QObject *parent = nullptr);
 
 signals:
 	void syncObjectPropertyChanged(QString objectName, QString objectProperty, QVariant propertyValue);
@@ -47,6 +47,8 @@ private:
 	void unpackWindowInfo(QDataStream& stream, HWND& hwnd, QString& winTitle, QString& winClass, QString& winProcess, qint32& winStyle);
 
 	QString m_socketName;
+	HWND m_hwnd;
+
 	QLocalSocket* m_localSocket;
 	QVariantList m_windowMoveBuffer;
 };

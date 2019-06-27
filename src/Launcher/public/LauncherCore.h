@@ -59,8 +59,6 @@ signals:
 	void ipcServerChanged();
 	void settingsContainerChanged();
 
-	void startup();
-
 	void sendMessage(QString socketName, QVariantList message);
 
 private:
@@ -68,6 +66,15 @@ private:
 	void makeConnections();
 	void registerSynchronizedObject(QObject* object);
 
+private slots:
+	void windowScanFinished();
+	void windowListRequested(QString socketName);
+	void setPendingWindowInfoSocket(QString socketName);
+	void windowSelected(QVariant windowInfoVar);
+	void quitRequested();
+	void cleanup();
+
+private:
 	TrayIcon* m_trayIcon;
 	SubprocessController* m_subprocessController;
 	WinShellController* m_winShellController;
@@ -77,10 +84,11 @@ private:
 	WindowController* m_windowController;
 	OverlayController* m_overlayController;
 
+	QThread m_subprocessControllerThread;
 	QThread m_ipcServerThread;
 	IPCServer* m_ipcServer;
 
-	QString m_pendingWindowInfoRecipient;
+	QString m_pendingWindowInfoSocket;
 };
 
 #endif // APPCORE_H

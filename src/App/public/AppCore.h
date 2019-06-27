@@ -7,6 +7,8 @@
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(appCore);
 
+#include <Win.h>
+
 class WindowView;
 class TreeModel;
 class SettingsContainer;
@@ -50,6 +52,7 @@ public:
 
 	WindowView* getWindowView() const { return m_windowView; }
 	QMLController* getQmlController() const { return m_qmlController; }
+	SettingsContainer* getSettingsContainer() const { return m_settingsContainer; }
 
 signals:
 	void windowViewChanged();
@@ -57,20 +60,20 @@ signals:
 	void treeModelChanged();
 	void ipcClientChanged();
 
-	void startup();
-
-public slots:
-	void syncObjectPropertyChanged(QString object, QString property, QVariant value);
-
-	void setPendingWindowRecipient(TreeItem* treeItem) { m_pendingWindowRecipient = treeItem; }
-
-	void exitRequested();
-	void logReceived(QtMsgType type, const QMessageLogContext& ctx, const QString& msg);
-
 private:
 	void registerMetatypes();
 	void makeConnections();
 
+private slots:
+	void syncObjectPropertyChanged(QString object, QString property, QVariant value);
+	void setPendingWindowRecipient(TreeItem* treeItem);
+	void windowSelected(HWND hwnd);
+	void windowSelectionCanceled();
+	void exitRequested();
+	void lastWindowClosed();
+	void cleanup();
+
+private:
 	QMLController* m_qmlController;
 	WindowView* m_windowView;
 	SettingsContainer* m_settingsContainer;

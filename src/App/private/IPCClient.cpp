@@ -12,9 +12,10 @@ Q_LOGGING_CATEGORY(ipcClient, "app.ipcClient")
 #include <WindowInfo.h>
 #include <WindowView.h>
 
-IPCClient::IPCClient(QObject *parent)
+IPCClient::IPCClient(QString socketName, HWND hwnd, QObject *parent)
 	: QObject(parent)
-	, m_socketName(QString(QCoreApplication::arguments().at(1)))
+	, m_socketName(socketName)
+	, m_hwnd(hwnd)
 {
 	qCInfo(ipcClient) << "Creating m_localSocket";
 
@@ -51,12 +52,14 @@ IPCClient::IPCClient(QObject *parent)
 		switch(error)
 		{
 			case QLocalSocket::ServerNotFoundError:
-				QTimer::singleShot(500, [=](){
+				qCWarning(ipcClient) << "Server not found, retrying";
+
+				QTimer::singleShot(100, [=](){
 					m_localSocket->connectToServer("WindowManager", QIODevice::ReadWrite);
 				});
 				break;
 			default:
-				qWarning() << "Local Socket Error:" << m_localSocket->errorString();
+				qCWarning(ipcClient) << "Local Socket Error:" << m_localSocket->errorString();
 				break;
 		}
 	});
@@ -66,6 +69,7 @@ IPCClient::IPCClient(QObject *parent)
 
 void IPCClient::connectToServer()
 {
+	qCInfo(ipcClient) << "Connecting to server";
 	m_localSocket->connectToServer("WindowManager", QIODevice::ReadWrite);
 }
 
@@ -74,7 +78,7 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 	if(message == "Identify")
 	{
 		qCInfo(ipcClient) << "ID request from server";
-		sendMessage({"Identify", m_socketName});
+		sendMessage({"Identify", m_socketName, QVariant::fromValue<HWND>(m_hwnd)});
 		sendMessage({"WindowList"});
 	}
 	else if(message == "SyncObjectPropertyChanged")

@@ -876,8 +876,7 @@ void TreeItem::tryAutoGrabWindow()
 
 	//qCInfo(treeItem) << objectName() << "trying auto grab";
 
-	AppCore* appCore = AppCore::getInstance(this);
-	WindowView* wv = appCore->property("windowView").value<WindowView*>();
+	WindowView* wv = getWindowView();
 	WindowInfo* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
 
 	if(foundWindow != nullptr)
@@ -903,7 +902,7 @@ SettingsContainer* TreeItem::getSettingsContainer()
 	AppCore* appCore = AppCore::getInstance(this);
 	Q_ASSERT(appCore != nullptr);
 
-	return appCore->property("settingsContainer").value<SettingsContainer*>();
+	return appCore->getSettingsContainer();
 }
 
 WindowView* TreeItem::getWindowView()

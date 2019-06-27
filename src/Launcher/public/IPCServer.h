@@ -17,15 +17,34 @@ class QLocalServer;
 class QLocalSocket;
 class LauncherCore;
 
+struct AppClient {
+	AppClient(QString name = "", HWND hwnd = nullptr)
+		: name(name)
+		, hwnd(hwnd)
+		, wantsWindowUpdate(false)
+	{}
+
+	AppClient(const AppClient& ac)
+		: name(ac.name)
+		, hwnd(ac.hwnd)
+		, wantsWindowUpdate(ac.wantsWindowUpdate)
+	{}
+
+	QString name;
+	HWND hwnd;
+	bool wantsWindowUpdate;
+};
+
 class IPCServer : public QObject
 {
 	Q_OBJECT
 
 public:
 	explicit IPCServer(QString serverName, QObject* parent = nullptr);
+	~IPCServer();
 
 public slots:
-	void listen();
+	void startup();
 
 	void sendMessage(QString socketName, QVariantList message);
 	void sendMessage(QLocalSocket* socket, QVariantList message);
@@ -40,6 +59,8 @@ public slots:
 	void windowRemoved(HWND hwnd);
 
 signals:
+	void socketReady(AppClient client);
+
 	void moveOverlayRequested(QPoint pos, QSize size);
 	void showOverlayRequested(QString item);
 
@@ -60,8 +81,7 @@ private:
 	QString m_serverName;
 
 	QLocalServer* m_localServer;
-	QMap<QString, QLocalSocket*> m_localSockets;
-	QMap<QString, QLocalSocket*> m_windowUpdateSockets;
+	QMap<QLocalSocket*, AppClient*> m_appClients;
 };
 
 #endif // IPCSERVER_H

@@ -15,6 +15,11 @@ Q_LOGGING_CATEGORY(ipcServer, "launcher.ipcServer")
 
 #include "LauncherCore.h"
 
+bool operator ==(const AppClient& lhs, const AppClient& rhs)
+{
+	return lhs.name == rhs.name && lhs.hwnd == rhs.hwnd && lhs.wantsWindowUpdate == rhs.wantsWindowUpdate;
+}
+
 IPCServer::IPCServer(QString serverName, QObject* parent)
 	: QObject(parent)
 	, m_serverName(serverName)
@@ -60,22 +65,35 @@ IPCServer::IPCServer(QString serverName, QObject* parent)
 	});
 }
 
-void IPCServer::listen()
+IPCServer::~IPCServer()
+{
+	qDeleteAll(m_appClients.values());
+	m_appClients.clear();
+}
+
+void IPCServer::startup()
 {
 	m_localServer->listen(m_serverName);
 }
 
 void IPCServer::sendMessage(QString socketName, QVariantList message)
 {
-	QLocalSocket* socket = m_localSockets.value(socketName);
-	Q_ASSERT(socket != nullptr);
+	for(AppClient* candidate : m_appClients)
+	{
+		if(candidate->name == socketName)
+		{
+			qCInfo(ipcServer) << "Sending" << message << "to" << candidate->name;
+			sendMessage(m_appClients.key(candidate), message);
+			return;
+		}
+	}
 
-	sendMessage(socket, message);
+	qCritical() << "No socket with name " + socketName;
 }
 
 void IPCServer::sendMessage(QLocalSocket* socket, QVariantList message)
 {
-	qCInfo(ipcServer) << "Sending" << message << "to" << m_localSockets.key(socket);
+	qCInfo(ipcServer) << "Sending" << message << "to" << socket;
 
 	QDataStream stream(socket);
 	stream.setVersion(QDataStream::Qt_5_12);
@@ -90,18 +108,32 @@ void IPCServer::sendMessage(QLocalSocket* socket, QVariantList message)
 
 void IPCServer::broadcastMessage(QVariantList message)
 {
-	for(QLocalSocket* socket : m_localSockets.values())
+	if(m_appClients.isEmpty())
 	{
-		sendMessage(socket, message);
+		qCWarning(ipcServer) << "broadcastMessage: Tried sending" << message << "to no clients";
+		return;
+	}
+
+	for(AppClient* client : m_appClients.values())
+	{
+		sendMessage(m_appClients.key(client), message);
 	}
 }
 
 void IPCServer::broadcastWindowUpdate(QVariantList message)
 {
-	qCInfo(ipcServer) << "Broadcasting window update";
-	for(QLocalSocket* socket : m_windowUpdateSockets.values())
+	if(m_appClients.isEmpty())
 	{
-		sendMessage(socket, message);
+		qCWarning(ipcServer) << "broadcastWindowUpdate: Tried sending" << message << "to no clients";
+		return;
+	}
+
+	for(AppClient* client : m_appClients.values())
+	{
+		if(client->wantsWindowUpdate)
+		{
+			sendMessage(m_appClients.key(client), message);
+		}
 	}
 }
 
@@ -159,46 +191,16 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 {
 	if(message == "Identify")
 	{
-		QVariant id;
-		stream >> id;
-		QString idStr = id.toString();
+		QVariant nameVar, hwndVar;
+		stream >> nameVar >> hwndVar;
+		QString name = nameVar.toString();
+		HWND hwnd = hwndVar.value<HWND>();
 
-		qCInfo(ipcServer) << "ID from" << idStr;
-		m_localSockets.insert(idStr, socket);
-	}
-	if(message == "Log")
-	{
-		QVariant type;
-		QVariant category;
-		QVariant msg;
-		stream >> type;
-		stream >> category;
-		stream >> msg;
-		QtMsgType msgType = QtMsgType(type.toInt());
-		QString categoryStr = category.toString();
-		QString msgStr = msg.toString();
+		qCInfo(ipcServer) << "ID from" << name << hwnd;
 
-		QString msgFmt;
-		QTextStream ts(&msgFmt);
-		ts << "[" << m_localSockets.key(socket) << "] " << categoryStr << ": " << msgStr;
-
-		switch(msgType) {
-			case QtMsgType::QtDebugMsg:
-				qDebug().noquote().nospace() << msgFmt;
-				break;
-			case QtMsgType::QtInfoMsg:
-				qInfo().noquote().nospace() << msgFmt;
-				break;
-			case QtMsgType::QtWarningMsg:
-				qWarning().noquote().nospace() << msgFmt;
-				break;
-			case QtMsgType::QtCriticalMsg:
-				qCritical().noquote().nospace() << msgFmt;
-				break;
-			case QtMsgType::QtFatalMsg:
-				qFatal(msgFmt.toStdString().c_str());
-				break;
-		}
+		AppClient* newClient = new AppClient(name, hwnd);
+		m_appClients.insert(socket, newClient);
+		emit socketReady(*newClient);
 	}
 	else if(message == "MoveOverlay")
 	{
@@ -208,7 +210,7 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 		stream >> posVar;
 		stream >> sizeVar;
 
-		qCInfo(ipcServer) << "Move request from" << m_localSockets.key(socket) << posVar << sizeVar;
+		qCInfo(ipcServer) << "Move request from" << m_appClients.value(socket)->name << posVar << sizeVar;
 
 		QPoint pos = posVar.toPoint();
 		QSize size = sizeVar.toSize();
@@ -233,7 +235,7 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 	}
 	else if(message == "SetPendingWindowInfoSocket")
 	{
-		emit setPendingWindowInfoSocket(m_localSockets.key(socket));
+		emit setPendingWindowInfoSocket(m_appClients.value(socket)->name);
 	}
 	else if(message == "MoveWindows")
 	{
@@ -274,10 +276,12 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 	}
 	else if(message == "WindowList")
 	{
-		qCInfo(ipcServer) << "Window list requested from" << m_localSockets.key(socket);
-		m_windowUpdateSockets.insert(m_localSockets.key(socket), socket);
+		AppClient* client = m_appClients.value(socket);
+		qCInfo(ipcServer) << "Window list requested from" << client->name;
 
-		emit windowListRequested(m_localSockets.key(socket));
+		client->wantsWindowUpdate = true;
+
+		emit windowListRequested(client->name);
 	}
 	else if(message == "Quit")
 	{
@@ -285,6 +289,6 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 	}
 	else
 	{
-		qCInfo(ipcServer) << "Unknown message from" << m_localSockets.key(socket) << ":" << message;
+		qCInfo(ipcServer) << "Unknown message from" << m_appClients.value(socket)->name << ":" << message;
 	}
 }

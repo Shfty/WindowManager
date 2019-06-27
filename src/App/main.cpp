@@ -9,18 +9,6 @@
 
 #include <Logging.h>
 
-namespace Logging {
-	static AppCore* appCore = nullptr;
-
-	static void appCoreLogHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
-	{
-		if(Logging::appCore != nullptr)
-		{
-			Logging::appCore->logReceived(type, ctx, msg);
-		}
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	QGuiApplication app(argc, argv);
@@ -43,10 +31,9 @@ int main(int argc, char *argv[])
 
 	QQuickStyle::setStyle("Universal");
 
-	qInstallMessageHandler(Logging::appCoreLogHandler);
+	qInstallMessageHandler(Logging::logHandler);
 
 	AppCore appCore;
-	Logging::appCore = &appCore;
 
 	return app.exec();
 }

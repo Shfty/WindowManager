@@ -15,6 +15,17 @@ Q_LOGGING_CATEGORY(subprocessController, "launcher.subprocess")
 SubprocessController::SubprocessController(QObject *parent)
 	: QObject(parent)
 {
+
+}
+
+SubprocessController::~SubprocessController()
+{
+	qDeleteAll(m_appProcesses.keys());
+	m_appProcesses.clear();
+}
+
+void SubprocessController::startup()
+{
 	// Load save file and launch app instances
 	QFile file("../../launcher.json");
 	file.open(QIODevice::ReadOnly);
@@ -31,8 +42,7 @@ SubprocessController::SubprocessController(QObject *parent)
 			int monitorIndex = monitorObject["monitorIndex"].toInt();
 			QString monitorFile = monitorObject["monitorFile"].toString();
 
-			qCInfo(subprocessController) << "Launching app instance for monitor" << monitorName << " with index " << monitorIndex << " using save file " << monitorFile;
-			launchAppInstance(monitorName, monitorIndex, "../../" + monitorFile);
+			launchAppProcess(monitorName, monitorIndex, "../../" + monitorFile);
 		}
 	}
 	file.close();
@@ -40,34 +50,37 @@ SubprocessController::SubprocessController(QObject *parent)
 
 void SubprocessController::cleanup()
 {
-	for(QProcess* inst : m_appInstances)
+	for(QProcess* inst : m_appProcesses.keys())
 	{
 		inst->terminate();
 	}
 }
 
-void SubprocessController::launchAppInstance(QString name, int monitorIndex, QString saveFile)
+void SubprocessController::launchAppProcess(QString name, int monitorIndex, QString saveFile)
 {
-	qCInfo(subprocessController) << "Launching process for " << name;
+	qCInfo(subprocessController) << "Launching app instance for monitor" << name << "with index" << monitorIndex << "using save file" << saveFile;
 
 	QProcess* process = new QProcess(this);
-	process->closeReadChannel(QProcess::ProcessChannel::StandardOutput);
-	process->closeReadChannel(QProcess::ProcessChannel::StandardError);
+	process->setProcessChannelMode(QProcess::ForwardedChannels);
 	process->closeWriteChannel();
 
 	QStringList mainArgs;
 	mainArgs << name << QString::number(monitorIndex) << saveFile;
 	process->start(APP_EXE, mainArgs);
 
+	connect(process, &QProcess::started, [=](){
+		AppSubprocess* newAppSubprocess = new AppSubprocess(name, monitorIndex, saveFile);
+		m_appProcesses.insert(process, newAppSubprocess);
+		emit processStarted(*newAppSubprocess);
+	});
+
 	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){
 		qCInfo(subprocessController) << "Process finished" << process;
-		m_appInstances.remove(m_appInstances.key(process));
-		if(m_appInstances.isEmpty())
+		m_appProcesses.remove(process);
+		if(m_appProcesses.isEmpty())
 		{
 			qCInfo(subprocessController) << "All subprocesses finished, quitting";
 			QApplication::quit();
 		}
 	});
-
-	m_appInstances.insert(name, process);
 }

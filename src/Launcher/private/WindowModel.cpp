@@ -9,19 +9,14 @@ Q_LOGGING_CATEGORY(windowModel, "launcher.windowModel")
 
 WindowModel::WindowModel(QObject* parent)
 	: QThread(parent)
+	, m_abort(false)
 {
 	setObjectName("Window Model");
 
 	qCInfo(windowModel, "Startup");
 }
 
-void WindowModel::startProcess()
-{
-	m_abort = false;
-	start();
-}
-
-void WindowModel::stopProcess()
+void WindowModel::cleanup()
 {
 	m_abort = true;
 }
@@ -45,6 +40,8 @@ BOOL CALLBACK enumWindowsProc(__in HWND hwnd, __in LPARAM lParam)
 
 void WindowModel::run()
 {
+	qCInfo(windowModel) << "Startup";
+
 	while(!m_abort)
 	{
 		QList<HWND> windows;
@@ -113,6 +110,8 @@ void WindowModel::run()
 
 		msleep(33);
 	}
+
+	qCInfo(windowModel) << "Shutdown";
 
 	quit();
 }

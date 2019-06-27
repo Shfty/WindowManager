@@ -16,17 +16,15 @@ class WindowModel : public QThread
 	public:
 		explicit WindowModel(QObject *parent = nullptr);
 
-		void startProcess();
-
 	signals:
 		void windowAdded(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
 		void windowTitleChanged(HWND window, QString title);
 		void windowRemoved(HWND window);
+
 		void windowScanFinished();
-		void windowListChanged();
 
 	public slots:
-		void stopProcess();
+		void cleanup();
 
 	protected:
 		void run();

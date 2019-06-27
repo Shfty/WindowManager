@@ -18,13 +18,19 @@ AppWindow {
     property var treeRoot: treeModel ? treeModel.rootItem : null
     property bool treeRootReady: treeRoot ? true : false
 
+    property var settingsContainer: appCore ? appCore.settingsContainer : null
+    property bool hasSettingsContainer: settingsContainer ? true: false
+
+    property var windowView: appCore ? appCore.windowView : null
+    property bool hasWindowView: windowView ? true: false
+
     // Wallpaper
     ShaderEffectSource {
         id: wallpaper
 
         anchors.fill: parent
 
-        property rect virtualGeometry: appCore.windowView.screenList[0].virtualGeometry
+        property rect virtualGeometry: hasWindowView ? windowView.screenList[0].virtualGeometry : Qt.rect(0, 0, 0, 0)
 
         sourceRect: Qt.rect(
             Screen.virtualX - virtualGeometry.x,
@@ -36,7 +42,7 @@ AppWindow {
         sourceItem: Image {
             id: wallpaperImage
             asynchronous: true
-            source: appCore.settingsContainer.wallpaperUrl
+            source: hasSettingsContainer ? settingsContainer.wallpaperUrl : ""
             width: wallpaper.virtualGeometry.width
             height: wallpaper.virtualGeometry.height
             fillMode: Image.PreserveAspectCrop

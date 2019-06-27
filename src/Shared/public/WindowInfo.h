@@ -8,6 +8,23 @@
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(windowInfo);
 
+struct WindowInfoInternal {
+	WindowInfoInternal(HWND inHwnd, QString inTitle, QString inClass, QString inProcess, qint32 inStyle)
+	{
+		hwnd = inHwnd;
+		winTitle = inTitle;
+		winClass = inClass;
+		winProcess = inProcess;
+		winStyle = inStyle;
+	}
+
+	HWND hwnd;
+	QString winTitle;
+	QString winClass;
+	QString winProcess;
+	qint32 winStyle;
+};
+
 class WindowInfo : public QObject
 {
 	Q_OBJECT
