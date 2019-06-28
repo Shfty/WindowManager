@@ -6,49 +6,66 @@ Item {
     property bool active: true
     property var sourceComponent: null
     property var properties: null
+
     property var itemIncubator: null
     property var itemInstance: null
     property var status: Component.Null
 
     Component.onCompleted: {
-        onActiveChanged.connect(updateComponent)
-        onSourceComponentChanged.connect(updateComponent)
-        updateComponent()
+        onActiveChanged.connect(updateItem)
+        onSourceComponentChanged.connect(updateItem)
+        updateItem()
     }
 
-    function updateComponent() {
+    Component.onDestruction: {
+        print("Incubator Destruction")
+        destroyItem()
+    }
+
+    function updateItem() {
         if(active && sourceComponent !== null)
         {
-            if(itemIncubator === null && itemInstance === null)
-            {
-                itemIncubator = sourceComponent.incubateObject(incubator, properties)
-
-                itemIncubator.onStatusChanged = function(status) {
-                    if(status === Component.Ready)
-                    {
-                        incubator.status = status
-                        incubator.itemInstance = itemIncubator.object
-                        incubator.itemIncubator = null
-                    }
-                }
-            }
+            incubateItem()
         }
         else
         {
-            if(itemIncubator !== null)
-            {
-                if(itemIncubator.status !== Component.Null)
-                {
-                    itemIncubator.forceCompletion();
-                }
-                itemIncubator = null;
-            }
+            destroyItem()
+        }
+    }
 
-            if(itemInstance)
-            {
-                itemInstance.destroy()
-                itemInstance = null
+    function incubateItem()
+    {
+        if(itemIncubator === null && itemInstance === null)
+        {
+            itemIncubator = sourceComponent.incubateObject(incubator, properties)
+
+            itemIncubator.onStatusChanged = function(status) {
+                if(status === Component.Ready)
+                {
+                    incubator.status = status
+                    incubator.itemInstance = itemIncubator.object
+                }
             }
+        }
+    }
+
+    function destroyItem()
+    {
+        if(itemIncubator !== null)
+        {
+            print("Destroying item incubator", itemIncubator)
+            if(itemIncubator.status !== Component.Null)
+            {
+                itemIncubator.forceCompletion();
+            }
+            itemIncubator = null;
+        }
+
+        if(itemInstance !== null)
+        {
+            print("Destroying item instance", itemInstance)
+            itemInstance.destroy()
+            itemInstance = null
         }
     }
 }

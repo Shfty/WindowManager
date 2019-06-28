@@ -83,7 +83,7 @@ AppWindow {
             anchors.fill: parent
             sourceComponent: recursiveDelegate
             properties: ({
-                model: Qt.binding(function() { return appWindow.treeRoot }),
+                modelData: Qt.binding(function() { return appWindow.treeRoot }),
                 visualDelegate: nodeDelegate,
                 boundsProperty: "contentBounds",
                 childBoundsProperty: "nodeBounds",
@@ -96,7 +96,7 @@ AppWindow {
             anchors.fill: parent
             sourceComponent: recursiveDelegate
             properties: ({
-                model: Qt.binding(function() { return appWindow.treeRoot }),
+                modelData: Qt.binding(function() { return appWindow.treeRoot }),
                 visualDelegate: headerDelegate,
                 boundsProperty: "bounds",
                 clipChildren: true
@@ -155,15 +155,14 @@ AppWindow {
     }
 
     // Spinner
-    readonly property bool incubatorsLoaded: nodeWrapper.status === Component.Ready && headerWrapper.status === Component.Ready
-    onIncubatorsLoadedChanged: {
-        if(incubatorsLoaded)
+    readonly property bool nodesLoaded: nodeWrapper.itemInstance ? nodeWrapper.itemInstance.loadComplete : false
+    readonly property bool headersLoaded: headerWrapper.itemInstance ? headerWrapper.itemInstance.loadComplete : false
+    readonly property bool treeReady: appWindow.treeRoot.startupComplete
+    readonly property bool qmlReady: nodesLoaded && headersLoaded && treeReady
+    onQmlReadyChanged: {
+        if(qmlReady)
         {
-            var startupBinding = Qt.binding(function() {
-                return appWindow.treeRoot.startupComplete ? "above" : "here"
-            })
-
-            spinnerWrapper.setState(startupBinding)
+            spinnerWrapper.setState("above")
         }
     }
 
@@ -264,87 +263,5 @@ AppWindow {
                 }
             }
         ]
-    }
-
-    // Debug
-    Loader {
-        id: debugLoader
-        active: false
-        sourceComponent: Component {
-            Item {
-                anchors.fill: parent
-
-                Component {
-                    id: boundsRectDelegate
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.color: "red"
-                        border.width: 2
-                    }
-                }
-
-                Component {
-                    id: headerBoundsRectDelegate
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.color: "green"
-                        border.width: 2
-                    }
-                }
-
-                Component {
-                    id: contentBoundsRectDelegate
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.color: "blue"
-                        border.width: 2
-                    }
-                }
-
-                Item {
-                    id: boundsWrapper
-                    anchors.fill: parent
-
-                    readonly property bool ready: appWindow.treeRootReady
-                    onReadyChanged: {
-                        if (ready) {
-                            var incubator = recursiveDelegate.incubateObject(
-                                this,
-                                {
-                                    "model": appWindow.treeRoot,
-                                    "visualDelegate": boundsRectDelegate,
-                                    "boundsProperty": "bounds"
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Item {
-                    id: contentBoundsWrapper
-                    anchors.fill: parent
-
-                    readonly property bool ready: appWindow.treeRootReady
-                    onReadyChanged: {
-                        if (ready) {
-                            var incubator = recursiveDelegate.incubateObject(
-                                this,
-                                {
-                                    "model": appWindow.treeRoot,
-                                    "visualDelegate": contentBoundsRectDelegate,
-                                    "boundsProperty": "contentBounds"
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 }

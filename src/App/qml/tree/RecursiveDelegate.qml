@@ -6,27 +6,51 @@ import ".."
 Item {
     id: recursiveWrapper
 
-    objectName: model ? model.objectName : "Recursive Wrapper"
+    objectName: modelData ? modelData.objectName : "Recursive Wrapper"
 
-    property var model: null
+    Component.onDestruction: {
+        print("Recursive Delegate Destruction", modelData.objectName)
+    }
+
+    property var modelData: null
     property var visualDelegate: null
+
+    readonly property bool visualLoaded: visualWrapper.status === Component.Ready
+    readonly property bool childrenLoaded: {
+        for(var childKey in childIncubator.itemInstances)
+        {
+            var instance = childIncubator.itemInstances[childKey]
+            if(instance.loadComplete === false)
+            {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    readonly property bool loadComplete: visualLoaded && childrenLoaded
+
+    onLoadCompleteChanged: {
+        print(objectName, "Load Complete", loadComplete)
+    }
 
     // Positioning
     property string boundsProperty: null
     property rect delegateBounds: {
         if (!boundsProperty)
             return Qt.rect(0, 0, 0, 0)
-        if (!model)
+        if (!modelData)
             return Qt.rect(0, 0, 0, 0)
-        return model[boundsProperty]
+        return modelData[boundsProperty]
     }
 
     Behavior on delegateBounds {
-        enabled: model ? true : false
+        enabled: modelData ? true : false
         PropertyAnimation {
             duration: appCore.settingsContainer.itemAnimationDuration
             easing.type: appCore.settingsContainer.itemAnimationCurve
-            onRunningChanged: model.isAnimating = running
+            onRunningChanged: modelData.isAnimating = running
         }
     }
 
@@ -42,45 +66,8 @@ Item {
 
         sourceComponent: visualDelegate
         properties: ({
-            model: recursiveWrapper.model
+            modelData: recursiveWrapper.modelData
         })
-    }
-
-    // Child elements
-    property var incubateReady: model && childWrapper.children.length === 0
-    onIncubateReadyChanged: {
-        if (incubateReady) {
-            for (var i = 0; i < recursiveWrapper.model.children.length; ++i) {
-                incubateItem(recursiveWrapper.model.children[i])
-            }
-        }
-    }
-
-    Connections {
-        target: model
-        onChildAdded: function (index, child) {
-            incubateItem(child)
-        }
-        onChildRemoved: function (index, child) {
-            for(var i = 0; i < childWrapper.children.length; ++i) {
-                var candidate = childWrapper.children[i]
-                if (candidate.model === child) {
-                    candidate.destroy()
-                }
-            }
-        }
-    }
-
-    function incubateItem(childModel) {
-        recursiveDelegate.incubateObject(
-            childWrapper, {
-                model: childModel,
-                visualDelegate: recursiveWrapper.visualDelegate,
-                boundsProperty: recursiveWrapper.boundsProperty,
-                childBoundsProperty: recursiveWrapper.childBoundsProperty,
-                clipChildren: recursiveWrapper.clipChildren
-            }
-        )
     }
 
     property bool clipChildren: false
@@ -88,26 +75,36 @@ Item {
     property rect childBounds: {
         if (!childBoundsProperty)
             return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
-        if (!model)
+        if (!modelData)
             return Qt.rect(0, 0, delegateBounds.width, delegateBounds.height)
-        return model[childBoundsProperty]
+        return modelData[childBoundsProperty]
     }
 
     Behavior on childBounds {
-        enabled: model ? true : false
+        enabled: modelData ? true : false
         PropertyAnimation {
             easing.type: appCore.settingsContainer.itemAnimationCurve
             duration: appCore.settingsContainer.itemAnimationDuration
         }
     }
 
-    Item {
-        id: childWrapper
-        objectName: recursiveWrapper.objectName + " Child Wrapper"
+    MultiIncubator {
+        id: childIncubator
+
         x: childBounds.x
         y: childBounds.y
         width: childBounds.width
         height: childBounds.height
         clip: clipChildren
+
+        active: recursiveWrapper.modelData && childIncubator.itemInstances.length === 0
+        model: recursiveWrapper.modelData.children
+        sourceComponent: recursiveDelegate
+        properties: ({
+            visualDelegate: recursiveWrapper.visualDelegate,
+            boundsProperty: recursiveWrapper.boundsProperty,
+            childBoundsProperty: recursiveWrapper.childBoundsProperty,
+            clipChildren: recursiveWrapper.clipChildren
+        })
     }
 }

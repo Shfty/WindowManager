@@ -9,15 +9,19 @@ import ".."
 Item {
     id: treeHeader
 
-    property var model: null
-    property bool hasModel: model ? true : false
+    Component.onDestruction: {
+        print("Header Delegate Destruction")
+    }
+
+    property var modelData: null
+    property bool hasModel: modelData ? true : false
 
     x: headerBounds.x
     y: headerBounds.y
     width: headerBounds.width
     height: headerBounds.height
 
-    property rect headerBounds: hasModel ? model.headerBounds : Qt.rect(0, 0, 0, 0)
+    property rect headerBounds: hasModel ? modelData.headerBounds : Qt.rect(0, 0, 0, 0)
     Behavior on headerBounds {
         enabled: hasModel
         PropertyAnimation {
@@ -26,16 +30,16 @@ Item {
         }
     }
 
-    property var windowInfo: model.windowInfo
+    property var windowInfo: modelData.windowInfo
     property var hwnd: windowInfo !== null ? windowInfo.hwnd : null
 
     property bool hwndValid: hwnd !== null
-    property bool isRoot: hasModel ? model.depth === 0 : false
+    property bool isRoot: hasModel ? modelData.depth === 0 : false
     property bool hasLaunchProperties: {
-        return  model.launchUri !== "" ||
-                model.launchParams !== "" ||
-                model.autoGrabTitle !== "" ||
-                model.autoGrabClass !== ""
+        return  modelData.launchUri !== "" ||
+                modelData.launchParams !== "" ||
+                modelData.autoGrabTitle !== "" ||
+                modelData.autoGrabClass !== ""
     }
 
     Rectangle {
@@ -43,15 +47,15 @@ Item {
         height: appCore.settingsContainer.headerSize
 
         color: {
-            if(!model) return appCore.settingsContainer.colorActiveHeader
+            if(!modelData) return appCore.settingsContainer.colorActiveHeader
 
             if(isRoot) return appCore.settingsContainer.colorActiveHeader
 
-            if(model.treeParent.layout === "Split") {
+            if(modelData.treeParent.layout === "Split") {
                 return appCore.settingsContainer.colorActiveHeader
             }
 
-            if(model.treeParent.activeIndex === model.index) {
+            if(modelData.treeParent.activeIndex === modelData.index) {
                 return appCore.settingsContainer.colorActiveHeader
             }
 
@@ -68,7 +72,7 @@ Item {
         width: 100
         height: appCore.settingsContainer.headerSize
 
-        text: model.objectName !== "" ? model.objectName : ""
+        text: modelData.objectName !== "" ? modelData.objectName : ""
 
         onClicked: {
             var size = Qt.size(600, 440)
@@ -85,13 +89,13 @@ Item {
         anchors.right: buttonLayout.left
         height: appCore.settingsContainer.headerSize
 
-        enabled: model.children.length === 0
-        text: model.windowInfo !== null ? model.windowInfo.winTitle : "[Container]"
+        enabled: modelData.children.length === 0
+        text: modelData.windowInfo !== null ? modelData.windowInfo.winTitle : "[Container]"
 
         onClicked: {
             var size = Qt.size(windowSelectButton.width, 500)
             var pos = windowSelectButton.mapToGlobal(0, windowSelectButton.height)
-            appCore.setPendingWindowRecipient(model)
+            appCore.setPendingWindowRecipient(modelData)
             appCore.ipcClient.sendMessage(["SetPendingWindowInfoSocket"]);
             appCore.ipcClient.sendMessage(["MoveOverlay", pos, size]);
             appCore.ipcClient.sendMessage(["ShowOverlay", "WindowList"]);
@@ -120,7 +124,7 @@ Item {
 
             sourceSize: Qt.size(parent.height - parent.padding, parent.height - parent.padding)
 
-            model: treeHeader.model
+            model: treeHeader.modelData
         }
     }
 
@@ -141,13 +145,13 @@ Item {
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: qsTr(model.flow + " Flow")
+            ToolTip.text: qsTr(modelData.flow + " Flow")
 
             Label {
                 anchors.centerIn: parent
                 font.family: "Segoe MDL2 Assets"
                 text: "\uE174"
-                rotation: hasModel ? (model.flow === "Horizontal" ? -90 : 0) : 0
+                rotation: hasModel ? (modelData.flow === "Horizontal" ? -90 : 0) : 0
 
                 Behavior on rotation {
                     PropertyAnimation {
@@ -160,11 +164,11 @@ Item {
             visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!model) return
+                if(!modelData) return
 
                 if(!pressed) {
-                    model.toggleFlow()
-                    model.updateWindowPosition()
+                    modelData.toggleFlow()
+                    modelData.updateWindowPosition()
                 }
             }
         }
@@ -178,13 +182,13 @@ Item {
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: qsTr(model.layout + " Layout")
+            ToolTip.text: qsTr(modelData.layout + " Layout")
 
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: layoutButton.padding
 
-                spacing: hasModel ? (model.layout === "Split" ? 2 : 0) : 0
+                spacing: hasModel ? (modelData.layout === "Split" ? 2 : 0) : 0
                 Behavior on spacing {
                     NumberAnimation {
                         duration: appCore.settingsContainer.itemAnimationDuration
@@ -192,7 +196,7 @@ Item {
                     }
                 }
 
-                rotation: hasModel ? (model.flow === "Horizontal" ? 0 : 90) : 0
+                rotation: hasModel ? (modelData.flow === "Horizontal" ? 0 : 90) : 0
                 Behavior on rotation {
                     PropertyAnimation {
                         duration: appCore.settingsContainer.itemAnimationDuration
@@ -214,11 +218,11 @@ Item {
             visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!model) return
+                if(!modelData) return
 
                 if(!pressed) {
-                    model.toggleLayout()
-                    model.updateWindowPosition()
+                    modelData.toggleLayout()
+                    modelData.updateWindowPosition()
                 }
             }
         }
@@ -240,115 +244,17 @@ Item {
             visible: !hwndValid && !hasLaunchProperties
 
             onClicked: {
-                if(!model) return
+                if(!modelData) return
 
                 if(!pressed) {
-                    model.addChild(
+                    modelData.addChild(
                         "",
-                        model.flow === "Horizontal" ? "Vertical" : "Horizontal",
+                        modelData.flow === "Horizontal" ? "Vertical" : "Horizontal",
                         "Split"
                     )
 
-                    model.updateWindowPosition()
+                    modelData.updateWindowPosition()
                 }
-            }
-        }
-
-        /*
-        Button {
-            id: moveLeftButton
-            objectName: "moveLeftButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Move Left")
-
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: {
-                if(!model) return "\uE76B"
-
-                if(model.treeParent)
-                {
-                    return model.treeParent.flow === "Horizontal" ? "\uE76B" : "\uE70E"
-                }
-
-                return "\uE76B"
-            }
-
-            visible: !isRoot
-            enabled: {
-                if(!model) return false
-                if(!model.treeParent) return false
-
-                return model.treeParent.children.length > 0 && model.index > 0
-            }
-
-            onClicked: {
-                if(!model) return
-
-                model.moveUp()
-                model.treeParent.updateWindowPosition()
-            }
-        }
-
-        Button {
-            id: moveRightButton
-            objectName: "moveRightButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Move Right")
-
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: {
-                if(model.treeParent)
-                {
-                    return model.treeParent.flow === "Horizontal" ? "\uE76C" : "\uE70D"
-                }
-
-                return "\uE76C"
-            }
-
-            visible: !isRoot
-            enabled: {
-                if(!model) return false
-                if(!model.treeParent) return false
-
-                return model.treeParent.children.length > 0 && model.index < model.treeParent.children.length - 1
-            }
-
-            onClicked: {
-                if(!model) return
-
-                model.moveDown()
-                model.treeParent.updateWindowPosition()
-            }
-        }
-        */
-
-        Button {
-            id: swapButton
-            objectName: "swapButton"
-
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Swap")
-
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
-            Layout.fillHeight: true
-
-            font.family: "Segoe MDL2 Assets"
-            text: "\uE895"
-            visible: isRoot
-
-            onClicked: {
-                swapMenu.visible = !swapMenu.visible
             }
         }
 
@@ -369,9 +275,9 @@ Item {
             enabled: !hwndValid
 
             onClicked: {
-                if(!model) return
+                if(!modelData) return
 
-                model.launch()
+                modelData.launch()
             }
         }
 
@@ -392,67 +298,16 @@ Item {
             visible: !isRoot
 
             onClicked: {
-                if(!model) return
+                appCore.ipcClient.sendMessage(["CloseWindow", windowInfo.hwnd]);
 
-                model.remove()
-                model.treeParent.updateWindowPosition()
+                /*
+                if(!modelData) return
+
+                modelData.remove()
+                modelData.treeParent.updateWindowPosition()
+                */
             }
         }
-
-        /*
-        Window {
-            id: swapWindow
-            property var rootTransform: {
-                // Dependencies
-                swapMenu.opened
-
-                return mapToGlobal(windowComboBox.x + windowComboBox.width, windowComboBox.y + windowComboBox.height)
-            }
-            x: rootTransform.x
-            y: rootTransform.y
-            width: buttonLayout.width
-            height: 50 * swapRepeater.count
-
-            flags: Qt.FramelessWindowHint | Qt.WA_TranslucentBackground | Qt.WindowStaysOnTopHint | Qt.Dialog
-            color: "#00000000"
-            visible: swapMenu.visible
-
-            Menu {
-                id: swapMenu
-
-                width: parent.width
-
-                property int parentIndex: model.index
-                property string parentTitle: model.objectName
-
-                property bool hasParentBounds: model.bounds ? true : false
-                property rect parentBounds: hasParentBounds ? model.bounds : Qt.rect(-1, -1, -1, -1)
-
-                property rect cachedItemBounds
-                property rect cachedParentBounds
-
-                Repeater {
-                    id: swapRepeater
-                    model: nestedModel
-                    MenuItem {
-                        text: model.objectName
-                        enabled: model.index != swapMenu.parentIndex
-                        width: parent.width
-                        onTriggered: {
-                            var fromIndex = nestedModel.index(index, 3)
-                            var toIndex = nestedModel.index(swapMenu.parentIndex, 3)
-
-                            swapMenu.cachedItemBounds = model.bounds
-                            swapMenu.cachedParentBounds = swapMenu.parentBounds
-
-                            nestedModel.setData(fromIndex, swapMenu.cachedParentBounds)
-                            nestedModel.setData(toIndex, swapMenu.cachedItemBounds)
-                        }
-                    }
-                }
-            }
-        }
-        */
     }
 
     Incubator {
@@ -463,11 +318,14 @@ Item {
         anchors.right: parent.right
         width: itemInstance !== null ? itemInstance.width : 0
         height: hasSettingsContainer ? settingsContainer.headerSize : 0
-
         sourceComponent: Component {
             RowLayout {
                 id: rootLayout
                 spacing: 0
+
+                Component.onDestruction: {
+                    print("Header Incubator Item Destruction", modelData.objectName)
+                }
 
                 Button {
                     id: trayIconWidget
@@ -605,13 +463,13 @@ Item {
 
         font.family: "Segoe MDL2 Assets"
 
-        visible: !isRoot && model.treeParent.layout !== "Split" && model.index !== model.treeParent.activeIndex
+        visible: !isRoot && modelData.treeParent.layout !== "Split" && modelData.index !== modelData.treeParent.activeIndex
 
         onClicked: {
-            if(!model) return
+            if(!modelData) return
 
-            model.setActive();
-            model.treeParent.updateWindowPosition()
+            modelData.setActive();
+            modelData.treeParent.updateWindowPosition()
         }
     }
 
@@ -622,34 +480,34 @@ Item {
         height: appCore.settingsContainer.headerSize
 
         onWheel: function(event) {
-            if(model.treeParent)
+            if(modelData.treeParent)
             {
                 var delta = -Math.sign(event.angleDelta.y)
-                if(model.treeParent.layout === "Tabbed")
+                if(modelData.treeParent.layout === "Tabbed")
                 {
-                    if(delta < 0 && model.treeParent.activeIndex > 0)
+                    if(delta < 0 && modelData.treeParent.activeIndex > 0)
                     {
-                        model.treeParent.scrollActiveIndex(delta)
+                        modelData.treeParent.scrollActiveIndex(delta)
                     }
 
-                    if(delta > 0 && model.treeParent.activeIndex < model.treeParent.children.length - 1)
+                    if(delta > 0 && modelData.treeParent.activeIndex < modelData.treeParent.children.length - 1)
                     {
-                        model.treeParent.scrollActiveIndex(delta)
+                        modelData.treeParent.scrollActiveIndex(delta)
                     }
                 }
                 else
                 {
                     if(delta > 0)
                     {
-                        model.moveDown()
+                        modelData.moveDown()
                     }
                     else if(delta < 0)
                     {
-                        model.moveUp()
+                        modelData.moveUp()
                     }
                 }
 
-                model.treeParent.updateWindowPosition()
+                modelData.treeParent.updateWindowPosition()
             }
         }
         onPressed: mouse.accepted = false

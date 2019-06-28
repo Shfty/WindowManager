@@ -157,9 +157,8 @@ signals:
 	void isVisibleChanged();
 	void windowVisibleChanged();
 
-	void beginMoveWindows();
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void endMoveWindows();
+	void commitWindowMove();
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 public slots:

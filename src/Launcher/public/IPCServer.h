@@ -56,10 +56,12 @@ signals:
 
 	void setPendingWindowInfoSocket(QString socketName);
 
-	void beginMoveWindows();
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void endMoveWindows();
+	void commitWindowMove();
+
 	void setWindowStyle(HWND hwnd, qint32 style);
+
+	void closeWindow(HWND hwnd);
 
 public slots:
 	void startup();

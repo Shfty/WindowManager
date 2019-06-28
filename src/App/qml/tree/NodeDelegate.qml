@@ -9,17 +9,29 @@ Item {
 
     anchors.fill: parent
 
-    property var model: null
-    property bool hasModel: model ? true : false
+    Component.onDestruction: {
+        print("Node Delegate Destruction", modelData.objectName)
+    }
+
+    property var modelData: null
+    property bool hasModel: modelData ? true : false
 
     Incubator {
         anchors.fill: parent
-        active: hasModel ? model.depth > 0 : false
+        active: hasModel ? modelData.depth > 0 : false
+
+        Component.onDestruction: {
+            print("Node Delegate Incubator Destruction", modelData.objectName)
+        }
 
         sourceComponent: Component {
             Item {
                 anchors.fill: parent
                 clip: true
+
+                Component.onDestruction: {
+                    print("Node Delegate Incubator Item Destruction", modelData.objectName)
+                }
 
                 Rectangle {
                     id: itemBackground
@@ -39,7 +51,7 @@ Item {
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
 
-                        model: hasModel ? itemWrapper.model : null
+                        model: hasModel ? itemWrapper.modelData : null
                     }
                 }
             }
@@ -47,12 +59,12 @@ Item {
     }
 
     DWMThumbnail {
-        objectName: model.objectName
+        objectName: modelData.objectName
         anchors.fill: parent
         hwnd: {
             if(!hasModel) return appCore.windowView.windowList[0].hwnd
-            if(!model.windowInfo) return appCore.windowView.windowList[0].hwnd
-            return model.windowInfo.hwnd
+            if(!modelData.windowInfo) return appCore.windowView.windowList[0].hwnd
+            return modelData.windowInfo.hwnd
         }
     }
 }

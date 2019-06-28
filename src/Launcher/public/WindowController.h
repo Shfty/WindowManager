@@ -39,7 +39,9 @@ public slots:
 	void windowRemoved(HWND window);
 
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void endMoveWindows();
+	void commitWindowMove();
+
+	void closeWindow(HWND hwnd);
 
 	void setWindowStyle(HWND hwnd, qint32 style);
 

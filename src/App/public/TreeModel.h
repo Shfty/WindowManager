@@ -50,9 +50,8 @@ public slots:
 	void save();
 	void saveDefault();
 
-	void beginMoveWindows();
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void endMoveWindows();
+	void commitWindowMove();
 
 private:
 	QString m_autosavePath;

@@ -149,8 +149,9 @@ void LauncherCore::makeConnections()
 
 		// Window Controller
 		connect(m_ipcServer, &IPCServer::moveWindow, m_windowController, &WindowController::moveWindow);
-		connect(m_ipcServer, &IPCServer::endMoveWindows, m_windowController, &WindowController::endMoveWindows);
+		connect(m_ipcServer, &IPCServer::commitWindowMove, m_windowController, &WindowController::commitWindowMove);
 		connect(m_ipcServer, &IPCServer::setWindowStyle, m_windowController, &WindowController::setWindowStyle);
+		connect(m_ipcServer, &IPCServer::closeWindow, m_windowController, &WindowController::closeWindow);
 
 		// Win Shell Controller
 		connect(m_ipcServer, &IPCServer::toggleTrayRequested, m_winShellController, &WinShellController::toggleTray);

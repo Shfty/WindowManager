@@ -10,5 +10,6 @@
         <file>qml/items/FramerateCounter.qml</file>
         <file>qml/items/Spinner.qml</file>
         <file>qml/items/Incubator.qml</file>
+        <file>qml/items/MultiIncubator.qml</file>
     </qresource>
 </RCC>

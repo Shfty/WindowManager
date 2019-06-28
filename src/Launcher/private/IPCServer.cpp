@@ -243,8 +243,6 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 		stream >> countVar;
 		int count = countVar.toInt();
 
-		emit beginMoveWindows();
-
 		for(int i = 0; i < count; i++)
 		{
 			QVariant hwndVar, geometryVar, visibleVar;
@@ -257,7 +255,7 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 			emit moveWindow(hwnd, geometry, visible);
 		}
 
-		emit endMoveWindows();
+		emit commitWindowMove();
 	}
 	else if(message == "SetWindowStyle")
 	{
@@ -271,6 +269,16 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 		qint32 style = styleVar.value<qint32>();
 
 		emit setWindowStyle(hwnd, style);
+	}
+	else if(message == "CloseWindow")
+	{
+		QVariant hwndVar;
+
+		stream >> hwndVar;
+
+		HWND hwnd = hwndVar.value<HWND>();
+
+		emit closeWindow(hwnd);
 	}
 	else if(message == "WindowList")
 	{

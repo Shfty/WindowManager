@@ -76,12 +76,6 @@ void TreeModel::saveDefault()
 	save();
 }
 
-void TreeModel::beginMoveWindows()
-{
-	m_windowMoveMessage.clear();
-	m_windowMoveCount = 0;
-}
-
 void TreeModel::moveWindow(HWND hwnd, QRect geometry, bool visible)
 {
 	m_windowMoveMessage.append(QVariant::fromValue<HWND>(hwnd));
@@ -90,7 +84,7 @@ void TreeModel::moveWindow(HWND hwnd, QRect geometry, bool visible)
 	m_windowMoveCount++;
 }
 
-void TreeModel::endMoveWindows()
+void TreeModel::commitWindowMove()
 {
 	if(m_windowMoveCount > 0)
 	{

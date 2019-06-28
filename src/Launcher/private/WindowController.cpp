@@ -72,7 +72,7 @@ void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 	}
 }
 
-void WindowController::endMoveWindows()
+void WindowController::commitWindowMove()
 {
 	HWND insertAfter;
 
@@ -96,6 +96,11 @@ void WindowController::endMoveWindows()
 	EndDeferWindowPos(m_dwp);
 
 	m_dwp = nullptr;
+}
+
+void WindowController::closeWindow(HWND hwnd)
+{
+	PostMessage(hwnd, WM_CLOSE, 0, 0);
 }
 
 void WindowController::setWindowStyle(HWND hwnd, qint32 style)

@@ -92,9 +92,8 @@ TreeItem::TreeItem(QObject* parent)
 
 	// Window management signals
 	TreeModel* tm = TreeModel::getInstance(this);
-	connect(this, &TreeItem::beginMoveWindows, tm, &TreeModel::beginMoveWindows);
 	connect(this, &TreeItem::moveWindow, tm, &TreeModel::moveWindow);
-	connect(this, &TreeItem::endMoveWindows, tm, &TreeModel::endMoveWindows);
+	connect(this, &TreeItem::commitWindowMove, tm, &TreeModel::commitWindowMove);
 
 	connect(this, SIGNAL(setWindowStyle(HWND, qint32)), tm, SIGNAL(setWindowStyle(HWND, qint32)));
 }
@@ -103,9 +102,8 @@ void TreeItem::cleanup()
 {
 	qCInfo(treeItem) << objectName() << "cleaning up";
 
-	emit beginMoveWindows();
 	cleanup_internal();
-	emit endMoveWindows();
+	emit commitWindowMove();
 }
 
 void TreeItem::cleanup_internal()
@@ -128,16 +126,6 @@ void TreeItem::cleanupWindow(WindowInfo* wi)
 
 		// Restore style
 		emit setWindowStyle(m_windowInfo->getHwnd(), m_windowInfo->getWinStyle());
-
-		// Center on monitor
-		QScreen* monitor = getMonitor();
-
-		QRect geo = monitor->geometry();
-		int qWidth = geo.width() / 4;
-		int qHeight = geo.height() / 4;
-		geo.adjust(qWidth, qHeight, -qWidth, -qHeight);
-
-		emit moveWindow(wi->getHwnd(), geo, true);
 	}
 }
 
@@ -655,9 +643,8 @@ void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
 {
 	if(m_windowInfo != nullptr && m_windowInfo->getHwnd() != nullptr)
 	{
-		emit beginMoveWindows();
 		cleanupWindow(m_windowInfo);
-		emit endMoveWindows();
+		emit commitWindowMove();
 	}
 
 	// Assign new window
@@ -782,9 +769,8 @@ void TreeItem::updateWindowPosition()
 {
 	//qCInfo(treeItem) << objectName() << "updating window position";
 
-	emit beginMoveWindows();
 	updateWindowPosition_Internal();
-	emit endMoveWindows();
+	emit commitWindowMove();
 }
 
 void TreeItem::launch()
