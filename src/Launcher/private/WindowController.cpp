@@ -60,6 +60,7 @@ void WindowController::windowRemoved(HWND window)
 void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 {
 	qCInfo(windowController) << "moveWindow" << hwnd << geometry << visible;
+
 	if(visible)
 	{
 		windowRemoved(hwnd);
@@ -74,9 +75,13 @@ void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 
 void WindowController::commitWindowMove()
 {
+	qCInfo(windowController) << "commitWindowMove";
+
 	HWND insertAfter;
 
 	m_dwp = BeginDeferWindowPos(0);
+	Q_ASSERT_X(m_dwp != nullptr, "moveWindow", "BeginDeferWindowPos failed");
+
 	{
 		insertAfter = HWND_TOP;
 
@@ -93,7 +98,9 @@ void WindowController::commitWindowMove()
 			}
 		}
 	}
-	EndDeferWindowPos(m_dwp);
+
+	bool result = EndDeferWindowPos(m_dwp);
+	Q_ASSERT_X(result, "moveWindow", "EndDeferWindowPos failed");
 
 	m_dwp = nullptr;
 }

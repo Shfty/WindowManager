@@ -298,14 +298,15 @@ Item {
             visible: !isRoot
 
             onClicked: {
-                appCore.ipcClient.sendMessage(["CloseWindow", windowInfo.hwnd]);
-
-                /*
-                if(!modelData) return
-
-                modelData.remove()
-                modelData.treeParent.updateWindowPosition()
-                */
+                if(windowInfo !== null)
+                {
+                    appCore.ipcClient.sendMessage(["CloseWindow", windowInfo.hwnd]);
+                }
+                else if(modelData)
+                {
+                    modelData.remove()
+                    modelData.treeParent.updateWindowPosition()
+                }
             }
         }
     }

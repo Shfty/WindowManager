@@ -183,18 +183,6 @@ AppWindow {
             running: spinnerWrapper.opacity > 0
         }
 
-        Rectangle {
-            anchors.centerIn: parent
-            width: 100
-            height: 50
-            color: "black"
-
-            FramerateCounter {
-                id: framerateCounter
-                anchors.centerIn: parent
-            }
-        }
-
         state: "below"
         property var stateQueue: []
         function setState(newState) {

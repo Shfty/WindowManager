@@ -15,6 +15,7 @@ Q_DECLARE_LOGGING_CATEGORY(subprocess)
 class TrayIcon;
 class WinShellController;
 class WindowModelThread;
+class WindowModel;
 class SettingsContainer;
 class WindowController;
 class WindowView;
@@ -72,7 +73,6 @@ private slots:
 	void windowReady(QQuickWindow* window);
 	void socketReady(AppClient client);
 
-	void windowScanFinished();
 	void windowListRequested(QString socketName);
 	void setPendingWindowInfoSocket(QString socketName);
 	void windowSelected(QVariant windowInfoVar);
@@ -84,12 +84,13 @@ private:
 	SubprocessController* m_subprocessController;
 	WinShellController* m_winShellController;
 	SettingsContainer* m_settingsContainer;
-	WindowModelThread* m_windowModelThread;
+	WindowModel* m_windowEventModel;
 	WindowView* m_windowView;
 	WindowController* m_windowController;
 	OverlayController* m_overlayController;
 
 	QThread m_subprocessControllerThread;
+	QThread m_windowEventModelThread;
 	QThread m_ipcServerThread;
 	QThread m_windowControllerThread;
 	IPCServer* m_ipcServer;

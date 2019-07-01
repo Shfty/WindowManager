@@ -698,7 +698,8 @@ void TreeItem::loadFromJson(QJsonObject jsonObject)
 	m_flow = jsonObject.value("flow").toString();
 	m_layout = jsonObject.value("layout").toString();
 
-	m_savedHwnd = reinterpret_cast<HWND>(jsonObject.value("hwnd").toInt());
+	qlonglong savedHwnd = jsonObject.value("hwnd").toInt();
+	m_savedHwnd = reinterpret_cast<HWND>(savedHwnd);
 
 	m_borderless = jsonObject.value("borderless").toBool();
 
@@ -840,7 +841,7 @@ void TreeItem::updateWindowPosition_Internal()
 		QPoint position = globalPosition.toPoint();
 		QSize size = globalSize.toSize();
 
-		emit moveWindow(m_windowInfo->getHwnd(), visible ? QRect(position, size) : QRect(), visible);
+		emit moveWindow(m_windowInfo->getHwnd(), QRect(position, size), visible);
 	}
 
 	for(TreeItem* child : m_children)

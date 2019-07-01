@@ -32,7 +32,7 @@ HEADERS += \
 	public/WinShellController/TaskBarWindow.h \
 	public/WinShellController/TrayWindow.h \
 	public/WindowController.h \
-	public/WindowModelThread.h
+	public/WindowModel.h
 
 SOURCES += \
 	main.cpp \
@@ -46,7 +46,7 @@ SOURCES += \
 	private/WinShellController/TaskBarWindow.cpp \
 	private/WinShellController/TrayWindow.cpp \
 	private/WindowController.cpp \
-	private/WindowModelThread.cpp
+	private/WindowModel.cpp
 
 RESOURCES += qml.qrc \
 	graphics.qrc

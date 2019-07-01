@@ -10,7 +10,11 @@
 #include <QDebug>
 Q_LOGGING_CATEGORY(subprocessController, "launcher.subprocess")
 
-#define APP_EXE "App.exe"
+#ifdef QT_DEBUG
+#define APP_EXE "./build/src/App/debug/App.exe"
+#else
+#define APP_EXE "./build/src/App/release/App.exe"
+#endif
 
 SubprocessController::SubprocessController(QObject *parent)
 	: QObject(parent)
@@ -27,8 +31,9 @@ SubprocessController::~SubprocessController()
 void SubprocessController::startup()
 {
 	// Load save file and launch app instances
-	QFile file("../../launcher.json");
-	file.open(QIODevice::ReadOnly);
+	QFile file("launcher.json");
+
+	if(file.open(QIODevice::ReadOnly))
 	{
 		QByteArray loadData = file.readAll();
 		QJsonDocument loadDocument = QJsonDocument::fromJson(loadData);
@@ -42,10 +47,16 @@ void SubprocessController::startup()
 			int monitorIndex = monitorObject["monitorIndex"].toInt();
 			QString monitorFile = monitorObject["monitorFile"].toString();
 
-			launchAppProcess(monitorName, monitorIndex, "../../" + monitorFile);
+			launchAppProcess(monitorName, monitorIndex, monitorFile);
 		}
+
+		file.close();
 	}
-	file.close();
+	else
+	{
+		qFatal("Could not open Launcher save file");
+	}
+
 }
 
 void SubprocessController::cleanup()
@@ -70,6 +81,13 @@ void SubprocessController::launchAppProcess(QString name, int monitorIndex, QStr
 		AppSubprocess* newAppSubprocess = new AppSubprocess(name, monitorIndex, saveFile);
 		m_appProcesses.insert(process, newAppSubprocess);
 		emit processStarted(*newAppSubprocess);
+	});
+
+	connect(process, &QProcess::errorOccurred, [=](QProcess::ProcessError error){
+		Q_UNUSED(error)
+
+		QString errorString = "Subprocess error: " + process->errorString();
+		qFatal(errorString.toStdString().c_str());
 	});
 
 	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){

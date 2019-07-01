@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QMetaMethod>
 #include <QQuickWindow>
+#include <QTimer>
 
 #include <QDebug>
 Q_LOGGING_CATEGORY(launcherCore, "launcher.core")
@@ -11,7 +12,7 @@ Q_LOGGING_CATEGORY(launcherCore, "launcher.core")
 #include <WindowView.h>
 #include <WindowInfo.h>
 
-#include "WindowModelThread.h"
+#include "WindowModel.h"
 #include "WindowController.h"
 #include "WinShellController.h"
 #include "SubprocessController.h"
@@ -24,7 +25,7 @@ LauncherCore::LauncherCore(QObject* parent)
 	, m_subprocessController(nullptr)
 	, m_winShellController(nullptr)
 	, m_settingsContainer(nullptr)
-	, m_windowModelThread(nullptr)
+	, m_windowEventModel(nullptr)
 	, m_windowView(nullptr)
 	, m_windowController(nullptr)
 	, m_overlayController(nullptr)
@@ -33,6 +34,12 @@ LauncherCore::LauncherCore(QObject* parent)
 	setObjectName("Construction");
 
 	qCInfo(launcherCore) << "Construction";
+
+	/*
+	QLoggingCategory::setFilterRules("*=false\n"
+									 "launcher.windowEventModel=true\n"
+									 "shared.windowView=true");
+	*/
 
 	registerMetatypes();
 
@@ -50,8 +57,12 @@ LauncherCore::LauncherCore(QObject* parent)
 	connect(&m_ipcServerThread, &QThread::started, m_ipcServer, &IPCServer::startup);
 	connect(&m_ipcServerThread, &QThread::finished, m_ipcServer, &QObject::deleteLater);
 
-	// Window Model Thread
-	m_windowModelThread = new WindowModelThread(this);
+	// Window Event Model
+	m_windowEventModelThread.setObjectName("Window Event Model Thread");
+	m_windowEventModel = new WindowModel(nullptr);
+	m_windowEventModel->moveToThread(&m_windowEventModelThread);
+	connect(&m_windowEventModelThread, &QThread::started, m_windowEventModel, &WindowModel::startup);
+	connect(&m_windowEventModelThread, &QThread::finished, m_windowEventModel, &QObject::deleteLater);
 
 	// Window Controller
 	m_windowControllerThread.setObjectName("Window Controller Thread");
@@ -84,12 +95,17 @@ LauncherCore::LauncherCore(QObject* parent)
 	qCInfo(launcherCore) << "Construction Complete";
 
 	m_subprocessControllerThread.start();
-	m_windowModelThread->start();
+	m_windowEventModelThread.start();
 	m_windowControllerThread.start();
 
 	m_trayIcon->startup();
 	m_winShellController->startup();
 	m_overlayController->startup();
+
+	// Hacky workaround for window list race condition
+	QTimer::singleShot(1000, [=](){
+		m_ipcServerThread.start();
+	});
 }
 
 void LauncherCore::registerMetatypes()
@@ -119,22 +135,19 @@ void LauncherCore::makeConnections()
 
 	// Window Model
 	{
-		//App Core
-		connect(m_windowModelThread, &WindowModelThread::windowScanFinished, this, &LauncherCore::windowScanFinished);
-
 		// Window Model -> Window View
-		connect(m_windowModelThread, &WindowModelThread::windowAdded, m_windowView, &WindowView::windowAdded);
-		connect(m_windowModelThread, &WindowModelThread::windowTitleChanged, m_windowView, &WindowView::windowTitleChanged);
-		connect(m_windowModelThread, &WindowModelThread::windowRemoved, m_windowView, &WindowView::windowRemoved);
+		connect(m_windowEventModel, &WindowModel::windowCreated, m_windowView, &WindowView::windowAdded);
+		connect(m_windowEventModel, &WindowModel::windowRenamed, m_windowView, &WindowView::windowTitleChanged);
+		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_windowView, &WindowView::windowRemoved);
 
 		// Window Model -> Window Controller
-		connect(m_windowModelThread, &WindowModelThread::windowAdded, m_windowController, &WindowController::windowAdded);
-		connect(m_windowModelThread, &WindowModelThread::windowRemoved, m_windowController, &WindowController::windowRemoved);
+		connect(m_windowEventModel, &WindowModel::windowCreated, m_windowController, &WindowController::windowAdded);
+		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_windowController, &WindowController::windowRemoved);
 
 		// Window Model -> IPC Server
-		connect(m_windowModelThread, &WindowModelThread::windowAdded, m_ipcServer, &IPCServer::windowAdded);
-		connect(m_windowModelThread, &WindowModelThread::windowTitleChanged, m_ipcServer, &IPCServer::windowTitleChanged);
-		connect(m_windowModelThread, &WindowModelThread::windowRemoved, m_ipcServer, &IPCServer::windowRemoved);
+		connect(m_windowEventModel, &WindowModel::windowCreated, m_ipcServer, &IPCServer::windowAdded);
+		connect(m_windowEventModel, &WindowModel::windowRenamed, m_ipcServer, &IPCServer::windowTitleChanged);
+		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_ipcServer, &IPCServer::windowRemoved);
 	}
 
 	// IPC Server
@@ -204,12 +217,6 @@ void LauncherCore::socketReady(AppClient client)
 	m_windowController->registerUnderlayWindow(client.hwnd);
 }
 
-void LauncherCore::windowScanFinished()
-{
-	disconnect(m_windowModelThread, &WindowModelThread::windowScanFinished, this, &LauncherCore::windowScanFinished);
-	m_ipcServerThread.start();
-}
-
 void LauncherCore::windowListRequested(QString socketName)
 {
 	QObjectList windowList = m_windowView->getWindowList();
@@ -270,8 +277,8 @@ void LauncherCore::cleanup()
 {
 	qCInfo(launcherCore) << "Launcher Quitting";
 
-	m_windowModelThread->cleanup();
-	m_windowModelThread->wait();
+	m_windowEventModelThread.quit();
+	m_windowEventModelThread.wait();
 
 	m_subprocessControllerThread.quit();
 	m_subprocessControllerThread.wait();
