@@ -104,6 +104,65 @@ void objectDestroyed(HWINEVENTHOOK hWinEventHook,
 	WindowModel::instance->handleWindowDestroyed(hwnd);
 }
 
+void objectShown(HWINEVENTHOOK hWinEventHook,
+					 DWORD event,
+					 HWND hwnd,
+					 LONG idObject,
+					 LONG idChild,
+					 DWORD idEventThread,
+					 DWORD dwmsEventTime)
+{
+	Q_UNUSED(hWinEventHook);
+	Q_UNUSED(event);
+	Q_UNUSED(idEventThread);
+	Q_UNUSED(dwmsEventTime);
+
+	if(filterObject(idObject, idChild)) return;
+
+	qCInfo(windowModel) << "Object Shown" << hwnd;
+
+	WindowModel::instance->handleWindowCreated(hwnd);
+}
+
+void objectHidden(HWINEVENTHOOK hWinEventHook,
+					 DWORD event,
+					 HWND hwnd,
+					 LONG idObject,
+					 LONG idChild,
+					 DWORD idEventThread,
+					 DWORD dwmsEventTime)
+{
+	Q_UNUSED(hWinEventHook);
+	Q_UNUSED(event);
+	Q_UNUSED(idEventThread);
+	Q_UNUSED(dwmsEventTime);
+
+	if(filterObject(idObject, idChild)) return;
+
+	qCInfo(windowModel) << "Object Hidden" << hwnd;
+
+	WindowModel::instance->handleWindowDestroyed(hwnd);
+}
+
+void activeWindowChanged(HWINEVENTHOOK hWinEventHook,
+					 DWORD event,
+					 HWND hwnd,
+					 LONG idObject,
+					 LONG idChild,
+					 DWORD idEventThread,
+					 DWORD dwmsEventTime)
+{
+	Q_UNUSED(hWinEventHook);
+	Q_UNUSED(event);
+	Q_UNUSED(hwnd);
+	Q_UNUSED(idObject);
+	Q_UNUSED(idChild);
+	Q_UNUSED(idEventThread);
+	Q_UNUSED(dwmsEventTime);
+
+	qCInfo(windowModel) << "Active Window Changed";
+}
+
 void WindowModel::startup()
 {
 	qCInfo(windowModel) << "Startup";
@@ -113,6 +172,9 @@ void WindowModel::startup()
 	m_createHook = hookEvent(EVENT_OBJECT_CREATE, &objectCreated);
 	m_renameHook = hookEvent(EVENT_OBJECT_NAMECHANGE, &objectRenamed);
 	m_destroyHook = hookEvent(EVENT_OBJECT_DESTROY, &objectDestroyed);
+	m_destroyHook = hookEvent(EVENT_OBJECT_SHOW, &objectShown);
+	m_destroyHook = hookEvent(EVENT_OBJECT_HIDE, &objectHidden);
+	m_destroyHook = hookEvent(EVENT_SYSTEM_FOREGROUND, &activeWindowChanged);
 
 	emit startupComplete();
 }
