@@ -32,25 +32,28 @@ public:
 public slots:
 	void startup();
 
-	void registerUnderlayWindow(HWND hwnd);
-	void registerOverlayWindow(HWND hwnd);
+	void registerUnderlayWindow(WindowInfo wi);
+	void registerOverlayWindow(WindowInfo wi);
 
-	void windowAdded(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
-	void windowRemoved(HWND window);
+	void windowCreated(WindowInfo wi);
+	void windowDestroyed(HWND window);
 
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void commitWindowMove();
+	void updateWindowLayout();
 
+	void setActiveWindow(HWND hwnd);
 	void closeWindow(HWND hwnd);
 
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 private:
-	void moveWindow_internal(HWND hwnd, HWND insertAfter, QRect geometry);
+	WindowInfo findWindowInfo(HWND hwnd);
+	void removeHwnd(HWND hwnd);
+	void moveWindow_internal(Layer layer, WindowInfo wi, HWND insertAfter, QRect geometry);
 
 	HDWP m_dwp;
 
-	QMap<Layer, QMap<HWND, QRect>> m_layers;
+	QMap<Layer, QMap<WindowInfo, QRect>> m_layers;
 };
 
 #endif // WINDOWCONTROLLER_H

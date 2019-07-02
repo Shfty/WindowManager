@@ -28,11 +28,13 @@ HEADERS += \
 	public/TreeIconImageProvider.h \
 	public/WindowInfo.h \
 	public/WindowView.h \
-	public/Win.h
+	public/Win.h \
+	public/Shared.h
 
 SOURCES += \
 	private/SettingsContainer.cpp \
 	private/TreeIconImageProvider.cpp \
 	private/Win.cpp \
 	private/WindowInfo.cpp \
-	private/WindowView.cpp
+	private/WindowView.cpp \
+	private/Shared.cpp

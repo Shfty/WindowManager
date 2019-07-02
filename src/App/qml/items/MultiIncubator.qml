@@ -17,13 +17,10 @@ Item {
     property var status: Component.Null
 
     Component.onDestruction: {
-        print("MultiIncubator Destruction")
-
         itemIncubators.length = 0
 
         for(var itemInstance in itemInstances)
         {
-            print("Destroying item instance", itemInstances[itemInstance])
             itemInstances[itemInstance].destroy()
         }
         itemInstances.length = 0

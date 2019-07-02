@@ -7,6 +7,7 @@
 Q_DECLARE_LOGGING_CATEGORY(windowModel);
 
 #include <Win.h>
+#include <WindowInfo.h>
 
 class WindowModel : public QObject
 {
@@ -21,9 +22,11 @@ public:
 signals:
 	void startupComplete();
 
-	void windowCreated(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
+	void windowCreated(WindowInfo wi);
 	void windowRenamed(HWND hwnd, QString winTitle);
 	void windowDestroyed(HWND hwnd);
+
+	void activeWindowChanged();
 
 public slots:
 	void startup();
@@ -31,6 +34,8 @@ public slots:
 	void handleWindowCreated(HWND hwnd);
 	void handleWindowRenamed(HWND hwnd);
 	void handleWindowDestroyed(HWND hwnd);
+
+	void handleActiveWindowChanged();
 
 protected:
 	HWINEVENTHOOK hookEvent(DWORD event, WINEVENTPROC callback);
@@ -46,7 +51,7 @@ private:
 	HWINEVENTHOOK m_renameHook;
 	HWINEVENTHOOK m_destroyHook;
 
-	QMap<HWND, QString> m_windowList;
+	QList<HWND> m_windowList;
 };
 
 #endif // WINDOWEVENTMODEL_H

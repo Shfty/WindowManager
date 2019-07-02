@@ -21,7 +21,7 @@ class WindowView;
 class QScreen;
 class QQuickWindow;
 class QQuickView;
-class WindowInfo;
+class WindowObject;
 
 class TreeItem : public QObject
 {
@@ -44,7 +44,7 @@ class TreeItem : public QObject
 	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
 	Q_PROPERTY(QRectF nodeBounds READ getNodeBoundsLocal() NOTIFY nodeBoundsChanged)
 
-	Q_PROPERTY(WindowInfo* windowInfo READ getWindowInfo WRITE setWindowInfo NOTIFY windowInfoChanged)
+	Q_PROPERTY(WindowObject* windowInfo READ getWindowInfo WRITE setWindowInfo NOTIFY windowInfoChanged)
 
 	// Node Options
 	Q_PROPERTY(bool borderless MEMBER m_borderless NOTIFY borderlessChanged)
@@ -69,8 +69,8 @@ public:
 
 	void cleanup();
 	void cleanup_internal();
-	void cleanupWindow(WindowInfo* wi);
-	void setupWindow(WindowInfo* wi);
+	void cleanupWindow(WindowObject* wi);
+	void setupWindow(WindowObject* wi);
 
 	int getActiveIndex();
 	Q_INVOKABLE void setActiveChild(TreeItem* activeChild);
@@ -97,7 +97,7 @@ public:
 	Q_INVOKABLE void toggleFlow();
 	Q_INVOKABLE void toggleLayout();
 
-	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", QScreen* monitor = nullptr, WindowInfo* windowInfo = nullptr);
+	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", QScreen* monitor = nullptr, WindowObject* windowInfo = nullptr);
 	QVariant addChild(TreeItem* newChild);
 	bool removeChild(TreeItem* childToRemove);
 
@@ -113,8 +113,8 @@ public:
 	void moveChild(TreeItem* child, int delta);
 	Q_INVOKABLE void moveChild(int fromIndex, int toIndex);
 
-	WindowInfo* getWindowInfo() const { return m_windowInfo; }
-	void setWindowInfo(WindowInfo* newWindowInfo);
+	WindowObject* getWindowInfo() const { return m_windowInfo; }
+	void setWindowInfo(WindowObject* newWindowInfo);
 
 	QJsonObject toJsonObject() const;
 	void loadFromJson(QJsonObject jsonObject);
@@ -184,7 +184,7 @@ private:
 	QString m_flow;
 	QString m_layout;
 	HWND m_savedHwnd;
-	WindowInfo* m_windowInfo;
+	WindowObject* m_windowInfo;
 
 	bool m_borderless;
 

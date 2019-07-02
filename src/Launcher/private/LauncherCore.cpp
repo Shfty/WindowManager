@@ -8,6 +8,7 @@
 #include <QDebug>
 Q_LOGGING_CATEGORY(launcherCore, "launcher.core")
 
+#include <Shared.h>
 #include <SettingsContainer.h>
 #include <WindowView.h>
 #include <WindowInfo.h>
@@ -25,7 +26,7 @@ LauncherCore::LauncherCore(QObject* parent)
 	, m_subprocessController(nullptr)
 	, m_winShellController(nullptr)
 	, m_settingsContainer(nullptr)
-	, m_windowEventModel(nullptr)
+	, m_windowModel(nullptr)
 	, m_windowView(nullptr)
 	, m_windowController(nullptr)
 	, m_overlayController(nullptr)
@@ -59,10 +60,10 @@ LauncherCore::LauncherCore(QObject* parent)
 
 	// Window Event Model
 	m_windowEventModelThread.setObjectName("Window Event Model Thread");
-	m_windowEventModel = new WindowModel(nullptr);
-	m_windowEventModel->moveToThread(&m_windowEventModelThread);
-	connect(&m_windowEventModelThread, &QThread::started, m_windowEventModel, &WindowModel::startup);
-	connect(&m_windowEventModelThread, &QThread::finished, m_windowEventModel, &QObject::deleteLater);
+	m_windowModel = new WindowModel(nullptr);
+	m_windowModel->moveToThread(&m_windowEventModelThread);
+	connect(&m_windowEventModelThread, &QThread::started, m_windowModel, &WindowModel::startup);
+	connect(&m_windowEventModelThread, &QThread::finished, m_windowModel, &QObject::deleteLater);
 
 	// Window Controller
 	m_windowControllerThread.setObjectName("Window Controller Thread");
@@ -107,11 +108,9 @@ void LauncherCore::registerMetatypes()
 {
 	qCInfo(launcherCore) << "Registering Metatypes";
 
-	qRegisterMetaType<HWND>();
-	qRegisterMetaTypeStreamOperators<HWND>();
-	QMetaType::registerDebugStreamOperator<HWND>();
+	Shared::registerMetatypes();
+
 	qRegisterMetaType<IPCServer*>();
-	qRegisterMetaType<WindowInfo*>();
 	qRegisterMetaType<AppClient>();
 }
 
@@ -131,21 +130,22 @@ void LauncherCore::makeConnections()
 	// Window Model
 	{
 		// Window Model -> IPC Server Thread
-		connect(m_windowEventModel, SIGNAL(startupComplete()), &m_ipcServerThread, SLOT(start()));
-
-		// Window Model -> Window View
-		connect(m_windowEventModel, &WindowModel::windowCreated, m_windowView, &WindowView::windowAdded);
-		connect(m_windowEventModel, &WindowModel::windowRenamed, m_windowView, &WindowView::windowTitleChanged);
-		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_windowView, &WindowView::windowRemoved);
+		connect(m_windowModel, SIGNAL(startupComplete()), &m_ipcServerThread, SLOT(start()));
 
 		// Window Model -> Window Controller
-		connect(m_windowEventModel, &WindowModel::windowCreated, m_windowController, &WindowController::windowAdded);
-		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_windowController, &WindowController::windowRemoved);
+		connect(m_windowModel, &WindowModel::windowCreated, m_windowController, &WindowController::windowCreated);
+		connect(m_windowModel, &WindowModel::windowDestroyed, m_windowController, &WindowController::windowDestroyed);
+		connect(m_windowModel, &WindowModel::activeWindowChanged, m_windowController, &WindowController::updateWindowLayout);
+
+		// Window Model -> Window View
+		connect(m_windowModel, &WindowModel::windowCreated, m_windowView, &WindowView::windowCreated);
+		connect(m_windowModel, &WindowModel::windowRenamed, m_windowView, &WindowView::windowTitleChanged);
+		connect(m_windowModel, &WindowModel::windowDestroyed, m_windowView, &WindowView::windowDestroyed);
 
 		// Window Model -> IPC Server
-		connect(m_windowEventModel, &WindowModel::windowCreated, m_ipcServer, &IPCServer::windowAdded);
-		connect(m_windowEventModel, &WindowModel::windowRenamed, m_ipcServer, &IPCServer::windowTitleChanged);
-		connect(m_windowEventModel, &WindowModel::windowDestroyed, m_ipcServer, &IPCServer::windowRemoved);
+		connect(m_windowModel, &WindowModel::windowCreated, m_ipcServer, &IPCServer::windowCreated);
+		connect(m_windowModel, &WindowModel::windowRenamed, m_ipcServer, &IPCServer::windowTitleChanged);
+		connect(m_windowModel, &WindowModel::windowDestroyed, m_ipcServer, &IPCServer::windowDestroyed);
 	}
 
 	// IPC Server
@@ -160,7 +160,7 @@ void LauncherCore::makeConnections()
 
 		// Window Controller
 		connect(m_ipcServer, &IPCServer::moveWindow, m_windowController, &WindowController::moveWindow);
-		connect(m_ipcServer, &IPCServer::commitWindowMove, m_windowController, &WindowController::commitWindowMove);
+		connect(m_ipcServer, &IPCServer::commitWindowMove, m_windowController, &WindowController::updateWindowLayout);
 		connect(m_ipcServer, &IPCServer::setWindowStyle, m_windowController, &WindowController::setWindowStyle);
 		connect(m_ipcServer, &IPCServer::closeWindow, m_windowController, &WindowController::closeWindow);
 
@@ -207,12 +207,12 @@ void LauncherCore::registerSynchronizedObject(QObject* object)
 
 void LauncherCore::windowReady(QQuickWindow* window)
 {
-	m_windowController->registerOverlayWindow(reinterpret_cast<HWND>(window->winId()));
+	m_windowController->registerOverlayWindow(WindowInfo(reinterpret_cast<HWND>(window->winId()), "Launcher Overlay"));
 }
 
 void LauncherCore::socketReady(AppClient client)
 {
-	m_windowController->registerUnderlayWindow(client.hwnd);
+	m_windowController->registerUnderlayWindow(WindowInfo(client.hwnd, client.name));
 }
 
 void LauncherCore::windowListRequested(QString socketName)
@@ -222,12 +222,8 @@ void LauncherCore::windowListRequested(QString socketName)
 
 	for(QObject* object : windowList)
 	{
-		WindowInfo* windowInfo = qobject_cast<WindowInfo*>(object);
-		winListMessage.append(QVariant::fromValue<HWND>(windowInfo->getHwnd()));
-		winListMessage.append(windowInfo->getWinTitle());
-		winListMessage.append(windowInfo->getWinClass());
-		winListMessage.append(windowInfo->getWinProcess());
-		winListMessage.append(windowInfo->getWinStyle());
+		WindowObject* wo = qobject_cast<WindowObject*>(object);
+		winListMessage.append(QVariant::fromValue<WindowInfo>(wo->getWindowInfo()));
 	}
 
 	emit sendMessage(socketName, winListMessage);
@@ -240,7 +236,7 @@ void LauncherCore::setPendingWindowInfoSocket(QString socketName)
 
 void LauncherCore::windowSelected(QVariant windowInfoVar)
 {
-	WindowInfo* wi = windowInfoVar.value<WindowInfo*>();
+	WindowObject* wi = windowInfoVar.value<WindowObject*>();
 
 	qCInfo(launcherCore) << "Window Selected " << wi;
 

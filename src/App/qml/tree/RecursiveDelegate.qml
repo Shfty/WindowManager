@@ -8,10 +8,6 @@ Item {
 
     objectName: modelData ? modelData.objectName : "Recursive Wrapper"
 
-    Component.onDestruction: {
-        print("Recursive Delegate Destruction", modelData.objectName)
-    }
-
     property var modelData: null
     property var visualDelegate: null
 

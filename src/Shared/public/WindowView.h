@@ -22,7 +22,7 @@ class WindowView : public QObject
 public:
 	explicit WindowView(QObject* parent = nullptr);
 
-	WindowInfo* getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
+	WindowObject* getWindowByRegex(const QString& titlePattern = "", const QString& classPattern = "");
 
 	QObjectList getWindowList();
 	QObjectList getScreenList();
@@ -34,23 +34,23 @@ public:
 	Q_INVOKABLE bool isWindowVisible(HWND hwnd);
 
 	Q_INVOKABLE bool hasWindowInfo(HWND hwnd);
-	Q_INVOKABLE WindowInfo* getWindowInfo(HWND hwnd);
+	Q_INVOKABLE WindowObject* getWindowInfo(HWND hwnd);
 
-	Q_INVOKABLE WindowInfo* objectToWindowInfo(QObject* obj);
+	Q_INVOKABLE WindowObject* objectToWindowInfo(QObject* obj);
 
 signals:
 	void windowListChanged();
 	void screenListChanged();
 
 public slots:
-	void windowAdded(HWND hwnd, QString title, QString winClass, QString winProcess, qint32 winStyle);
+	void windowCreated(WindowInfo wi);
 	void windowTitleChanged(HWND hwnd, QString title);
-	void windowRemoved(HWND hwnd);
+	void windowDestroyed(HWND hwnd);
 
 private:
 	HDWP m_dwp;
-	WindowInfo* m_placeholder;
-	QMap<HWND, WindowInfo*> m_windowMap;
+	WindowObject* m_placeholder;
+	QMap<HWND, WindowObject*> m_windowMap;
 };
 
 #endif // WINDOWVIEW_H

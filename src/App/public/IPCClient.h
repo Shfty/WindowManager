@@ -8,6 +8,7 @@
 Q_DECLARE_LOGGING_CATEGORY(ipcClient);
 
 #include <Win.h>
+#include <WindowInfo.h>
 
 class QLocalSocket;
 class TreeItem;
@@ -21,9 +22,9 @@ public:
 signals:
 	void syncObjectPropertyChanged(QString objectName, QString objectProperty, QVariant propertyValue);
 
-	void windowAdded(HWND hwnd, QString title, QString winClass, QString winProcess, qint32 winStyle);
+	void windowCreated(WindowInfo wi);
 	void windowTitleChanged(HWND hwnd, QString title);
-	void windowRemoved(HWND hwnd);
+	void windowDestroyed(HWND hwnd);
 
 	void windowSelected(HWND hwnd);
 	void windowSelectionCanceled();

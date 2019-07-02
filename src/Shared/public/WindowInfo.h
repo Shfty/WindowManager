@@ -8,8 +8,12 @@
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(windowInfo);
 
-struct WindowInfoInternal {
-	WindowInfoInternal(HWND inHwnd, QString inTitle, QString inClass, QString inProcess, qint32 inStyle)
+struct WindowInfo {
+	WindowInfo(HWND inHwnd = nullptr,
+			   QString inTitle = QString(),
+			   QString inClass = QString(),
+			   QString inProcess = QString(),
+			   qint32 inStyle = 0)
 	{
 		hwnd = inHwnd;
 		winTitle = inTitle;
@@ -25,7 +29,16 @@ struct WindowInfoInternal {
 	qint32 winStyle;
 };
 
-class WindowInfo : public QObject
+QDataStream& operator <<(QDataStream&, const WindowInfo&);
+QDataStream& operator >>(QDataStream&, WindowInfo&);
+QTextStream& operator <<(QTextStream&, const WindowInfo&);
+QDebug operator <<(QDebug, const WindowInfo&);
+bool operator ==(const WindowInfo&, const WindowInfo&);
+bool operator <(const WindowInfo&, const WindowInfo&);
+
+Q_DECLARE_METATYPE(WindowInfo)
+
+class WindowObject : public QObject
 {
 	Q_OBJECT
 
@@ -36,13 +49,15 @@ class WindowInfo : public QObject
 	Q_PROPERTY(qint32 winStyle READ getWinStyle WRITE setWinStyle NOTIFY winStyleChanged)
 
 public:
-	explicit WindowInfo(QObject* parent = nullptr);
+	explicit WindowObject(QObject* parent = nullptr);
+	explicit WindowObject(WindowInfo wi, QObject* parent = nullptr);
 
-	HWND getHwnd() const { return m_hwnd; }
-	QString getWinTitle() const { return m_winTitle; }
-	QString getWinClass() const { return m_winClass; }
-	QString getWinProcess() const { return m_winProcess; }
-	qint32 getWinStyle() const { return m_winStyle; }
+	HWND getHwnd() const { return m_windowInfo.hwnd; }
+	QString getWinTitle() const { return m_windowInfo.winTitle; }
+	QString getWinClass() const { return m_windowInfo.winClass; }
+	QString getWinProcess() const { return m_windowInfo.winProcess; }
+	qint32 getWinStyle() const { return m_windowInfo.winStyle; }
+	WindowInfo getWindowInfo() const { return m_windowInfo; }
 
 	void setHwnd(HWND newHwnd);
 	void setWinTitle(QString newTitle);
@@ -60,11 +75,7 @@ signals:
 	void windowClosed();
 
 private:
-	HWND m_hwnd;
-	QString m_winTitle;
-	QString m_winClass;
-	QString m_winProcess;
-	qint32 m_winStyle;
+	WindowInfo m_windowInfo;
 };
 
 Q_DECLARE_METATYPE(WindowInfo*)

@@ -9,10 +9,6 @@ Item {
 
     anchors.fill: parent
 
-    Component.onDestruction: {
-        print("Node Delegate Destruction", modelData.objectName)
-    }
-
     property var modelData: null
     property bool hasModel: modelData ? true : false
 
@@ -20,18 +16,10 @@ Item {
         anchors.fill: parent
         active: hasModel ? modelData.depth > 0 : false
 
-        Component.onDestruction: {
-            print("Node Delegate Incubator Destruction", modelData.objectName)
-        }
-
         sourceComponent: Component {
             Item {
                 anchors.fill: parent
                 clip: true
-
-                Component.onDestruction: {
-                    print("Node Delegate Incubator Item Destruction", modelData.objectName)
-                }
 
                 Rectangle {
                     id: itemBackground

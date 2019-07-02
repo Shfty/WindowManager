@@ -155,17 +155,10 @@ void IPCServer::syncObjectPropertyChanged()
 	broadcastMessage({"SyncObjectPropertyChanged", sender()->objectName(), notifyProperty.name(), notifyProperty.read(sender())});
 }
 
-void IPCServer::windowAdded(HWND hwnd, QString winTitle, QString winClass, QString winProcess, qint32 winStyle)
+void IPCServer::windowCreated(WindowInfo wi)
 {
 	qCInfo(ipcServer) << "IPC server window added";
-	broadcastWindowUpdate({
-		"WindowAdded",
-		QVariant::fromValue<HWND>(hwnd),
-		winTitle,
-		winClass,
-		winProcess,
-		QVariant(winStyle)
-	});
+	broadcastWindowUpdate({ "WindowAdded", QVariant::fromValue<WindowInfo>(wi) });
 }
 
 void IPCServer::windowTitleChanged(HWND hwnd, QString newTitle)
@@ -178,7 +171,7 @@ void IPCServer::windowTitleChanged(HWND hwnd, QString newTitle)
 	});
 }
 
-void IPCServer::windowRemoved(HWND hwnd)
+void IPCServer::windowDestroyed(HWND hwnd)
 {
 	qCInfo(ipcServer) << "IPC server window removed";
 	broadcastWindowUpdate({

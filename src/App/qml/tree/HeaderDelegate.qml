@@ -9,10 +9,6 @@ import ".."
 Item {
     id: treeHeader
 
-    Component.onDestruction: {
-        print("Header Delegate Destruction")
-    }
-
     property var modelData: null
     property bool hasModel: modelData ? true : false
 
@@ -323,10 +319,6 @@ Item {
             RowLayout {
                 id: rootLayout
                 spacing: 0
-
-                Component.onDestruction: {
-                    print("Header Incubator Item Destruction", modelData.objectName)
-                }
 
                 Button {
                     id: trayIconWidget

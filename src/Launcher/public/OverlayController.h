@@ -10,7 +10,6 @@ Q_DECLARE_LOGGING_CATEGORY(qmlController)
 
 class QQmlApplicationEngine;
 class QQuickWindow;
-class WindowInfo;
 
 class OverlayController : public QObject
 {

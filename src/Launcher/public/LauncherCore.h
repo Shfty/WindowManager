@@ -84,7 +84,7 @@ private:
 	SubprocessController* m_subprocessController;
 	WinShellController* m_winShellController;
 	SettingsContainer* m_settingsContainer;
-	WindowModel* m_windowEventModel;
+	WindowModel* m_windowModel;
 	WindowView* m_windowView;
 	WindowController* m_windowController;
 	OverlayController* m_overlayController;

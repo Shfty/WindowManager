@@ -74,9 +74,9 @@ public slots:
 
 	void syncObjectPropertyChanged();
 
-	void windowAdded(HWND hwnd, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
+	void windowCreated(WindowInfo wi);
 	void windowTitleChanged(HWND hwnd, QString newTitle);
-	void windowRemoved(HWND hwnd);
+	void windowDestroyed(HWND hwnd);
 
 private:
 	void handleMessage(QLocalSocket* socket, QDataStream& stream, QString message);

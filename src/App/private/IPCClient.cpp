@@ -101,26 +101,23 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 
 		for(int i = 0; i < count; ++i)
 		{
-			HWND hwnd;
-			QString winTitle, winClass, winProcess;
-			qint32 winStyle;
+			QVariant wiVar;
+			stream >> wiVar;
+			WindowInfo wi = wiVar.value<WindowInfo>();
 
-			unpackWindowInfo(stream, hwnd, winTitle, winClass, winProcess, winStyle);
-			emit windowAdded(hwnd, winTitle, winClass, winProcess, winStyle);
+			emit windowCreated(wi);
 		}
 
 		emit receivedWindowList();
 	}
 	else if(message == "WindowAdded")
 	{
-		HWND hwnd;
-		QString winTitle, winClass, winProcess;
-		qint32 winStyle;
+		QVariant wiVar;
+		stream >> wiVar;
+		WindowInfo wi = wiVar.value<WindowInfo>();
 
-		unpackWindowInfo(stream, hwnd, winTitle, winClass, winProcess, winStyle);
-
-		qCInfo(ipcClient) << "WindowAdded from server " << hwnd << winTitle << winClass << winProcess << winStyle;
-		emit windowAdded(hwnd, winTitle, winClass, winProcess, winStyle);
+		qCInfo(ipcClient) << "WindowAdded from server " << wi;
+		emit windowCreated(wi);
 	}
 	else if(message == "WindowTitleChanged")
 	{
@@ -143,7 +140,7 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 
 		qCInfo(ipcClient) << "WindowRemoved from server" << hwnd;
 
-		emit windowRemoved(hwnd);
+		emit windowDestroyed(hwnd);
 
 	}
 	else if(message == "WindowSelected")

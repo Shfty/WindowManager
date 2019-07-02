@@ -18,7 +18,6 @@ Item {
     }
 
     Component.onDestruction: {
-        print("Incubator Destruction")
         destroyItem()
     }
 
@@ -53,7 +52,6 @@ Item {
     {
         if(itemIncubator !== null)
         {
-            print("Destroying item incubator", itemIncubator)
             if(itemIncubator.status !== Component.Null)
             {
                 itemIncubator.forceCompletion();
@@ -63,7 +61,6 @@ Item {
 
         if(itemInstance !== null)
         {
-            print("Destroying item instance", itemInstance)
             itemInstance.destroy()
             itemInstance = null
         }

@@ -15,18 +15,21 @@ Q_LOGGING_CATEGORY(windowView, "shared.windowView")
 WindowView::WindowView(QObject* parent)
 	: QObject(parent)
 	, m_dwp(nullptr)
-	, m_placeholder(new WindowInfo(this))
+	, m_placeholder(new WindowObject(this))
 {
 	qRegisterMetaType<WindowView*>();
 	setObjectName("Window View");
+
+	m_placeholder->setHwnd(HWND(-1));
+	m_placeholder->setWinTitle("[ Container ]");
 }
 
-WindowInfo* WindowView::getWindowByRegex(const QString& titlePattern, const QString& classPattern)
+WindowObject* WindowView::getWindowByRegex(const QString& titlePattern, const QString& classPattern)
 {
 	QRegularExpression titleRegex(titlePattern);
 	QRegularExpression classRegex(classPattern);
 
-	for(WindowInfo* wi : m_windowMap.values())
+	for(WindowObject* wi : m_windowMap.values())
 	{
 		if(titleRegex.match(wi->getWinTitle()).hasMatch() && classRegex.match(wi->getWinClass()).hasMatch())
 		{
@@ -40,8 +43,8 @@ WindowInfo* WindowView::getWindowByRegex(const QString& titlePattern, const QStr
 #include <QDebug>
 QObjectList WindowView::getWindowList()
 {
-	QMap<QString, WindowInfo*> sortedList;
-	for(WindowInfo* wi : m_windowMap.values())
+	QMap<QString, WindowObject*> sortedList;
+	for(WindowObject* wi : m_windowMap.values())
 	{
 		QString hwndString;
 		QTextStream addressStream (&hwndString);
@@ -52,7 +55,7 @@ QObjectList WindowView::getWindowList()
 
 	QObjectList objectList;
 	objectList.append(m_placeholder);
-	for(WindowInfo* wi : sortedList.values())
+	for(WindowObject* wi : sortedList.values())
 	{
 		objectList.append(wi);
 	}
@@ -72,7 +75,7 @@ QObjectList WindowView::getScreenList()
 
 bool WindowView::hasWindowInfo(HWND hwnd)
 {
-	for(WindowInfo* wi : m_windowMap.values())
+	for(WindowObject* wi : m_windowMap.values())
 	{
 		if(wi->getHwnd() == hwnd)
 			return true;
@@ -81,9 +84,9 @@ bool WindowView::hasWindowInfo(HWND hwnd)
 	return false;
 }
 
-WindowInfo* WindowView::getWindowInfo(HWND hwnd)
+WindowObject* WindowView::getWindowInfo(HWND hwnd)
 {
-	for(WindowInfo* wi : m_windowMap.values())
+	for(WindowObject* wi : m_windowMap.values())
 	{
 		if(wi->getHwnd() == hwnd)
 			return wi;
@@ -92,10 +95,10 @@ WindowInfo* WindowView::getWindowInfo(HWND hwnd)
 	return nullptr;
 }
 
-WindowInfo* WindowView::objectToWindowInfo(QObject* obj)
+WindowObject* WindowView::objectToWindowInfo(QObject* obj)
 {
-	qCInfo(windowView) << qobject_cast<WindowInfo*>(obj);
-	return qobject_cast<WindowInfo*>(obj);
+	qCInfo(windowView) << qobject_cast<WindowObject*>(obj);
+	return qobject_cast<WindowObject*>(obj);
 }
 
 HWND WindowView::getWindowHwnd(QWindow* window)
@@ -118,24 +121,19 @@ HWND WindowView::findWindow(QString winTitle, QString winClass, HWND after, HWND
 	return FindWindowEx(parent, after, (LPCWSTR)winClass.utf16(), (LPCWSTR)winTitle.utf16());
 }
 
-void WindowView::windowAdded(HWND hwnd, QString winTitle, QString winClass, QString winProcess, qint32 winStyle)
+void WindowView::windowCreated(WindowInfo wi)
 {
-	qCInfo(windowView) << "WindowView windowAdded" << hwnd << winTitle << winClass << winProcess << winStyle;
+	qCInfo(windowView) << "WindowView windowCreated" << wi;
 
-	WindowInfo* winInfo = new WindowInfo(this);
-	winInfo->setProperty("hwnd", QVariant::fromValue<HWND>(hwnd));
-	winInfo->setProperty("winTitle", winTitle);
-	winInfo->setProperty("winClass", winClass);
-	winInfo->setProperty("winProcess", winProcess);
-	winInfo->setProperty("winStyle", winStyle);
+	WindowObject* winInfo = new WindowObject(wi, this);
 
-	m_windowMap.insert(hwnd, winInfo);
+	m_windowMap.insert(wi.hwnd, winInfo);
 	emit windowListChanged();
 }
 
 void WindowView::windowTitleChanged(HWND hwnd, QString newTitle)
 {
-	WindowInfo* target = m_windowMap.value(hwnd);
+	WindowObject* target = m_windowMap.value(hwnd);
 	if(target == nullptr)
 	{
 		qFatal("onWindowTitleChanged: target nullptr");
@@ -145,9 +143,9 @@ void WindowView::windowTitleChanged(HWND hwnd, QString newTitle)
 	emit windowListChanged();
 }
 
-void WindowView::windowRemoved(HWND hwnd)
+void WindowView::windowDestroyed(HWND hwnd)
 {
-	WindowInfo* target = m_windowMap.value(hwnd);
+	WindowObject* target = m_windowMap.value(hwnd);
 	if(target == nullptr)
 	{
 		qFatal("onWindowRemoved: target nullptr");

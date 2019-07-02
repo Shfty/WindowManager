@@ -116,7 +116,7 @@ void TreeItem::cleanup_internal()
 	}
 }
 
-void TreeItem::cleanupWindow(WindowInfo* wi)
+void TreeItem::cleanupWindow(WindowObject* wi)
 {
 	qCInfo(treeItem) << objectName() << "cleaning up window";
 
@@ -129,11 +129,11 @@ void TreeItem::cleanupWindow(WindowInfo* wi)
 	}
 }
 
-void TreeItem::setupWindow(WindowInfo* wi)
+void TreeItem::setupWindow(WindowObject* wi)
 {
 	if(m_windowInfo)
 	{
-		connect(wi, &WindowInfo::windowClosed, [=](){
+		connect(wi, &WindowObject::windowClosed, [=](){
 			m_windowInfo = nullptr;
 			windowInfoChanged();
 		});
@@ -481,7 +481,7 @@ void TreeItem::toggleLayout()
 	layoutChanged();
 }
 
-QVariant TreeItem::addChild(QString title, QString flow, QString layout, QScreen* monitor, WindowInfo* windowInfo)
+QVariant TreeItem::addChild(QString title, QString flow, QString layout, QScreen* monitor, WindowObject* windowInfo)
 {
 	TreeItem* child = new TreeItem(this);
 
@@ -639,7 +639,7 @@ void TreeItem::moveChild(int fromIndex, int toIndex)
 	moveChild(child, delta);
 }
 
-void TreeItem::setWindowInfo(WindowInfo* newWindowInfo)
+void TreeItem::setWindowInfo(WindowObject* newWindowInfo)
 {
 	if(m_windowInfo != nullptr && m_windowInfo->getHwnd() != nullptr)
 	{
@@ -858,7 +858,7 @@ void TreeItem::tryAutoGrabWindow()
 	//qCInfo(treeItem) << objectName() << "trying auto grab";
 
 	WindowView* wv = getWindowView();
-	WindowInfo* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
+	WindowObject* foundWindow = wv->getWindowByRegex(m_autoGrabTitle, m_autoGrabClass);
 
 	if(foundWindow != nullptr)
 	{

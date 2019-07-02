@@ -13,7 +13,7 @@ Q_LOGGING_CATEGORY(subprocessController, "launcher.subprocess")
 #ifdef QT_DEBUG
 #define APP_EXE "./build/src/App/debug/App.exe"
 #else
-#define APP_EXE "./build/src/App/release/App.exe"
+#define APP_EXE "./deploy/App.exe"
 #endif
 
 SubprocessController::SubprocessController(QObject *parent)

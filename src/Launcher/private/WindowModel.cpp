@@ -31,9 +31,16 @@ bool filterObject(LONG idObject, LONG idChild)
 
 bool filterWindow(HWND hwnd)
 {
+	// Shell Window
 	if(hwnd == GetShellWindow()) return true;
+
+	// Invisible Windows
 	if(!IsWindowVisible(hwnd)) return true;
 
+	// Non-root Windows
+	if(hwnd != GetAncestor(hwnd, GA_ROOT)) return true;
+
+	// Windows with no title
 	int titleLength = GetWindowTextLength(hwnd);
 	if(titleLength == 0) return true;
 
@@ -144,7 +151,7 @@ void objectHidden(HWINEVENTHOOK hWinEventHook,
 	WindowModel::instance->handleWindowDestroyed(hwnd);
 }
 
-void activeWindowChanged(HWINEVENTHOOK hWinEventHook,
+void systemForeground(HWINEVENTHOOK hWinEventHook,
 					 DWORD event,
 					 HWND hwnd,
 					 LONG idObject,
@@ -160,7 +167,9 @@ void activeWindowChanged(HWINEVENTHOOK hWinEventHook,
 	Q_UNUSED(idEventThread);
 	Q_UNUSED(dwmsEventTime);
 
-	qCInfo(windowModel) << "Active Window Changed";
+	qCInfo(windowModel) << "System Foreground";
+
+	WindowModel::instance->handleActiveWindowChanged();
 }
 
 void WindowModel::startup()
@@ -174,7 +183,7 @@ void WindowModel::startup()
 	m_destroyHook = hookEvent(EVENT_OBJECT_DESTROY, &objectDestroyed);
 	m_destroyHook = hookEvent(EVENT_OBJECT_SHOW, &objectShown);
 	m_destroyHook = hookEvent(EVENT_OBJECT_HIDE, &objectHidden);
-	m_destroyHook = hookEvent(EVENT_SYSTEM_FOREGROUND, &activeWindowChanged);
+	m_destroyHook = hookEvent(EVENT_SYSTEM_FOREGROUND, &systemForeground);
 
 	emit startupComplete();
 }
@@ -183,9 +192,18 @@ void WindowModel::handleWindowCreated(HWND hwnd)
 {
 	if(filterWindow(hwnd)) return;
 
-	qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
-	emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
-	m_windowList.insert(hwnd, getWinTitle(hwnd));
+	if(!m_windowList.contains(hwnd))
+	{
+		qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
+
+		emit windowCreated(WindowInfo(hwnd,
+									  getWinTitle(hwnd),
+									  getWinClass(hwnd),
+									  getWinProcess(hwnd),
+									  getWinStyle(hwnd)));
+
+		m_windowList.append(hwnd);
+	}
 }
 
 void WindowModel::handleWindowRenamed(HWND hwnd)
@@ -195,15 +213,19 @@ void WindowModel::handleWindowRenamed(HWND hwnd)
 	if(!m_windowList.contains(hwnd))
 	{
 		qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
-		emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
+
+		emit windowCreated(WindowInfo(hwnd,
+									  getWinTitle(hwnd),
+									  getWinClass(hwnd),
+									  getWinProcess(hwnd),
+									  getWinStyle(hwnd)));
+		m_windowList.append(hwnd);
 	}
 	else
 	{
 		qCInfo(windowModel) << "windowRenamed" << hwnd << getWinTitle(hwnd);
 		emit windowRenamed(hwnd, getWinTitle(hwnd));
 	}
-
-	m_windowList.insert(hwnd, getWinTitle(hwnd));
 }
 
 void WindowModel::handleWindowDestroyed(HWND hwnd)
@@ -213,7 +235,12 @@ void WindowModel::handleWindowDestroyed(HWND hwnd)
 	qCInfo(windowModel) << "windowDestroyed" << hwnd;
 	emit windowDestroyed(hwnd);
 
-	m_windowList.remove(hwnd);
+	m_windowList.removeOne(hwnd);
+}
+
+void WindowModel::handleActiveWindowChanged()
+{
+	emit activeWindowChanged();
 }
 
 HWINEVENTHOOK WindowModel::hookEvent(DWORD event, WINEVENTPROC callback)

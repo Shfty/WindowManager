@@ -10,6 +10,7 @@
 #include <QDebug>
 Q_LOGGING_CATEGORY(appCore, "app.core")
 
+#include <Shared.h>
 #include <WindowView.h>
 #include <SettingsContainer.h>
 #include <Win.h>
@@ -65,21 +66,17 @@ void AppCore::registerMetatypes()
 {
 	// Register Metatypes
 	qCInfo(appCore) << "Registering Metatypes";
-	qRegisterMetaType<HWND>();
-	qRegisterMetaTypeStreamOperators<HWND>();
-	QMetaType::registerDebugStreamOperator<HWND>();
+	Shared::registerMetatypes();
+	qmlRegisterInterface<HWND>("HWND");
+
 	qRegisterMetaType<QScreen*>();
 	qRegisterMetaType<TreeModel*>();
 	qRegisterMetaType<TreeItem*>();
 	qRegisterMetaType<IPCClient*>();
-	qRegisterMetaType<WindowInfo*>();
-	qRegisterMetaType<WindowView*>();
-	qRegisterMetaType<SettingsContainer*>();
 
 	// Register QML types
 	qCInfo(appCore) << "Registering QML Types";
 	qmlRegisterType<DWMThumbnail>("DWMThumbnail", 1, 0, "DWMThumbnail");
-	qmlRegisterInterface<HWND>("HWND");
 }
 
 void AppCore::makeConnections()
@@ -96,9 +93,9 @@ void AppCore::makeConnections()
 		connect(m_ipcClient, &IPCClient::disconnected, m_qmlController, &QMLController::closeWindow);
 
 		// Window View
-		connect(m_ipcClient, &IPCClient::windowAdded, m_windowView, &WindowView::windowAdded);
+		connect(m_ipcClient, &IPCClient::windowCreated, m_windowView, &WindowView::windowCreated);
 		connect(m_ipcClient, &IPCClient::windowTitleChanged, m_windowView, &WindowView::windowTitleChanged);
-		connect(m_ipcClient, &IPCClient::windowRemoved, m_windowView, &WindowView::windowRemoved);
+		connect(m_ipcClient, &IPCClient::windowDestroyed, m_windowView, &WindowView::windowDestroyed);
 
 		// Tree Model
 		connect(m_ipcClient, &IPCClient::receivedWindowList, m_treeModel, &TreeModel::startup);
@@ -131,7 +128,7 @@ void AppCore::setPendingWindowRecipient(TreeItem* treeItem)
 
 void AppCore::windowSelected(HWND hwnd)
 {
-	WindowInfo* wi = m_windowView->getWindowInfo(hwnd);
+	WindowObject* wi = m_windowView->getWindowInfo(hwnd);
 
 	m_pendingWindowRecipient->setWindowInfo(wi);
 	m_pendingWindowRecipient->updateWindowPosition();

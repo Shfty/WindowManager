@@ -4,8 +4,6 @@ import QtQuick.Controls 2.5
 import QtQuick.Controls.Universal 2.3
 
 Window {
-    title: "Window Manager"
-
     property int baseFlags: Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus
     property int extraFlags: 0
     flags: baseFlags | extraFlags
