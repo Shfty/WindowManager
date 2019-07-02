@@ -19,6 +19,8 @@ public:
 	static WindowModel* instance;
 
 signals:
+	void startupComplete();
+
 	void windowCreated(HWND window, QString winTitle, QString winClass, QString winProcess, qint32 winStyle);
 	void windowRenamed(HWND hwnd, QString winTitle);
 	void windowDestroyed(HWND hwnd);

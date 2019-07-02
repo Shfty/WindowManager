@@ -1,7 +1,7 @@
 #include "WindowModel.h"
 
 #include <QDebug>
-Q_LOGGING_CATEGORY(windowEventModel, "launcher.windowModel")
+Q_LOGGING_CATEGORY(windowModel, "launcher.windowModel")
 
 WindowModel* WindowModel::instance = nullptr;
 
@@ -44,10 +44,9 @@ BOOL CALLBACK enumWindows(__in HWND hwnd, __in LPARAM lParam)
 {
 	if(filterWindow(hwnd)) return true;
 
-	// Retrieve the pointer passed into this callback, and re-'type' it.
-	// The only way for a C API to pass arbitrary data is by means of a void*.
-	QList<HWND>& windowList = *reinterpret_cast<QList<HWND>*>(lParam);
-	windowList.append(hwnd);
+	WindowModel& windowModel = *reinterpret_cast<WindowModel*>(lParam);
+	windowModel.handleWindowCreated(hwnd);
+
 	return true;
 }
 
@@ -109,62 +108,48 @@ void WindowModel::startup()
 {
 	qCInfo(windowModel) << "Startup";
 
-	QList<HWND> existingWindows;
-	EnumWindows(enumWindows, reinterpret_cast<LPARAM>(&existingWindows));
-
-	for(HWND hwnd : existingWindows)
-	{
-		handleWindowCreated(hwnd);
-	}
+	EnumWindows(enumWindows, reinterpret_cast<LPARAM>(this));
 
 	m_createHook = hookEvent(EVENT_OBJECT_CREATE, &objectCreated);
 	m_renameHook = hookEvent(EVENT_OBJECT_NAMECHANGE, &objectRenamed);
 	m_destroyHook = hookEvent(EVENT_OBJECT_DESTROY, &objectDestroyed);
+
+	emit startupComplete();
 }
 
 void WindowModel::handleWindowCreated(HWND hwnd)
 {
-	qCInfo(windowModel) << "handleWindowCreated" << hwnd;
+	if(filterWindow(hwnd)) return;
 
-	if(!filterWindow(hwnd))
-	{
-		qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
-		emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
-	}
+	qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
+	emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
+	m_windowList.insert(hwnd, getWinTitle(hwnd));
 }
 
 void WindowModel::handleWindowRenamed(HWND hwnd)
 {
-	qCInfo(windowModel) << "handleWindowRenamed" << m_windowList.value(hwnd);
+	if(filterWindow(hwnd)) return;
 
-	if(!filterWindow(hwnd))
+	if(!m_windowList.contains(hwnd))
 	{
-		if(m_windowList.value(hwnd).isEmpty())
-		{
-			qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
-			emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
-		}
-		else
-		{
-			qCInfo(windowModel) << "windowRenamed" << hwnd << getWinTitle(hwnd);
-			emit windowRenamed(hwnd, getWinTitle(hwnd));
-		}
-
-		m_windowList.insert(hwnd, getWinTitle(hwnd));
+		qCInfo(windowModel) << "windowCreated" << hwnd << getWinTitle(hwnd) << getWinClass(hwnd) << getWinProcess(hwnd) << getWinStyle(hwnd);
+		emit windowCreated(hwnd, getWinTitle(hwnd), getWinClass(hwnd), getWinProcess(hwnd), getWinStyle(hwnd));
 	}
 	else
 	{
-		m_windowList.insert(hwnd, QString());
+		qCInfo(windowModel) << "windowRenamed" << hwnd << getWinTitle(hwnd);
+		emit windowRenamed(hwnd, getWinTitle(hwnd));
 	}
+
+	m_windowList.insert(hwnd, getWinTitle(hwnd));
 }
 
 void WindowModel::handleWindowDestroyed(HWND hwnd)
 {
-	if(!filterWindow(hwnd))
-	{
-		qCInfo(windowModel) << "windowDestroyed" << hwnd;
-		emit windowDestroyed(hwnd);
-	}
+	if(!m_windowList.contains(hwnd)) return;
+
+	qCInfo(windowModel) << "windowDestroyed" << hwnd;
+	emit windowDestroyed(hwnd);
 
 	m_windowList.remove(hwnd);
 }

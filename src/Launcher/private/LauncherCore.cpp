@@ -101,11 +101,6 @@ LauncherCore::LauncherCore(QObject* parent)
 	m_trayIcon->startup();
 	m_winShellController->startup();
 	m_overlayController->startup();
-
-	// Hacky workaround for window list race condition
-	QTimer::singleShot(1000, [=](){
-		m_ipcServerThread.start();
-	});
 }
 
 void LauncherCore::registerMetatypes()
@@ -135,6 +130,9 @@ void LauncherCore::makeConnections()
 
 	// Window Model
 	{
+		// Window Model -> IPC Server Thread
+		connect(m_windowEventModel, SIGNAL(startupComplete()), &m_ipcServerThread, SLOT(start()));
+
 		// Window Model -> Window View
 		connect(m_windowEventModel, &WindowModel::windowCreated, m_windowView, &WindowView::windowAdded);
 		connect(m_windowEventModel, &WindowModel::windowRenamed, m_windowView, &WindowView::windowTitleChanged);
