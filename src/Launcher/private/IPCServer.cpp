@@ -184,16 +184,26 @@ void IPCServer::handleMessage(QLocalSocket* socket, QDataStream& stream, QString
 {
 	if(message == "Identify")
 	{
-		QVariant nameVar, hwndVar;
-		stream >> nameVar >> hwndVar;
+		QVariant nameVar;
+		stream >> nameVar;
 		QString name = nameVar.toString();
+
+		qCInfo(ipcServer) << "ID from" << name;
+
+		AppClient* newClient = new AppClient(name);
+		m_appClients.insert(socket, newClient);
+	}
+	if(message == "WindowReady")
+	{
+		QVariant hwndVar;
+		stream >> hwndVar;
 		HWND hwnd = hwndVar.value<HWND>();
 
-		qCInfo(ipcServer) << "ID from" << name << hwnd;
+		qCInfo(ipcServer) << "HWND from" << m_appClients.value(socket)->name << hwnd;
 
-		AppClient* newClient = new AppClient(name, hwnd);
-		m_appClients.insert(socket, newClient);
-		emit socketReady(*newClient);
+		AppClient* client = m_appClients.value(socket);
+		client->hwnd = hwnd;
+		emit clientReady(*client);
 	}
 	else if(message == "MoveOverlay")
 	{

@@ -66,8 +66,8 @@ void AppCore::registerMetatypes()
 {
 	// Register Metatypes
 	qCInfo(appCore) << "Registering Metatypes";
+
 	Shared::registerMetatypes();
-	qmlRegisterInterface<HWND>("HWND");
 
 	qRegisterMetaType<QScreen*>();
 	qRegisterMetaType<TreeModel*>();
@@ -89,7 +89,8 @@ void AppCore::makeConnections()
 		connect(m_ipcClient, &IPCClient::windowSelectionCanceled, this, &AppCore::windowSelectionCanceled);
 		connect(m_ipcClient, &IPCClient::receivedQuitMessage, this, &AppCore::exitRequested);
 
-		// QML Window
+		// QML Controller
+		connect(m_ipcClient, &IPCClient::reloadQml, m_qmlController, &QMLController::reloadQml);
 		connect(m_ipcClient, &IPCClient::disconnected, m_qmlController, &QMLController::closeWindow);
 
 		// Window View
@@ -160,6 +161,7 @@ void AppCore::exitRequested()
 
 void AppCore::lastWindowClosed()
 {
+	/*
 	qCInfo(appCore) << "All windows closed, shutting down";
 
 	// Save if this is an unexpected force-quit
@@ -175,6 +177,7 @@ void AppCore::lastWindowClosed()
 
 	qCInfo(appCore) << "Quitting";
 	QGuiApplication::quit();
+	*/
 }
 
 void AppCore::cleanup()

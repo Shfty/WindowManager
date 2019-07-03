@@ -1,5 +1,6 @@
 #include "SubprocessController.h"
 
+#include <QDir>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -13,7 +14,7 @@ Q_LOGGING_CATEGORY(subprocessController, "launcher.subprocess")
 #ifdef QT_DEBUG
 #define APP_EXE "./build/src/App/debug/App.exe"
 #else
-#define APP_EXE "./deploy/App.exe"
+#define APP_EXE "./build/src/App/release/App.exe"
 #endif
 
 SubprocessController::SubprocessController(QObject *parent)
@@ -73,6 +74,7 @@ void SubprocessController::launchAppProcess(QString name, int monitorIndex, QStr
 	qCInfo(subprocessController) << "Launching app instance for monitor" << name << "with index" << monitorIndex << "using save file" << saveFile;
 
 	QProcess* process = new QProcess(this);
+	process->setWorkingDirectory(QDir::currentPath());
 	process->setProcessChannelMode(QProcess::ForwardedChannels);
 	process->closeWriteChannel();
 

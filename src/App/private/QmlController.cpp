@@ -15,6 +15,12 @@ Q_LOGGING_CATEGORY(qmlController, "app.qmlController")
 #include "AppCore.h"
 #include "TreeItem.h"
 
+#ifdef QT_DEBUG
+#define QML_PREFIX QString("./src/App/")
+#else
+#define QML_PREFIX QString("qrc:/")
+#endif
+
 QMLController::QMLController(QObject *parent)
 	: QObject(parent)
 	, m_qmlEngine(nullptr)
@@ -23,18 +29,41 @@ QMLController::QMLController(QObject *parent)
 	qCInfo(qmlController) << "Startup";
 
 	m_qmlEngine = new QQmlApplicationEngine(this);
-
-	m_qmlEngine->rootContext()->setContextProperty("appCore", AppCore::getInstance(this));
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
-	m_qmlEngine->load("qrc:/qml/main.qml");
 
-	m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects()[0]);
+	connect(m_qmlEngine, &QQmlApplicationEngine::objectCreated, [=](){
+		m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects().last());
 
-	int monitorIndex = QGuiApplication::arguments().at(2).toInt();
-	m_qmlWindow->setScreen(QGuiApplication::screens()[monitorIndex]);
+		qCInfo(qmlController) << "Assigning app core reference";
+		m_qmlWindow->setProperty("appCore", QVariant::fromValue<AppCore*>(AppCore::getInstance(this)));
 
-	m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
-	m_qmlWindow->setVisibility(QWindow::Windowed);
+		qCInfo(qmlController) << "Assigning monitor index";
+		int monitorIndex = QGuiApplication::arguments().at(2).toInt();
+		m_qmlWindow->setScreen(QGuiApplication::screens()[monitorIndex]);
+
+		qCInfo(qmlController) << "Showing window";
+		m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
+		m_qmlWindow->setVisibility(QWindow::Windowed);
+	});
+
+	reloadQml();
+}
+
+void QMLController::reloadQml()
+{
+	qCInfo(qmlController) << "Reloading QML";
+
+	if(m_qmlWindow != nullptr)
+	{
+		qCInfo(qmlController) << "Closing existing window";
+		m_qmlWindow->close();
+		m_qmlWindow->deleteLater();
+	}
+
+	qCInfo(qmlController) << "Loading main.qml";
+	m_qmlEngine->clearComponentCache();
+
+	m_qmlEngine->load(QML_PREFIX + "qml/main.qml");
 }
 
 void QMLController::closeWindow()

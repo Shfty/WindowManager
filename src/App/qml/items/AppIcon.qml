@@ -24,6 +24,6 @@ Image {
 
     BusyIndicator {
         anchors.fill: parent
-        running: appIcon.status !== Image.Ready
+        running: appIcon.source != "" && appIcon.status !== Image.Ready
     }
 }

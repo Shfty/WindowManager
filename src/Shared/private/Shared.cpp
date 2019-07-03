@@ -1,4 +1,4 @@
-#include "public/Shared.h"
+#include "Shared.h"
 
 #include <QMetaType>
 
@@ -9,6 +9,8 @@
 
 void Shared::registerMetatypes()
 {
+	qInfo() << "Registering shared metatypes";
+
 	qRegisterMetaType<HWND>();
 	qRegisterMetaTypeStreamOperators<HWND>();
 	QMetaType::registerDebugStreamOperator<HWND>();

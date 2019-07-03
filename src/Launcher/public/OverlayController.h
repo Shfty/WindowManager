@@ -20,6 +20,7 @@ public:
 
 signals:
 	void windowReady(QQuickWindow* window);
+	void reloadRequested();
 	void windowSelected(QVariant windowInfo);
 	void quitRequested();
 

@@ -7,9 +7,10 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication app(argc, argv);
 	QApplication::setOrganizationName("Josh Palmer");
 	QApplication::setOrganizationDomain("https://josh-palmer.com");
+	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QApplication app(argc, argv);
 
 	QQuickStyle::setStyle("Universal");
 

@@ -21,6 +21,7 @@ public:
 	QQuickWindow* getQmlWindow() const { return m_qmlWindow; }
 
 public slots:
+	void reloadQml();
 	void closeWindow();
 
 private:

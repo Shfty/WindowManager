@@ -94,7 +94,7 @@ Item {
         clip: clipChildren
 
         active: recursiveWrapper.modelData && childIncubator.itemInstances.length === 0
-        model: recursiveWrapper.modelData.children
+        model: recursiveWrapper.modelData ? recursiveWrapper.modelData.children : null
         sourceComponent: recursiveDelegate
         properties: ({
             visualDelegate: recursiveWrapper.visualDelegate,

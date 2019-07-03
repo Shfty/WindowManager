@@ -78,7 +78,8 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 	if(message == "Identify")
 	{
 		qCInfo(ipcClient) << "ID request from server";
-		sendMessage({"Identify", m_socketName, QVariant::fromValue<HWND>(m_hwnd)});
+		sendMessage({"Identify", m_socketName});
+		sendMessage({"WindowReady", QVariant::fromValue<HWND>(m_hwnd)});
 		sendMessage({"WindowList"});
 	}
 	else if(message == "SyncObjectPropertyChanged")
@@ -158,6 +159,11 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 	{
 		qCInfo(ipcClient) << "Server canceled window selection";
 		emit windowSelectionCanceled();
+	}
+	else if(message == "ReloadQML")
+	{
+		qCInfo(ipcClient) << "Reload QML request from server";
+		emit reloadQml();
 	}
 	else if(message == "Quit")
 	{

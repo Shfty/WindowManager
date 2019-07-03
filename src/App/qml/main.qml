@@ -7,13 +7,15 @@ import "."
 AppWindow {
     id: appWindow
 
-    extraFlags: Qt.WindowStaysOnTopHint
+    //extraFlags: Qt.WindowStaysOnTopHint
 
     // Animation
     property real animationDuration: 1000
     property int animationCurve: Easing.OutQuint
 
     // Tree Root
+    property var appCore: null
+
     property bool showTree: false
 
     property var treeModel: appCore ? appCore.treeModel : null
@@ -157,7 +159,7 @@ AppWindow {
     // Spinner
     readonly property bool nodesLoaded: nodeWrapper.itemInstance ? nodeWrapper.itemInstance.loadComplete : false
     readonly property bool headersLoaded: headerWrapper.itemInstance ? headerWrapper.itemInstance.loadComplete : false
-    readonly property bool treeReady: appWindow.treeRoot.startupComplete
+    readonly property bool treeReady: appWindow.treeRoot ? appWindow.treeRoot.startupComplete : false
     readonly property bool qmlReady: nodesLoaded && headersLoaded && treeReady
     onQmlReadyChanged: {
         if(qmlReady)

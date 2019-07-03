@@ -35,6 +35,7 @@ void OverlayController::startup()
 	m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects()[0]);
 
 	connect(m_qmlWindow, SIGNAL(windowSelected(QVariant)), this, SIGNAL(windowSelected(QVariant)));
+	connect(m_qmlWindow, SIGNAL(reloadRequested()), this, SIGNAL(reloadRequested()));
 	connect(m_qmlWindow, SIGNAL(quitRequested()), this, SIGNAL(quitRequested()));
 
 	emit windowReady(m_qmlWindow);

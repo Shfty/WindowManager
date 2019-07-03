@@ -23,6 +23,13 @@ Rectangle {
                 }
             }
             ListElement {
+                name: "Reload"
+                category: "Window Manager"
+                func: function() {
+                    appWindow.reloadRequested()
+                }
+            }
+            ListElement {
                 name: "Shut Down"
                 category: "Power"
                 func: function() {

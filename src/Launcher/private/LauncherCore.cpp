@@ -151,7 +151,7 @@ void LauncherCore::makeConnections()
 	// IPC Server
 	{
 		// App Core
-		connect(m_ipcServer, &IPCServer::socketReady, this, &LauncherCore::socketReady);
+		connect(m_ipcServer, &IPCServer::clientReady, this, &LauncherCore::clientReady);
 		connect(m_ipcServer, &IPCServer::windowListRequested, this, &LauncherCore::windowListRequested);
 		connect(m_ipcServer, &IPCServer::setPendingWindowInfoSocket, this, &LauncherCore::setPendingWindowInfoSocket);
 
@@ -177,6 +177,7 @@ void LauncherCore::makeConnections()
 		// App Core
 		connect(m_overlayController, &OverlayController::windowReady, this, &LauncherCore::windowReady);
 		connect(m_overlayController, &OverlayController::windowSelected, this, &LauncherCore::windowSelected);
+		connect(m_overlayController, &OverlayController::reloadRequested, this, &LauncherCore::reloadRequested);
 		connect(m_overlayController, &OverlayController::quitRequested, this, &LauncherCore::quitRequested);
 	}
 
@@ -210,7 +211,7 @@ void LauncherCore::windowReady(QQuickWindow* window)
 	m_windowController->registerOverlayWindow(WindowInfo(reinterpret_cast<HWND>(window->winId()), "Launcher Overlay"));
 }
 
-void LauncherCore::socketReady(AppClient client)
+void LauncherCore::clientReady(AppClient client)
 {
 	m_windowController->registerUnderlayWindow(WindowInfo(client.hwnd, client.name));
 }
@@ -259,6 +260,12 @@ void LauncherCore::windowSelected(QVariant windowInfoVar)
 	QMetaObject::invokeMethod(m_ipcServer, "sendMessage", Q_ARG(QString, m_pendingWindowInfoSocket), Q_ARG(QVariantList, message));
 
 	m_pendingWindowInfoSocket = QString();
+}
+
+void LauncherCore::reloadRequested()
+{
+	QVariantList message = {"ReloadQML"};
+	QMetaObject::invokeMethod(m_ipcServer, "broadcastMessage", Q_ARG(QVariantList, message));
 }
 
 void LauncherCore::quitRequested()

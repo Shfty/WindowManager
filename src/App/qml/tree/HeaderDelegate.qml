@@ -15,7 +15,7 @@ Item {
     x: headerBounds.x
     y: headerBounds.y
     width: headerBounds.width
-    height: headerBounds.height
+    height: appCore ? appCore.settingsContainer.headerSize : 20
 
     property rect headerBounds: hasModel ? modelData.headerBounds : Qt.rect(0, 0, 0, 0)
     Behavior on headerBounds {
@@ -26,12 +26,14 @@ Item {
         }
     }
 
-    property var windowInfo: modelData.windowInfo
-    property var hwnd: windowInfo !== null ? windowInfo.hwnd : null
+    property var windowInfo: modelData ? modelData.windowInfo : null
+    property var hwnd: windowInfo ? windowInfo.hwnd : null
 
-    property bool hwndValid: hwnd !== null
+    property bool hwndValid: hwnd ? true : false
     property bool isRoot: hasModel ? modelData.depth === 0 : false
     property bool hasLaunchProperties: {
+        if(!modelData) return false
+
         return  modelData.launchUri !== "" ||
                 modelData.launchParams !== "" ||
                 modelData.autoGrabTitle !== "" ||
@@ -40,9 +42,11 @@ Item {
 
     Rectangle {
         width: parent.width
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
         color: {
+            if(!appCore) return "black"
+
             if(!modelData) return appCore.settingsContainer.colorActiveHeader
 
             if(isRoot) return appCore.settingsContainer.colorActiveHeader
@@ -66,9 +70,9 @@ Item {
         anchors.left: parent.left
 
         width: 100
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
-        text: modelData.objectName !== "" ? modelData.objectName : ""
+        text: modelData ? (modelData.objectName !== "" ? modelData.objectName : "") : ""
 
         onClicked: {
             var size = Qt.size(600, 440)
@@ -83,10 +87,10 @@ Item {
 
         anchors.left: titleButton.right
         anchors.right: buttonLayout.left
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
-        enabled: modelData.children.length === 0
-        text: modelData.windowInfo !== null ? modelData.windowInfo.winTitle : "[Container]"
+        enabled: modelData ? modelData.children.length === 0 : false
+        text: modelData ? (modelData.windowInfo !== null ? modelData.windowInfo.winTitle : "[Container]") : ""
 
         onClicked: {
             var size = Qt.size(windowSelectButton.width, 500)
@@ -128,7 +132,7 @@ Item {
         id: buttonLayout
 
         anchors.right: rootItemIncubator.left
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
         spacing: 0
 
@@ -136,12 +140,12 @@ Item {
             id: flipButton
             objectName: "flipButton"
 
-            Layout.minimumWidth: appCore.settingsContainer.headerSize
+            Layout.minimumWidth: parent.height
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: qsTr(modelData.flow + " Flow")
+            ToolTip.text: modelData ? qsTr(modelData.flow + " Flow") : ""
 
             Label {
                 anchors.centerIn: parent
@@ -173,12 +177,12 @@ Item {
             id: layoutButton
             objectName: "layoutButton"
 
-            Layout.minimumWidth: appCore.settingsContainer.headerSize
+            Layout.minimumWidth: parent.height
             Layout.fillHeight: true
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: qsTr(modelData.layout + " Layout")
+            ToolTip.text: modelData ? qsTr(modelData.layout + " Layout") : ""
 
             RowLayout {
                 anchors.fill: parent
@@ -231,7 +235,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Add Child")
 
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: parent.height
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -262,7 +266,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Launch")
 
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: parent.height
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -285,7 +289,7 @@ Item {
             ToolTip.delay: 500
             ToolTip.text: qsTr("Close")
 
-            Layout.maximumWidth: appCore.settingsContainer.headerSize
+            Layout.maximumWidth: parent.height
             Layout.fillHeight: true
 
             font.family: "Segoe MDL2 Assets"
@@ -313,8 +317,8 @@ Item {
         active: isRoot
         anchors.top: parent.top
         anchors.right: parent.right
-        width: itemInstance !== null ? itemInstance.width : 0
-        height: hasSettingsContainer ? settingsContainer.headerSize : 0
+        width: itemInstance ? itemInstance.width : 0
+        height: parent.height
         sourceComponent: Component {
             RowLayout {
                 id: rootLayout
@@ -328,14 +332,14 @@ Item {
                     ToolTip.delay: 500
                     ToolTip.text: qsTr("Tray")
 
-                    Layout.maximumWidth: appCore.settingsContainer.headerSize
+                    Layout.maximumWidth: parent.height
                     Layout.fillHeight: true
 
                     font.family: "Segoe MDL2 Assets"
                     text: "\uE8A5"
 
                     onClicked: {
-                        var pos = mapToGlobal(0, appCore.settingsContainer.headerSize)
+                        var pos = mapToGlobal(0, rootItemIncubator.height)
                         appCore.ipcClient.sendMessage(["ToggleTray", pos]);
                     }
                 }
@@ -382,7 +386,7 @@ Item {
 
                     Spinner {
                         Layout.fillHeight: true
-                        size: appCore.settingsContainer.headerSize
+                        size: parent.height
                         visible: false
                     }
 
@@ -448,7 +452,7 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
         ToolTip.visible: hovered
         ToolTip.delay: 500
@@ -456,7 +460,14 @@ Item {
 
         font.family: "Segoe MDL2 Assets"
 
-        visible: !isRoot && modelData.treeParent.layout !== "Split" && modelData.index !== modelData.treeParent.activeIndex
+        visible: {
+            if(isRoot) return false
+            if(!modelData) return false
+            if(!modelData.treeParent) return false
+            if(modelData.treeParent.layout === "Split") return false
+            if(modelData.index === modelData.treeParent.activeIndex) return false
+            return true
+        }
 
         onClicked: {
             if(!modelData) return
@@ -470,7 +481,7 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: appCore.settingsContainer.headerSize
+        height: parent.height
 
         onWheel: function(event) {
             if(modelData.treeParent)

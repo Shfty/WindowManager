@@ -19,6 +19,11 @@ public:
 
 	static WindowModel* instance;
 
+	QString getWinTitle(HWND hwnd);
+	QString getWinClass(HWND hwnd);
+	QString getWinProcess(HWND hwnd);
+	qint32 getWinStyle(HWND hwnd);
+
 signals:
 	void startupComplete();
 
@@ -39,12 +44,6 @@ public slots:
 
 protected:
 	HWINEVENTHOOK hookEvent(DWORD event, WINEVENTPROC callback);
-
-private:
-	QString getWinTitle(HWND hwnd);
-	QString getWinClass(HWND hwnd);
-	QString getWinProcess(HWND hwnd);
-	qint32 getWinStyle(HWND hwnd);
 
 private:
 	HWINEVENTHOOK m_createHook;

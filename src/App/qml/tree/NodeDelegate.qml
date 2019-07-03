@@ -47,9 +47,9 @@ Item {
     }
 
     DWMThumbnail {
-        objectName: modelData.objectName
         anchors.fill: parent
         hwnd: {
+            if(!appCore) return undefined
             if(!hasModel) return appCore.windowView.windowList[0].hwnd
             if(!modelData.windowInfo) return appCore.windowView.windowList[0].hwnd
             return modelData.windowInfo.hwnd

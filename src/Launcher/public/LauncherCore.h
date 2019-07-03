@@ -71,11 +71,12 @@ private:
 
 private slots:
 	void windowReady(QQuickWindow* window);
-	void socketReady(AppClient client);
+	void clientReady(AppClient client);
 
 	void windowListRequested(QString socketName);
 	void setPendingWindowInfoSocket(QString socketName);
 	void windowSelected(QVariant windowInfoVar);
+	void reloadRequested();
 	void quitRequested();
 	void cleanup();
 

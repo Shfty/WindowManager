@@ -162,9 +162,16 @@ QRectF TreeItem::getBounds()
 	if(treeParent == nullptr)
 	{
 		AppCore* appCore = AppCore::getInstance(this);
-		QMLController* qmlController = appCore->getQmlController();
-		QQuickWindow* appWindow = qmlController->getQmlWindow();
-		return QRectF(QPoint(), appWindow->size());
+		if(appCore != nullptr)
+		{
+			QMLController* qmlController = appCore->getQmlController();
+			QQuickWindow* appWindow = qmlController->getQmlWindow();
+			return QRectF(QPoint(), appWindow->size());
+		}
+		else
+		{
+			return QRectF();
+		}
 	}
 
 	QRectF bounds = treeParent->getContentBounds();

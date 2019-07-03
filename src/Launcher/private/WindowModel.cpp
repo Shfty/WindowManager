@@ -44,6 +44,8 @@ bool filterWindow(HWND hwnd)
 	int titleLength = GetWindowTextLength(hwnd);
 	if(titleLength == 0) return true;
 
+	if(WindowModel::instance->getWinTitle(hwnd) == "Window Manager") return true;
+
 	return false;
 }
 

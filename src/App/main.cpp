@@ -11,12 +11,13 @@
 
 int main(int argc, char *argv[])
 {
-	QGuiApplication app(argc, argv);
 	QGuiApplication::setApplicationName("Window Manager");
 	QGuiApplication::setOrganizationName("Josh Palmer");
 	QGuiApplication::setOrganizationDomain("https://josh-palmer.com");
 	//QGuiApplication::setQuitOnLastWindowClosed(false);
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+	QGuiApplication app(argc, argv);
 
 	QStringList args = QCoreApplication::arguments();
 	if(args.length() <= 2)

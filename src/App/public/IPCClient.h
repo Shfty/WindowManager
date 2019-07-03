@@ -32,6 +32,8 @@ signals:
 	void receivedWindowList();
 	void receivedQuitMessage();
 
+	void reloadQml();
+
 	void disconnected();
 
 public slots:

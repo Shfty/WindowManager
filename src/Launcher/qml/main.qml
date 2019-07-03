@@ -7,6 +7,7 @@ import QtQuick.Controls.Universal 2.3
 ApplicationWindow {
     id: appWindow
 
+    signal reloadRequested()
     signal quitRequested()
     signal windowSelected(var hwnd)
 

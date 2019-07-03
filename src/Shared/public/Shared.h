@@ -1,9 +1,10 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-namespace Shared
+class Shared
 {
-	void registerMetatypes();
-}
+public:
+	static void registerMetatypes();
+};
 
 #endif // SHARED_H

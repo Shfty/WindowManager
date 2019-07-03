@@ -29,14 +29,14 @@ struct WindowInfo {
 	qint32 winStyle;
 };
 
+Q_DECLARE_METATYPE(WindowInfo)
+
 QDataStream& operator <<(QDataStream&, const WindowInfo&);
 QDataStream& operator >>(QDataStream&, WindowInfo&);
 QTextStream& operator <<(QTextStream&, const WindowInfo&);
 QDebug operator <<(QDebug, const WindowInfo&);
 bool operator ==(const WindowInfo&, const WindowInfo&);
 bool operator <(const WindowInfo&, const WindowInfo&);
-
-Q_DECLARE_METATYPE(WindowInfo)
 
 class WindowObject : public QObject
 {
@@ -78,7 +78,7 @@ private:
 	WindowInfo m_windowInfo;
 };
 
-Q_DECLARE_METATYPE(WindowInfo*)
-Q_DECLARE_METATYPE(const WindowInfo*)
+Q_DECLARE_METATYPE(WindowObject*)
+Q_DECLARE_METATYPE(const WindowObject*)
 
 #endif // WINDOWINFO_H
