@@ -1,15 +1,26 @@
 import QtQuick 2.12
 
 Item {
-    id: incubator
+    id: incubatorItem
 
     property bool active: true
+    property bool asynchronous: false
     property var sourceComponent: null
-    property var properties: null
+    property var properties: ({})
 
-    property var itemIncubator: null
-    property var itemInstance: null
-    property var status: Component.Null
+    property var incubator: null
+    property int status: Component.Null
+    readonly property var item: {
+        if(status === Component.Ready)
+        {
+            if(incubator)
+            {
+                return incubator.object
+            }
+        }
+
+        return null
+    }
 
     Component.onCompleted: {
         onActiveChanged.connect(updateItem)
@@ -34,35 +45,28 @@ Item {
 
     function incubateItem()
     {
-        if(itemIncubator === null && itemInstance === null)
+        if(incubator === null && item === null)
         {
-            itemIncubator = sourceComponent.incubateObject(incubator, properties)
-
-            itemIncubator.onStatusChanged = function(status) {
-                if(status === Component.Ready)
-                {
-                    incubator.status = status
-                    incubator.itemInstance = itemIncubator.object
-                }
+            incubator = sourceComponent.incubateObject(incubatorItem, properties, asynchronous ? Qt.Asynchronous : Qt.Synchronous)
+            incubator.onStatusChanged = function(status) {
+                incubatorItem.status = status
             }
+
+            status = incubator.status
         }
     }
 
     function destroyItem()
     {
-        if(itemIncubator !== null)
+        if(incubator !== null)
         {
-            if(itemIncubator.status !== Component.Null)
+            if(incubator.status !== Component.Null)
             {
-                itemIncubator.forceCompletion();
+                incubator.forceCompletion();
+                incubator.object.destroy();
             }
-            itemIncubator = null;
-        }
-
-        if(itemInstance !== null)
-        {
-            itemInstance.destroy()
-            itemInstance = null
+            incubator = null;
+            status = Component.Null;
         }
     }
 }

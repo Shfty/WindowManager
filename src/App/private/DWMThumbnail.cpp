@@ -27,6 +27,11 @@ DWMThumbnail::~DWMThumbnail()
 
 void DWMThumbnail::updateThumbnail()
 {
+	if(objectName() == "Firefox")
+	{
+		qInfo() << "Updating Firefox thumbnail";
+	}
+
 	if (m_thumbnail != nullptr)
 	{
 		DwmUnregisterThumbnail(m_thumbnail);
@@ -38,12 +43,10 @@ void DWMThumbnail::updateThumbnail()
 	if(parentWindow == nullptr) return;
 	if(parentWindow->visibility() == QWindow::Hidden)
 	{
-		connect(parentWindow, &QQuickWindow::visibilityChanged, [=](){
-			updateThumbnail();
-		});
+		connect(parentWindow, &QQuickWindow::visibilityChanged, this, &DWMThumbnail::updateThumbnail);
 		return;
 	}
-	disconnect(parentWindow, &QQuickWindow::visibilityChanged, nullptr, nullptr);
+	disconnect(parentWindow, &QQuickWindow::visibilityChanged, this, &DWMThumbnail::updateThumbnail);
 
 	HWND parentHwnd = reinterpret_cast<HWND>(parentWindow->winId());
 	if (parentHwnd == nullptr) return;
@@ -51,8 +54,8 @@ void DWMThumbnail::updateThumbnail()
 	if(m_hwnd == nullptr) return;
 
 	DwmRegisterThumbnail(parentHwnd, m_hwnd, &m_thumbnail);
-	QObject::disconnect(this, SLOT(drawThumbnail()));
-	QObject::connect(parentWindow, SIGNAL(frameSwapped()), this, SLOT(drawThumbnail()));
+	disconnect(this, SLOT(drawThumbnail()));
+	connect(parentWindow, &QQuickWindow::frameSwapped, this, &DWMThumbnail::drawThumbnail);
 }
 
 void DWMThumbnail::drawThumbnail()

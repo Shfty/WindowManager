@@ -3,7 +3,8 @@ FramerateCounter 1.0 items/FramerateCounter.qml
 Spinner 1.0 items/Spinner.qml
 Incubator 1.0 items/Incubator.qml
 MultiIncubator 1.0 items/MultiIncubator.qml
+ClippingRect 1.0 items/ClippingRect.qml
 
+ItemDelegate 1.0 tree/ItemDelegate.qml
 HeaderDelegate 1.0 tree/HeaderDelegate.qml
 NodeDelegate 1.0 tree/NodeDelegate.qml
-RecursiveDelegate 1.0 tree/RecursiveDelegate.qml

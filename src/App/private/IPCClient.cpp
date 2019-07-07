@@ -12,12 +12,11 @@ Q_LOGGING_CATEGORY(ipcClient, "app.ipcClient")
 #include <WindowInfo.h>
 #include <WindowView.h>
 
-IPCClient::IPCClient(QString socketName, HWND hwnd, QObject *parent)
+IPCClient::IPCClient(QString socketName, QObject *parent)
 	: QObject(parent)
 	, m_socketName(socketName)
-	, m_hwnd(hwnd)
 {
-	qCInfo(ipcClient) << "Creating m_localSocket";
+	qCInfo(ipcClient) << "Construction";
 
 	m_localSocket = new QLocalSocket(this);
 
@@ -67,8 +66,10 @@ IPCClient::IPCClient(QString socketName, HWND hwnd, QObject *parent)
 	connect(m_localSocket, &QLocalSocket::disconnected, this, &IPCClient::disconnected);
 }
 
-void IPCClient::connectToServer()
+void IPCClient::startup()
 {
+	qCInfo(ipcClient) << "Startup";
+
 	qCInfo(ipcClient) << "Connecting to server";
 	m_localSocket->connectToServer("WindowManager", QIODevice::ReadWrite);
 }
@@ -79,8 +80,7 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 	{
 		qCInfo(ipcClient) << "ID request from server";
 		sendMessage({"Identify", m_socketName});
-		sendMessage({"WindowReady", QVariant::fromValue<HWND>(m_hwnd)});
-		sendMessage({"WindowList"});
+		emit ipcReady();
 	}
 	else if(message == "SyncObjectPropertyChanged")
 	{
@@ -176,19 +176,6 @@ void IPCClient::handleMessage(QDataStream& stream, QString message)
 	}
 }
 
-void IPCClient::unpackWindowInfo(QDataStream& stream, HWND& hwnd, QString& winTitle, QString& winClass, QString& winProcess, qint32& winStyle)
-{
-	QVariant hwndVar, winTitleVar, winClassVar, winProcessVar, winStyleVar;
-
-	stream >> hwndVar >> winTitleVar >> winClassVar >> winProcessVar >> winStyleVar;
-
-	hwnd = hwndVar.value<HWND>();
-	winTitle = winTitleVar.toString();
-	winClass = winClassVar.toString();
-	winProcess = winProcessVar.toString();
-	winStyle = winStyleVar.value<qint32>();
-}
-
 void IPCClient::sendMessage(QVariantList message)
 {
 	qCInfo(ipcClient) << "Sending" << message << "to server";
@@ -202,13 +189,4 @@ void IPCClient::sendMessage(QVariantList message)
 	}
 
 	m_localSocket->flush();
-}
-
-void IPCClient::setWindowStyle(HWND hwnd, qint32 style)
-{
-	sendMessage({
-		"SetWindowStyle",
-		QVariant::fromValue<HWND>(hwnd),
-		style
-	});
 }

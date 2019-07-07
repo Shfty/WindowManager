@@ -61,6 +61,23 @@ void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 {
 	qCInfo(windowController) << "moveWindow" << hwnd << geometry << visible;
 
+	// Calculate extended frame
+	RECT winRect;
+	GetWindowRect(hwnd, &winRect);
+
+	RECT extendedFrame;
+	DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedFrame, sizeof(RECT));
+
+	QMargins extendedMargins = QMargins(
+		extendedFrame.left - winRect.left,
+		extendedFrame.top - winRect.top,
+		winRect.right - extendedFrame.right,
+		winRect.bottom - extendedFrame.bottom
+	);
+
+	// Apply extended frame
+	geometry.adjust(-extendedMargins.left(), -extendedMargins.top(), extendedMargins.right(), extendedMargins.bottom());
+
 	WindowInfo wi = findWindowInfo(hwnd);
 	removeHwnd(hwnd);
 	m_layers[visible ? Visible : Hidden].insert(wi, geometry);

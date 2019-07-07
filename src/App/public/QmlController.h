@@ -6,6 +6,8 @@
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(qmlController);
 
+#include <Win.h>
+
 class QQmlApplicationEngine;
 class QQuickWindow;
 class QQmlComponent;
@@ -20,8 +22,16 @@ public:
 
 	QQuickWindow* getQmlWindow() const { return m_qmlWindow; }
 
+signals:
+	void sendMessage(QVariantList message);
+
 public slots:
+	void startup();
+
+	void ipcReady();
+
 	void reloadQml();
+	void qmlLoaded();
 	void closeWindow();
 
 private:

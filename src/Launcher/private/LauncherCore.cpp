@@ -151,7 +151,7 @@ void LauncherCore::makeConnections()
 	// IPC Server
 	{
 		// App Core
-		connect(m_ipcServer, &IPCServer::clientReady, this, &LauncherCore::clientReady);
+		connect(m_ipcServer, &IPCServer::clientWindowChanged, this, &LauncherCore::clientWindowChanged);
 		connect(m_ipcServer, &IPCServer::windowListRequested, this, &LauncherCore::windowListRequested);
 		connect(m_ipcServer, &IPCServer::setPendingWindowInfoSocket, this, &LauncherCore::setPendingWindowInfoSocket);
 
@@ -211,9 +211,17 @@ void LauncherCore::windowReady(QQuickWindow* window)
 	m_windowController->registerOverlayWindow(WindowInfo(reinterpret_cast<HWND>(window->winId()), "Launcher Overlay"));
 }
 
-void LauncherCore::clientReady(AppClient client)
+void LauncherCore::clientWindowChanged(AppClient client, HWND oldHwnd)
 {
-	m_windowController->registerUnderlayWindow(WindowInfo(client.hwnd, client.name));
+	if(oldHwnd != nullptr)
+	{
+		m_windowController->removeHwnd(oldHwnd);
+	}
+
+	if(client.hwnd != nullptr)
+	{
+		m_windowController->registerUnderlayWindow(WindowInfo(client.hwnd, client.name));
+	}
 }
 
 void LauncherCore::windowListRequested(QString socketName)

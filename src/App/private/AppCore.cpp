@@ -38,13 +38,14 @@ AppCore::AppCore(QObject* parent)
 	registerMetatypes();
 
 	m_qmlController = new QMLController(this);
+	m_qmlController->startup();
 
 	m_windowView = new WindowView(this);
 
 	m_ipcClientThread.setObjectName("IPC Client Thread");
-	m_ipcClient = new IPCClient(QString(QCoreApplication::arguments().at(1)), reinterpret_cast<HWND>(m_qmlController->getQmlWindow()->winId()));
+	m_ipcClient = new IPCClient(QString(QCoreApplication::arguments().at(1)));
 	m_ipcClient->moveToThread(&m_ipcClientThread);
-	connect(&m_ipcClientThread, &QThread::started, m_ipcClient, &IPCClient::connectToServer);
+	connect(&m_ipcClientThread, &QThread::started, m_ipcClient, &IPCClient::startup);
 	connect(&m_ipcClientThread, &QThread::finished, m_ipcClient, &QObject::deleteLater);
 
 	m_settingsContainer = new SettingsContainer(this);
@@ -81,15 +82,23 @@ void AppCore::registerMetatypes()
 
 void AppCore::makeConnections()
 {
+	// QML Controller
+	{
+		// IPC Client
+		connect(m_qmlController, &QMLController::sendMessage, m_ipcClient, &IPCClient::sendMessage);
+	}
+
 	// IPC Client
 	{
 		// App Core
+		connect(m_ipcClient, &IPCClient::ipcReady, this, &AppCore::ipcReady);
 		connect(m_ipcClient, &IPCClient::syncObjectPropertyChanged, this, &AppCore::syncObjectPropertyChanged);
 		connect(m_ipcClient, &IPCClient::windowSelected, this, &AppCore::windowSelected);
 		connect(m_ipcClient, &IPCClient::windowSelectionCanceled, this, &AppCore::windowSelectionCanceled);
 		connect(m_ipcClient, &IPCClient::receivedQuitMessage, this, &AppCore::exitRequested);
 
 		// QML Controller
+		connect(m_ipcClient, &IPCClient::ipcReady, m_qmlController, &QMLController::ipcReady);
 		connect(m_ipcClient, &IPCClient::reloadQml, m_qmlController, &QMLController::reloadQml);
 		connect(m_ipcClient, &IPCClient::disconnected, m_qmlController, &QMLController::closeWindow);
 
@@ -105,14 +114,39 @@ void AppCore::makeConnections()
 	// Tree Model
 	{
 		// IPC Client
-		connect(m_treeModel, &TreeModel::moveWindows, m_ipcClient, &IPCClient::sendMessage);
-		connect(m_treeModel, &TreeModel::setWindowStyle, m_ipcClient, &IPCClient::setWindowStyle);
+		connect(m_treeModel, &TreeModel::sendMessage, m_ipcClient, &IPCClient::sendMessage);
 	}
 
 	// Cleanup on exit
 	QGuiApplication* app = static_cast<QGuiApplication*>(QGuiApplication::instance());
 	connect(app, &QGuiApplication::lastWindowClosed, this, &AppCore::lastWindowClosed);
 	connect(app, &QGuiApplication::aboutToQuit, this, &AppCore::cleanup);
+}
+
+void AppCore::windowReady(HWND hwnd)
+{
+	QVariantList message = {
+		"WindowChanged",
+		QVariant::fromValue<HWND>(hwnd)
+	};
+
+	QMetaObject::invokeMethod(m_ipcClient, "sendMessage", Q_ARG(QVariantList, message));
+}
+
+void AppCore::windowDestroyed()
+{
+	QVariantList message = {
+		"WindowChanged",
+		QVariant::fromValue<HWND>(nullptr)
+	};
+
+	QMetaObject::invokeMethod(m_ipcClient, "sendMessage", Q_ARG(QVariantList, message));
+}
+
+void AppCore::ipcReady()
+{
+	QVariantList message = {"WindowList"};
+	QMetaObject::invokeMethod(m_ipcClient, "sendMessage", Q_ARG(QVariantList, message));
 }
 
 void AppCore::syncObjectPropertyChanged(QString object, QString property, QVariant value)
@@ -132,7 +166,6 @@ void AppCore::windowSelected(HWND hwnd)
 	WindowObject* wi = m_windowView->getWindowInfo(hwnd);
 
 	m_pendingWindowRecipient->setWindowInfo(wi);
-	m_pendingWindowRecipient->updateWindowPosition();
 	m_pendingWindowRecipient = nullptr;
 }
 
@@ -146,9 +179,6 @@ void AppCore::exitRequested()
 	m_exitExpected = true;
 
 	m_treeModel->save();
-
-	m_settingsContainer->setProperty("headerSize", 0);
-	m_treeModel->getRootItem()->playShutdownAnimation();
 
 	m_qmlController->closeWindow();
 	/*

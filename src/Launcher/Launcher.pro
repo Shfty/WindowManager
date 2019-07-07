@@ -1,6 +1,6 @@
 QT += widgets quick quickcontrols2 network
 CONFIG += c++17
-LIBS += -luser32 -lAdvAPI32 -lpowrprof
+LIBS += -luser32 -ldwmapi -lAdvAPI32 -lpowrprof
 
 CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_INFO_OUTPUT QT_NO_WARNING_OUTPUT
 

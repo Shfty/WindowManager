@@ -76,6 +76,15 @@ void TreeModel::saveDefault()
 	save();
 }
 
+void TreeModel::setWindowStyle(HWND hwnd, qint32 style)
+{
+	emit sendMessage({
+		"SetWindowStyle",
+		QVariant::fromValue<HWND>(hwnd),
+		style
+	});
+}
+
 void TreeModel::moveWindow(HWND hwnd, QRect geometry, bool visible)
 {
 	m_windowMoveMessage.append(QVariant::fromValue<HWND>(hwnd));
@@ -90,7 +99,7 @@ void TreeModel::commitWindowMove()
 	{
 		m_windowMoveMessage.prepend(m_windowMoveCount);
 		m_windowMoveMessage.prepend("MoveWindows");
-		emit moveWindows(m_windowMoveMessage);
+		emit sendMessage(m_windowMoveMessage);
 	}
 	m_windowMoveMessage.clear();
 	m_windowMoveCount = 0;

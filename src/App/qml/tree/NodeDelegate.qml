@@ -7,10 +7,14 @@ import ".."
 Item {
     id: itemWrapper
 
-    anchors.fill: parent
-
     property var modelData: null
-    property bool hasModel: modelData ? true : false
+    readonly property bool hasModel: modelData ? true : false
+
+    readonly property var settingsContainer: appCore ? appCore.settingsContainer : null
+    readonly property real itemRadius: settingsContainer.itemRadius
+    readonly property real itemBorder: settingsContainer.itemBorder
+    readonly property color colorContainerBorder: settingsContainer.colorContainerBorder
+    readonly property color colorContainerPlaceholder: settingsContainer.colorContainerPlaceholder
 
     Incubator {
         anchors.fill: parent
@@ -21,17 +25,18 @@ Item {
                 anchors.fill: parent
                 clip: true
 
+                // Background
                 Rectangle {
                     id: itemBackground
                     anchors.fill: parent
 
-                    border.color: appCore.settingsContainer.colorContainerBorder
-                    border.width: appCore.settingsContainer.itemBorder
+                    border.color: colorContainerBorder
+                    border.width: itemBorder
 
-                    radius: appCore.settingsContainer.itemRadius
+                    radius: itemRadius
                     anchors.topMargin: -radius
 
-                    color: appCore.settingsContainer.colorContainerPlaceholder
+                    color: colorContainerPlaceholder
 
                     AppIcon {
                         id: appIcon
@@ -41,18 +46,37 @@ Item {
 
                         model: hasModel ? itemWrapper.modelData : null
                     }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.topMargin: itemBackground.radius
+
+                        anchors.left: parent.left
+                        anchors.leftMargin: itemBorder
+
+                        anchors.right: parent.right
+                        anchors.rightMargin: itemBorder
+
+                        height: itemBorder
+                        color: colorContainerBorder
+                    }
                 }
             }
         }
     }
 
     DWMThumbnail {
+        id: dwmThumbnail
+        objectName: modelData.objectName
+
         anchors.fill: parent
-        hwnd: {
-            if(!appCore) return undefined
-            if(!hasModel) return appCore.windowView.windowList[0].hwnd
-            if(!modelData.windowInfo) return appCore.windowView.windowList[0].hwnd
-            return modelData.windowInfo.hwnd
+        hwnd: windowHwnd
+
+        property var windowInfo: hasModel ? modelData.windowInfo : null
+        property var windowHwnd: windowInfo ? windowInfo.hwnd : HWND_NULL
+
+        onWindowHwndChanged: {
+            print(modelData.objectName, "hwnd changed", windowHwnd, "valid?", windowHwnd !== HWND_NULL)
         }
     }
 }

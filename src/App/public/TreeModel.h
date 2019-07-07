@@ -41,8 +41,7 @@ public:
 signals:
 	void rootItemChanged();
 
-	void moveWindows(QVariantList message);
-	void setWindowStyle(HWND hwnd, qint32 style);
+	void sendMessage(QVariantList message);
 
 public slots:
 	void load();
@@ -52,6 +51,8 @@ public slots:
 
 	void moveWindow(HWND hwnd, QRect geometry, bool visible);
 	void commitWindowMove();
+
+	void setWindowStyle(HWND hwnd, qint32 style);
 
 private:
 	QString m_autosavePath;

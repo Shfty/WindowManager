@@ -9,22 +9,10 @@ import ".."
 Item {
     id: treeHeader
 
+    property var settingsContainer: appCore ? appCore.settingsContainer : null
+
     property var modelData: null
     property bool hasModel: modelData ? true : false
-
-    x: headerBounds.x
-    y: headerBounds.y
-    width: headerBounds.width
-    height: appCore ? appCore.settingsContainer.headerSize : 20
-
-    property rect headerBounds: hasModel ? modelData.headerBounds : Qt.rect(0, 0, 0, 0)
-    Behavior on headerBounds {
-        enabled: hasModel
-        PropertyAnimation {
-            easing.type: appCore.settingsContainer.itemAnimationCurve
-            duration: appCore.settingsContainer.itemAnimationDuration
-        }
-    }
 
     property var windowInfo: modelData ? modelData.windowInfo : null
     property var hwnd: windowInfo ? windowInfo.hwnd : null
@@ -47,12 +35,14 @@ Item {
         color: {
             if(!appCore) return "black"
 
-            if(!modelData) return appCore.settingsContainer.colorActiveHeader
+            if(!settingsContainer) return "black"
 
-            if(isRoot) return appCore.settingsContainer.colorActiveHeader
+            if(!modelData) return settingsContainer.colorActiveHeader
+
+            if(isRoot) return settingsContainer.colorActiveHeader
 
             if(modelData.treeParent.layout === "Split") {
-                return appCore.settingsContainer.colorActiveHeader
+                return settingsContainer.colorActiveHeader
             }
 
             if(modelData.treeParent.activeIndex === modelData.index) {
@@ -168,7 +158,6 @@ Item {
 
                 if(!pressed) {
                     modelData.toggleFlow()
-                    modelData.updateWindowPosition()
                 }
             }
         }
@@ -222,7 +211,6 @@ Item {
 
                 if(!pressed) {
                     modelData.toggleLayout()
-                    modelData.updateWindowPosition()
                 }
             }
         }
@@ -252,8 +240,6 @@ Item {
                         modelData.flow === "Horizontal" ? "Vertical" : "Horizontal",
                         "Split"
                     )
-
-                    modelData.updateWindowPosition()
                 }
             }
         }
@@ -305,7 +291,6 @@ Item {
                 else if(modelData)
                 {
                     modelData.remove()
-                    modelData.treeParent.updateWindowPosition()
                 }
             }
         }
@@ -315,13 +300,18 @@ Item {
         id: rootItemIncubator
 
         active: isRoot
+
         anchors.top: parent.top
         anchors.right: parent.right
-        width: itemInstance ? itemInstance.width : 0
+        width: item ? item.width : 0
         height: parent.height
+
         sourceComponent: Component {
             RowLayout {
                 id: rootLayout
+
+                height: parent.height
+
                 spacing: 0
 
                 Button {
@@ -471,9 +461,7 @@ Item {
 
         onClicked: {
             if(!modelData) return
-
             modelData.setActive();
-            modelData.treeParent.updateWindowPosition()
         }
     }
 
@@ -510,8 +498,6 @@ Item {
                         modelData.moveUp()
                     }
                 }
-
-                modelData.treeParent.updateWindowPosition()
             }
         }
         onPressed: mouse.accepted = false

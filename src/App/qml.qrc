@@ -3,7 +3,6 @@
         <file>qml/qmldir</file>
         <file>qml/tree/HeaderDelegate.qml</file>
         <file>qml/tree/NodeDelegate.qml</file>
-        <file>qml/tree/RecursiveDelegate.qml</file>
         <file>qml/main.qml</file>
         <file>qml/AppWindow.qml</file>
         <file>qml/items/AppIcon.qml</file>
@@ -11,5 +10,8 @@
         <file>qml/items/Spinner.qml</file>
         <file>qml/items/Incubator.qml</file>
         <file>qml/items/MultiIncubator.qml</file>
+        <file>qml/tree/ItemDelegate.qml</file>
+        <file>qml/items/ClippingRect.qml</file>
+        <file>qml/items/ArrayWatcher.qml</file>
     </qresource>
 </RCC>

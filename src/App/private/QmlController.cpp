@@ -10,6 +10,7 @@
 #include <QDebug>
 Q_LOGGING_CATEGORY(qmlController, "app.qmlController")
 
+#include <Win.h>
 #include <TreeIconImageProvider.h>
 
 #include "AppCore.h"
@@ -30,23 +31,27 @@ QMLController::QMLController(QObject *parent)
 
 	m_qmlEngine = new QQmlApplicationEngine(this);
 	m_qmlEngine->addImageProvider(QLatin1String("treeIcon"), new TreeIconImageProvider);
+	m_qmlEngine->rootContext()->setContextProperty("HWND_NULL", QVariant::fromValue<HWND>(nullptr));
+#ifdef QT_DEBUG
+	m_qmlEngine->rootContext()->setContextProperty("QT_DEBUG", true);
+#else
+	m_qmlEngine->rootContext()->setContextProperty("QT_DEBUG", false);
+#endif
 
-	connect(m_qmlEngine, &QQmlApplicationEngine::objectCreated, [=](){
-		m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects().last());
+	connect(m_qmlEngine, &QQmlApplicationEngine::objectCreated, this, &QMLController::qmlLoaded);
+}
 
-		qCInfo(qmlController) << "Assigning app core reference";
-		m_qmlWindow->setProperty("appCore", QVariant::fromValue<AppCore*>(AppCore::getInstance(this)));
-
-		qCInfo(qmlController) << "Assigning monitor index";
-		int monitorIndex = QGuiApplication::arguments().at(2).toInt();
-		m_qmlWindow->setScreen(QGuiApplication::screens()[monitorIndex]);
-
-		qCInfo(qmlController) << "Showing window";
-		m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
-		m_qmlWindow->setVisibility(QWindow::Windowed);
-	});
-
+void QMLController::startup()
+{
 	reloadQml();
+}
+
+void QMLController::ipcReady()
+{
+	emit sendMessage({
+		"WindowChanged",
+		QVariant::fromValue<HWND>(reinterpret_cast<HWND>(m_qmlWindow->winId()))
+	});
 }
 
 void QMLController::reloadQml()
@@ -57,13 +62,39 @@ void QMLController::reloadQml()
 	{
 		qCInfo(qmlController) << "Closing existing window";
 		m_qmlWindow->close();
-		m_qmlWindow->deleteLater();
+		m_qmlWindow->destroy();
+		m_qmlWindow = nullptr;
+
+		emit sendMessage({
+			"WindowChanged",
+			QVariant::fromValue<HWND>(nullptr)
+		});
 	}
 
 	qCInfo(qmlController) << "Loading main.qml";
 	m_qmlEngine->clearComponentCache();
-
 	m_qmlEngine->load(QML_PREFIX + "qml/main.qml");
+}
+
+void QMLController::qmlLoaded()
+{
+	m_qmlWindow = qobject_cast<QQuickWindow*>(m_qmlEngine->rootObjects().last());
+
+	qCInfo(qmlController) << "Assigning app core reference";
+	m_qmlWindow->setProperty("appCore", QVariant::fromValue<AppCore*>(AppCore::getInstance(this)));
+
+	qCInfo(qmlController) << "Assigning monitor index";
+	int monitorIndex = QGuiApplication::arguments().at(2).toInt();
+	m_qmlWindow->setScreen(QGuiApplication::screens()[monitorIndex]);
+
+	qCInfo(qmlController) << "Showing window";
+	m_qmlWindow->setProperty("_q_showWithoutActivating", QVariant(true));
+	m_qmlWindow->setVisibility(QWindow::Windowed);
+
+	emit sendMessage({
+		"WindowChanged",
+		QVariant::fromValue<HWND>(reinterpret_cast<HWND>(m_qmlWindow->winId()))
+	});
 }
 
 void QMLController::closeWindow()

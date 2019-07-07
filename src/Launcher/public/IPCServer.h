@@ -45,7 +45,7 @@ public:
 	~IPCServer();
 
 signals:
-	void clientReady(AppClient client);
+	void clientWindowChanged(AppClient client, HWND oldHwnd);
 
 	void moveOverlayRequested(QPoint pos, QSize size);
 	void showOverlayRequested(QString item);

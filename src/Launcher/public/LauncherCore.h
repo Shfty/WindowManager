@@ -71,7 +71,7 @@ private:
 
 private slots:
 	void windowReady(QQuickWindow* window);
-	void clientReady(AppClient client);
+	void clientWindowChanged(AppClient client, HWND oldHwnd);
 
 	void windowListRequested(QString socketName);
 	void setPendingWindowInfoSocket(QString socketName);

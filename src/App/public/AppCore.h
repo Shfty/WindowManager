@@ -68,10 +68,17 @@ private:
 	void makeConnections();
 
 private slots:
+	void windowReady(HWND hwnd);
+	void windowDestroyed();
+
+	void ipcReady();
+
 	void syncObjectPropertyChanged(QString object, QString property, QVariant value);
+
 	void windowSelected(HWND hwnd);
 	void windowSelectionCanceled();
 	void exitRequested();
+
 	void lastWindowClosed();
 	void cleanup();
 

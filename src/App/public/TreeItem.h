@@ -14,13 +14,8 @@ Q_DECLARE_LOGGING_CATEGORY(treeItem);
 
 #include <Win.h>
 
-class AppCore;
-class SettingsContainer;
-class WindowController;
 class WindowView;
 class QScreen;
-class QQuickWindow;
-class QQuickView;
 class WindowObject;
 
 class TreeItem : public QObject
@@ -38,12 +33,6 @@ class TreeItem : public QObject
 	Q_PROPERTY(int index READ getIndex() NOTIFY indexChanged)
 	Q_PROPERTY(int depth READ getDepth() NOTIFY depthChanged)
 
-	Q_PROPERTY(QRectF bounds READ getBoundsLocal() NOTIFY boundsChanged)
-	Q_PROPERTY(QRectF contentBounds READ getContentBoundsLocal() NOTIFY contentBoundsChanged)
-
-	Q_PROPERTY(QRectF headerBounds READ getHeaderBoundsLocal() NOTIFY headerBoundsChanged)
-	Q_PROPERTY(QRectF nodeBounds READ getNodeBoundsLocal() NOTIFY nodeBoundsChanged)
-
 	Q_PROPERTY(WindowObject* windowInfo READ getWindowInfo WRITE setWindowInfo NOTIFY windowInfoChanged)
 
 	// Node Options
@@ -60,58 +49,26 @@ class TreeItem : public QObject
 
 	// Misc
 	Q_PROPERTY(bool startupComplete MEMBER m_startupComplete NOTIFY startupCompleteChanged)
-	Q_PROPERTY(bool isAnimating MEMBER m_isAnimating NOTIFY isAnimatingChanged)
-	Q_PROPERTY(bool isVisible READ getIsVisible NOTIFY isVisibleChanged)
-	Q_PROPERTY(bool windowVisible READ getWindowVisible NOTIFY windowVisibleChanged)
 
 public:
 	explicit TreeItem(QObject* parent = nullptr);
 
-	void cleanup();
-	void cleanup_internal();
-	void cleanupWindow(WindowObject* wi);
 	void setupWindow(WindowObject* wi);
 
 	int getActiveIndex();
-	Q_INVOKABLE void setActiveChild(TreeItem* activeChild);
-	Q_INVOKABLE void scrollActiveIndex(int delta);
-	Q_INVOKABLE void setActive();
 
 	int getIndex();
 	int getDepth();
 	bool getIsVisible();
 	bool getWindowVisible();
 
-	QScreen* getMonitor();
-
-	QRectF getBounds();
-	QRectF getHeaderBounds();
-	QRectF getContentBounds();
-	QRectF getNodeBounds();
-
-	QRectF getBoundsLocal();
-	QRectF getHeaderBoundsLocal();
-	QRectF getContentBoundsLocal();
-	QRectF getNodeBoundsLocal();
-
-	Q_INVOKABLE void toggleFlow();
-	Q_INVOKABLE void toggleLayout();
-
-	Q_INVOKABLE QVariant addChild(QString title = "", QString flow = "", QString layout = "", QScreen* monitor = nullptr, WindowObject* windowInfo = nullptr);
 	QVariant addChild(TreeItem* newChild);
 	bool removeChild(TreeItem* childToRemove);
-
-	Q_INVOKABLE void moveUp();
-	Q_INVOKABLE void moveDown();
-	Q_INVOKABLE void remove();
-
-	QPointF getScreenPosition();
 
 	TreeItem* getTreeParent() const;
 	QObjectList getTreeChildren() const;
 
 	void moveChild(TreeItem* child, int delta);
-	Q_INVOKABLE void moveChild(int fromIndex, int toIndex);
 
 	WindowObject* getWindowInfo() const { return m_windowInfo; }
 	void setWindowInfo(WindowObject* newWindowInfo);
@@ -133,13 +90,6 @@ signals:
 	void indexChanged();
 	void depthChanged();
 
-	void boundsChanged();
-	void contentBoundsChanged();
-
-	void headerBoundsChanged();
-	void nodeBoundsChanged();
-
-	void monitorChanged();
 	void windowInfoChanged();
 
 	void borderlessChanged();
@@ -152,33 +102,36 @@ signals:
 	void autoGrabClassChanged();
 
 	void startupCompleteChanged();
-	void isAnimatingChanged();
-	void animationFinished();
-	void isVisibleChanged();
-	void windowVisibleChanged();
 
-	void moveWindow(HWND hwnd, QRect geometry, bool visible);
-	void commitWindowMove();
 	void setWindowStyle(HWND hwnd, qint32 style);
 
 public slots:
 	void startup();
-	void updateWindowPosition();
-	void launch();
-	void playShutdownAnimation();
+	void cleanup();
 
-protected:
-	void updateWindowPosition_Internal();
+	void launch();
+
+	void toggleFlow();
+	void toggleLayout();
+
+	void moveUp();
+	void moveDown();
+	void remove();
+
+	QVariant addChild(QString title = "", QString flow = "", QString layout = "", WindowObject* windowInfo = nullptr);
+	void moveChild(int fromIndex, int toIndex);
+
+	void setActiveChild(TreeItem* activeChild);
+	void scrollActiveIndex(int delta);
+	void setActive();
+
+	void restoreWindowStyle();
 
 protected slots:
 	void tryAutoGrabWindow();
 
 private:
-	SettingsContainer* getSettingsContainer();
 	WindowView* getWindowView();
-
-	qreal getItemMargin();
-	qreal getHeaderSize();
 
 	// Serialized properties
 	QString m_flow;
@@ -200,11 +153,7 @@ private:
 	// Trasient properties
 	bool m_startupComplete;
 	TreeItem* m_activeChild;
-	bool m_isAnimating;
 	bool m_wantsAutoLaunch;
-
-	QQuickWindow* m_itemWindow;
-	QQuickWindow* m_headerWindow;
 };
 
 Q_DECLARE_METATYPE(TreeItem*)

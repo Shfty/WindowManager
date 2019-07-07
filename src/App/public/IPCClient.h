@@ -17,9 +17,11 @@ class IPCClient : public QObject
 {
 	Q_OBJECT
 public:
-	explicit IPCClient(QString socketName, HWND hwnd, QObject *parent = nullptr);
+	explicit IPCClient(QString socketName, QObject *parent = nullptr);
 
 signals:
+	void ipcReady();
+
 	void syncObjectPropertyChanged(QString objectName, QString objectProperty, QVariant propertyValue);
 
 	void windowCreated(WindowInfo wi);
@@ -37,19 +39,13 @@ signals:
 	void disconnected();
 
 public slots:
-	void connectToServer();
-
+	void startup();
 	void sendMessage(QVariantList message);
-
-	void setWindowStyle(HWND hwnd, qint32 style);
 
 private:
 	void handleMessage(QDataStream& stream, QString message);
 
-	void unpackWindowInfo(QDataStream& stream, HWND& hwnd, QString& winTitle, QString& winClass, QString& winProcess, qint32& winStyle);
-
 	QString m_socketName;
-	HWND m_hwnd;
 
 	QLocalSocket* m_localSocket;
 	QVariantList m_windowMoveBuffer;

@@ -46,9 +46,10 @@ public slots:
 
 	void setWindowStyle(HWND hwnd, qint32 style);
 
+	void removeHwnd(HWND hwnd);
+
 private:
 	WindowInfo findWindowInfo(HWND hwnd);
-	void removeHwnd(HWND hwnd);
 	void moveWindow_internal(Layer layer, WindowInfo wi, HWND insertAfter, QRect geometry);
 
 	HDWP m_dwp;

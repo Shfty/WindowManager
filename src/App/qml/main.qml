@@ -15,15 +15,19 @@ AppWindow {
 
     // Tree Root
     property var appCore: null
+    onAppCoreChanged: {
+        print("App Core:", appCore)
+    }
 
     property bool showTree: false
 
     property var treeModel: appCore ? appCore.treeModel : null
+
     property var treeRoot: treeModel ? treeModel.rootItem : null
     property bool treeRootReady: treeRoot ? true : false
 
     property var settingsContainer: appCore ? appCore.settingsContainer : null
-    property bool hasSettingsContainer: settingsContainer ? true: false
+    property bool hasSettingsContainer: settingsContainer ? true : false
 
     property var windowView: appCore ? appCore.windowView : null
     property bool hasWindowView: windowView ? true: false
@@ -52,67 +56,82 @@ AppWindow {
             fillMode: Image.PreserveAspectCrop
         }
 
-        opacity: wallpaperImage.status === Image.Ready ? 1.0 : 0.0
-        Behavior on opacity {
-            NumberAnimation {}
-        }
+        readonly property bool ready: wallpaperImage.status === Image.ready &&
+                                      spinner.stableState !== ""
+
+        state: wallpaperImage.status === Image.Ready ? "visible" : "hidden"
+        property string stableState: ""
+
+        states: [
+            State {
+                name: "hidden"
+                PropertyChanges {
+                    target: wallpaper
+                    opacity: 0
+                }
+            },
+            State {
+                name: "visible"
+                PropertyChanges {
+                    target: wallpaper
+                    opacity: 1
+                }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                id: wallpaperTransition
+
+                NumberAnimation {
+                    target: wallpaper
+                    property: "opacity"
+                }
+
+                onRunningChanged: {
+                    if(!running) {
+                        wallpaper.stableState = wallpaper.state
+                    }
+                }
+            }
+        ]
     }
 
-    // Tree
-    Item {
-        id: treeWrapper
-        anchors.fill: parent
+    // Tree Items
+    Component {
+        id: itemDelegateComponent
+        ItemDelegate {}
+    }
 
-        Component {
-            id: recursiveDelegate
-            RecursiveDelegate {
-            }
-        }
+    Incubator {
+        id: itemWrapper
 
-        Component {
-            id: nodeDelegate
-            NodeDelegate {}
-        }
+        asynchronous: false
 
-        Component {
-            id: headerDelegate
-            HeaderDelegate {}
-        }
+        anchors.top: rootHeader.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
 
-        // Loading Wrappers
-        Incubator {
-            id: nodeWrapper
-            anchors.fill: parent
-            sourceComponent: recursiveDelegate
-            properties: ({
-                modelData: Qt.binding(function() { return appWindow.treeRoot }),
-                visualDelegate: nodeDelegate,
-                boundsProperty: "contentBounds",
-                childBoundsProperty: "nodeBounds",
-                clipChildren: true
-            })
-        }
-
-        Incubator {
-            id: headerWrapper
-            anchors.fill: parent
-            sourceComponent: recursiveDelegate
-            properties: ({
-                modelData: Qt.binding(function() { return appWindow.treeRoot }),
-                visualDelegate: headerDelegate,
-                boundsProperty: "bounds",
-                clipChildren: true
-            })
-        }
+        sourceComponent: itemDelegateComponent
+        active: appWindow ? (appWindow.treeRoot ? true : false) : false
+        properties: ({
+            modelData: Qt.binding(function() { return appWindow.treeRoot })
+        })
 
         // Animation
-        state: appWindow.showTree ? "here" : "below"
+        readonly property bool ready: wallpaper.stableState === "visible" &&
+                                      rootHeader.stableState === "visible" &&
+                                      appWindow.treeRoot.startupComplete &&
+                                      item
+
+        state: ready ? "here" : "below"
 
         states: [
             State {
                 name: "below"
                 PropertyChanges {
-                    target: treeWrapper
+                    target: itemWrapper
                     opacity: 0
                     scale: 0.9
                 }
@@ -120,7 +139,7 @@ AppWindow {
             State {
                 name: "here"
                 PropertyChanges {
-                    target: treeWrapper
+                    target: itemWrapper
                     opacity: 1
                     scale: 1
                 }
@@ -128,7 +147,7 @@ AppWindow {
             State {
                 name: "above"
                 PropertyChanges {
-                    target: treeWrapper
+                    target: itemWrapper
                     opacity: 0
                     scale: 1.1
                 }
@@ -138,7 +157,7 @@ AppWindow {
         transitions: [
             Transition {
                 NumberAnimation {
-                    target: treeWrapper
+                    target: itemWrapper
                     properties: "opacity, scale"
                     duration: animationDuration
                     easing.type: animationCurve
@@ -146,9 +165,9 @@ AppWindow {
 
                 onRunningChanged: {
                     if(!running) {
-                        if(treeWrapper.state == "here")
+                        if(itemWrapper.state === "here")
                         {
-                            appWindow.treeRoot.updateWindowPosition()
+                            itemWrapper.item.updateWindows()
                         }
                     }
                 }
@@ -156,60 +175,97 @@ AppWindow {
         ]
     }
 
-    // Spinner
-    readonly property bool nodesLoaded: nodeWrapper.itemInstance ? nodeWrapper.itemInstance.loadComplete : false
-    readonly property bool headersLoaded: headerWrapper.itemInstance ? headerWrapper.itemInstance.loadComplete : false
-    readonly property bool treeReady: appWindow.treeRoot ? appWindow.treeRoot.startupComplete : false
-    readonly property bool qmlReady: nodesLoaded && headersLoaded && treeReady
-    onQmlReadyChanged: {
-        if(qmlReady)
-        {
-            spinnerWrapper.setState("above")
+    // Root Header
+    Incubator {
+        id: rootHeader
+
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: hasSettingsContainer ? settingsContainer.headerSize : 30
+
+        sourceComponent: Component {
+            HeaderDelegate {
+                anchors.fill: parent
+                modelData: appWindow.treeRoot
+            }
         }
+
+        readonly property bool ready: wallpaper.stableState !== "" &&
+                                      spinner.stableState !== "" &&
+                                      item
+        state: ready ? "visible" : "hidden"
+        property string stableState: ""
+
+        transform: Translate {
+            id: rootHeaderTransform
+        }
+
+        states: [
+            State {
+                name: "hidden"
+                PropertyChanges {
+                    target: rootHeaderTransform
+                    y: -rootHeader.height
+                }
+            },
+            State {
+                name: "visible"
+                PropertyChanges {
+                    target: rootHeaderTransform
+                    y: 0
+                }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                id: rootHeaderTransition
+
+                PropertyAnimation {
+                    target: rootHeaderTransform
+                    properties: "y"
+                    duration: animationDuration
+                    easing.type: animationCurve
+                }
+
+                onRunningChanged: {
+                    if(!running) {
+                        rootHeader.stableState = rootHeader.state
+                    }
+                }
+            }
+        ]
     }
 
+    // Spinner
     Item {
-        id: spinnerWrapper
+        id: spinner
 
         anchors.centerIn: parent
         width: appWindow.minSize * 0.5
-        height: appWindow.minSize * 0.5
-
-        Component.onCompleted: {
-            setState("here")
-        }
+        height: width
 
         BusyIndicator {
             layer.enabled: true
             anchors.fill: parent
-            running: spinnerWrapper.opacity > 0
+            running: spinner.opacity > 0
         }
 
+        readonly property bool ready: wallpaper.stableState === "visible" &&
+                                      rootHeader.stableState === "visible" &&
+                                      itemWrapper.state === "here"
         state: "below"
-        property var stateQueue: []
-        function setState(newState) {
-            if(spinnerTransition.running)
-            {
-                stateQueue.unshift(newState)
-            }
-            else
-            {
-                state = newState
-            }
-        }
-
-        onStateChanged: {
-            if(state === "above")
-            {
-                showTree = true
-            }
+        property var stableState: ""
+        Component.onCompleted: {
+            state = Qt.binding(function() { return ready ? "above" : "here" })
         }
 
         states: [
             State {
                 name: "below"
                 PropertyChanges {
-                    target: spinnerWrapper
+                    target: spinner
                     opacity: 0
                     scale: 0.9
                 }
@@ -217,7 +273,7 @@ AppWindow {
             State {
                 name: "here"
                 PropertyChanges {
-                    target: spinnerWrapper
+                    target: spinner
                     opacity: 1
                     scale: 1
                 }
@@ -225,7 +281,7 @@ AppWindow {
             State {
                 name: "above"
                 PropertyChanges {
-                    target: spinnerWrapper
+                    target: spinner
                     opacity: 0
                     scale: 1.1
                 }
@@ -236,8 +292,8 @@ AppWindow {
             Transition {
                 id: spinnerTransition
 
-                NumberAnimation {
-                    target: spinnerWrapper
+                PropertyAnimation {
+                    target: spinner
                     properties: "opacity, scale"
                     duration: animationDuration
                     easing.type: animationCurve
@@ -245,10 +301,7 @@ AppWindow {
 
                 onRunningChanged: {
                     if(!running) {
-                        if(spinnerWrapper.stateQueue.length > 0)
-                        {
-                            spinnerWrapper.state = spinnerWrapper.stateQueue.pop()
-                        }
+                        spinner.stableState = spinner.state
                     }
                 }
             }
