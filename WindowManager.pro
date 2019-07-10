@@ -1,10 +1,10 @@
 TEMPLATE = subdirs
 
-SUBDIRS += Shared App Launcher
+SUBDIRS += Shared Client Server
 
-Launcher.subdir = src/Launcher
-App.subdir = src/App
+Server.subdir = src/Server
+Client.subdir = src/Client
 Shared.subdir = src/Shared
 
-Launcher.depends = App
-App.depends = Shared
+Server.depends = Client
+Client.depends = Shared
