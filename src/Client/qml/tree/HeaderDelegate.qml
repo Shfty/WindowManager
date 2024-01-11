@@ -80,7 +80,7 @@ Item {
         height: parent.height
 
         enabled: modelData ? modelData.children.length === 0 : false
-        text: modelData ? (modelData.windowInfo !== null ? modelData.windowInfo.winTitle : "[Container]") : ""
+        text: modelData && enabled ? (modelData.windowInfo !== null ? modelData.windowInfo.winTitle : "[Container]") : ""
 
         onClicked: {
             var size = Qt.size(windowSelectButton.width, 500)

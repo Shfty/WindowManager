@@ -17,6 +17,11 @@ IPCClient::IPCClient(QString socketName, QObject *parent)
 	, m_socketName(socketName)
 {
 	qCInfo(ipcClient) << "Construction";
+}
+
+void IPCClient::startup()
+{
+	qCInfo(ipcClient) << "Startup";
 
 	m_localSocket = new QLocalSocket(this);
 
@@ -64,11 +69,6 @@ IPCClient::IPCClient(QString socketName, QObject *parent)
 	});
 
 	connect(m_localSocket, &QLocalSocket::disconnected, this, &IPCClient::disconnected);
-}
-
-void IPCClient::startup()
-{
-	qCInfo(ipcClient) << "Startup";
 
 	qCInfo(ipcClient) << "Connecting to server";
 	m_localSocket->connectToServer("WindowManager", QIODevice::ReadWrite);

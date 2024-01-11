@@ -59,11 +59,11 @@ ServerCore::ServerCore(QObject* parent)
 	connect(&m_ipcServerThread, &QThread::finished, m_ipcServer, &QObject::deleteLater);
 
 	// Window Event Model
-	m_windowEventModelThread.setObjectName("Window Event Model Thread");
+	m_windowModelThread.setObjectName("Window Event Model Thread");
 	m_windowModel = new WindowModel(nullptr);
-	m_windowModel->moveToThread(&m_windowEventModelThread);
-	connect(&m_windowEventModelThread, &QThread::started, m_windowModel, &WindowModel::startup);
-	connect(&m_windowEventModelThread, &QThread::finished, m_windowModel, &QObject::deleteLater);
+	m_windowModel->moveToThread(&m_windowModelThread);
+	connect(&m_windowModelThread, &QThread::started, m_windowModel, &WindowModel::startup);
+	connect(&m_windowModelThread, &QThread::finished, m_windowModel, &QObject::deleteLater);
 
 	// Window Controller
 	m_windowControllerThread.setObjectName("Window Controller Thread");
@@ -96,7 +96,7 @@ ServerCore::ServerCore(QObject* parent)
 	qCInfo(serverCore) << "Construction Complete";
 
 	m_subprocessControllerThread.start();
-	m_windowEventModelThread.start();
+	m_windowModelThread.start();
 	m_windowControllerThread.start();
 
 	m_trayIcon->startup();
@@ -281,8 +281,8 @@ void ServerCore::cleanup()
 {
 	qCInfo(serverCore) << "Launcher Quitting";
 
-	m_windowEventModelThread.quit();
-	m_windowEventModelThread.wait();
+	m_windowModelThread.quit();
+	m_windowModelThread.wait();
 
 	m_subprocessControllerThread.quit();
 	m_subprocessControllerThread.wait();

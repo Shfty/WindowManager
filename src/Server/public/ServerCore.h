@@ -85,7 +85,7 @@ private:
 	OverlayController* m_overlayController;
 
 	QThread m_subprocessControllerThread;
-	QThread m_windowEventModelThread;
+	QThread m_windowModelThread;
 	QThread m_ipcServerThread;
 	QThread m_windowControllerThread;
 	IPCServer* m_ipcServer;

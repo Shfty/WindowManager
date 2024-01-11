@@ -6,6 +6,8 @@ import ".."
 
 Item {
     id: itemDelegate
+    objectName: "itemDelegate"
+
     anchors.fill: parent
 
     readonly property var settingsContainer: clientCore ? clientCore.settingsContainer : null
@@ -41,6 +43,9 @@ Item {
 
     property int animatingChildren: 0
     property int prevAnimatingChildren: 0
+
+    readonly property var grandparent: parent.parent
+    readonly property var ancestorNode: grandparent.objectName === "nodeDelegate" ? grandparent : null
 
     onAnimatingChildrenChanged: {
         print("itemDelegate animatingChildren:", animatingChildren)
@@ -149,6 +154,12 @@ Item {
             sourceComponent: Component {
                 NodeDelegate {
                     id: nodeDelegate
+                    objectName: "nodeDelegate"
+
+                    readonly property var parentItem: itemDelegate
+                    readonly property var ancestorNode: itemDelegate.ancestorNode
+                    readonly property bool ancestorNodeVisible: ancestorNode ? ancestorNode.windowVisible : true
+                    readonly property bool ancestorNodeAnimating: ancestorNode ? ancestorNode.animating : false
 
                     readonly property var childDelegate: childIncubator.item
 
@@ -190,44 +201,69 @@ Item {
                         }
                     }
 
-                    function getWindowVisible() {
-                        if(targetBoundsAnimation.running) return false
-
-                        var parentIncubator = itemDelegate.parent
-                        if(parentIncubator)
-                        {
-                            var parentNode = parentIncubator.parent
-                            if(parentNode && parentNode.getWindowVisible)
-                            {
-                                var parentVisible = parentNode.getWindowVisible()
-                                if(!parentVisible) return false
-                            }
-                        }
-
-                        if(nodeDelegate.modelData.treeParent.layout === "Tabbed")
-                        {
-                            return nodeDelegate.modelData.treeParent.activeIndex === nodeDelegate.modelData.index
-                        }
-
-                        return true
-                    }
+                    readonly property bool animating: targetBoundsAnimation.running || ancestorNodeAnimating
+                    readonly property bool isTabbedChild: modelData.treeParent.layout === "Tabbed"
+                    readonly property bool isActiveChild: modelData.treeParent.activeIndex === modelData.index
+                    readonly property bool isHiddenTab: isTabbedChild && !isActiveChild
+                    readonly property bool windowVisible: !animating && !isHiddenTab && ancestorNodeVisible
 
                     function updateWindow() {
-                        if(nodeDelegate.modelData.windowInfo)
+                        windowVisibleChanged();
+                    }
+
+                    onWindowVisibleChanged: {
+                        print("updateWindow", modelData.objectName)
+                        if(modelData.windowInfo)
                         {
-                            var visible = nodeDelegate.getWindowVisible()
-                            var pos
-                            if(visible)
+                            var candidateNode = this
+                            var positions = []
+                            var firstVisibleNode = null;
+
+                            while(candidateNode)
                             {
-                                pos = mapToGlobal(0, 0)
-                            }
-                            else
-                            {
-                                pos = nodeContainer.mapToGlobal(itemMargin, 0)
+                                print("candidate node", candidateNode.modelData.objectName)
+
+                                if(candidateNode.windowVisible)
+                                {
+                                    print("visible node found", candidateNode.modelData.objectName)
+                                    firstVisibleNode = candidateNode;
+                                    break;
+                                }
+
+                                var ancestorNode = candidateNode.ancestorNode
+                                if(ancestorNode)
+                                {
+                                    var relativePos = candidateNode.targetFlickable.mapToItem(ancestorNode, 0, 0)
+                                    positions.push(relativePos)
+                                    print("ancestor node:", ancestorNode.modelData.objectName)
+                                    print("relative position:", relativePos)
+                                }
+                                else
+                                {
+                                    print("visible node found", candidateNode.modelData.objectName)
+                                    firstVisibleNode = candidateNode;
+                                    break;
+                                }
+
+                                candidateNode = ancestorNode
                             }
 
-                            var rect = Qt.rect(pos.x, pos.y, width, height)
-                            clientCore.sendMessage(["MoveWindow", modelData.windowInfo.hwnd, rect, visible])
+                            print("position accumulation:", positions)
+                            print("first visible node:", firstVisibleNode.modelData.objectName)
+                            print("first visible node position:", firstVisibleNode.mapToGlobal(0,0))
+
+                            var finalPos = firstVisibleNode.mapToGlobal(0,0)
+                            for(var key in positions)
+                            {
+                                var position = positions[key]
+                                finalPos.x += position.x
+                                finalPos.y += position.y
+                            }
+
+                            print("final position:", finalPos)
+
+                            var rect = Qt.rect(finalPos.x, finalPos.y, width, height)
+                            clientCore.sendMessage(["MoveWindow", modelData.windowInfo.hwnd, rect, windowVisible])
                         }
 
                         childIncubator.item.updateWindows_internal()
@@ -242,7 +278,6 @@ Item {
                     }
 
                     state: ""
-                    //Component.onCompleted: state = "anchored"
 
                     states: [
                         State {

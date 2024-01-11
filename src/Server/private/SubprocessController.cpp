@@ -13,12 +13,15 @@ Q_LOGGING_CATEGORY(subprocessController, "launcher.subprocess")
 
 #ifdef QT_DEBUG
 #define APP_EXE "./build/src/Client/debug/Client.exe"
+#define DEBUG_EXE "./build/src/WindowList/debug/WindowList.exe"
 #else
 #define APP_EXE "./build/src/Client/release/Client.exe"
+#define DEBUG_EXE "./build/src/WindowList/release/WindowList.exe"
 #endif
 
 SubprocessController::SubprocessController(QObject *parent)
 	: QObject(parent)
+	, m_debugProcess(nullptr)
 {
 	setObjectName("Subprocess Controller");
 	qCInfo(subprocessController) << "Construction";
@@ -61,11 +64,33 @@ void SubprocessController::startup()
 		qFatal("Could not open Launcher save file");
 	}
 
+	// Launch debug helper
+	m_debugProcess = new QProcess(this);
+	m_debugProcess->setWorkingDirectory(QDir::currentPath());
+	m_debugProcess->setProcessChannelMode(QProcess::ForwardedChannels);
+	m_debugProcess->closeWriteChannel();
+
+	connect(m_debugProcess, &QProcess::errorOccurred, [=](QProcess::ProcessError error){
+		Q_UNUSED(error)
+
+		QString errorString = "Debug process error: " + m_debugProcess->errorString();
+		qFatal(errorString.toStdString().c_str());
+	});
+
+	connect(m_debugProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](){
+		qCInfo(subprocessController) << "Debug process finished" << m_debugProcess;
+		m_debugProcess->deleteLater();
+	});
+
+	m_debugProcess->start(DEBUG_EXE);
 }
 
 void SubprocessController::cleanup()
 {
 	qCInfo(subprocessController) << "Cleanup";
+
+	m_debugProcess->terminate();
+	m_debugProcess->waitForFinished();
 
 	for(QProcess* inst : m_appProcesses.keys())
 	{

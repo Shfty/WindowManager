@@ -44,6 +44,8 @@ protected:
 	void launchAppProcess(QString name, int monitorIndex, QString saveFile);
 
 private:
+	QProcess* m_debugProcess;
+
 	QMap<QProcess*, AppSubprocess*> m_appProcesses;
 };
 

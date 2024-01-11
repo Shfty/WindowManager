@@ -25,8 +25,17 @@ IPCServer::IPCServer(QString serverName, QObject* parent)
 	, m_serverName(serverName)
 {
 	setObjectName("IPC Controller");
-	qCInfo(ipcServer, "Creating local server");
+	qCInfo(ipcServer, "Construction");
+}
 
+IPCServer::~IPCServer()
+{
+	qDeleteAll(m_appClients.values());
+	m_appClients.clear();
+}
+
+void IPCServer::startup()
+{
 	m_localServer = new QLocalServer(this);
 
 	connect(m_localServer, &QLocalServer::newConnection, [=](){
@@ -63,16 +72,7 @@ IPCServer::IPCServer(QString serverName, QObject* parent)
 			qWarning() << "Local Socket Error" << error << localSocket->errorString();
 		});
 	});
-}
 
-IPCServer::~IPCServer()
-{
-	qDeleteAll(m_appClients.values());
-	m_appClients.clear();
-}
-
-void IPCServer::startup()
-{
 	m_localServer->listen(m_serverName);
 }
 

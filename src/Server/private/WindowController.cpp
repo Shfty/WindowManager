@@ -81,8 +81,6 @@ void WindowController::moveWindow(HWND hwnd, QRect geometry, bool visible)
 	WindowInfo wi = findWindowInfo(hwnd);
 	removeHwnd(hwnd);
 	m_layers[visible ? Visible : Hidden].insert(wi, geometry);
-
-	SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
 void WindowController::updateWindowLayout()
@@ -102,6 +100,7 @@ void WindowController::updateWindowLayout()
 		const QMap<WindowInfo, QRect>& layer = layerIt.value();
 		for(WindowInfo wi : layer.keys())
 		{
+			SetWindowPos(wi.hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 			moveWindow_internal(layerIt.key(), wi, insertAfter, layer.value(wi));
 			insertAfter = wi.hwnd;
 		}
